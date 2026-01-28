@@ -3,17 +3,21 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasUlids, HasRoles, LogsActivity;
 
     /**
      * The attributes that are mass assignable.
@@ -24,7 +28,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'admin_user_id',
     ];
 
     /**
@@ -50,18 +53,13 @@ class User extends Authenticatable
         ];
     }
 
-    public function company(): HasOne
+    public function canAccessPanel(Panel $panel): bool
     {
-        return $this->hasOne(Company::class);
+        return true;
     }
 
-    public function adminUser(): BelongsTo
+    public function getActivitylogOptions(): LogOptions
     {
-        return $this->belongsTo(User::class, 'admin_user_id');
-    }
-
-    public function roles(): BelongsToMany
-    {
-        return $this->belongsToMany(Role::class);
+        return LogOptions::defaults()->logFillable()->logOnlyDirty();
     }
 }
