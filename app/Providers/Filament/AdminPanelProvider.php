@@ -12,6 +12,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Illuminate\Support\Facades\Schema;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
@@ -37,9 +38,9 @@ class AdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->login()
             ->colors([
-                'primary' => GeneralSetting::first()->theme_color ?? Color::Amber,
+                'primary' => Schema::hasTable('general_settings') && GeneralSetting::first() ? GeneralSetting::first()->theme_color : Color::Amber,
             ])
-             ->brandName(GeneralSetting::first()->site_name)
+             ->brandName(Schema::hasTable('general_settings') && GeneralSetting::first() ? GeneralSetting::first()->site_name : '')
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\Filament\Admin\Resources')
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\Filament\Admin\Pages')
             ->pages([
