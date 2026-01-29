@@ -4,22 +4,25 @@ namespace App\Filament\Admin\Resources\Users\RelationManagers;
 
 use Filament\Actions\AttachAction;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\CreateAction;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\DetachAction;
 use Filament\Actions\DetachBulkAction;
-use Filament\Actions\EditAction;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Illuminate\Database\Eloquent\Model;
 
-class SupplierRolesRelationManager extends RelationManager
+class PartnerRolesRelationManager extends RelationManager
 {
-    protected static string $relationship = 'supplierRoles';
+    protected static string $relationship = 'partnerRoles';
+
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
+    {
+        return $ownerRecord?->role === 'partner';
+    }
 
     public function form(Schema $schema): Schema
     {
@@ -56,18 +59,14 @@ class SupplierRolesRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                CreateAction::make(),
                 AttachAction::make(),
             ])
             ->recordActions([
-                EditAction::make(),
-                DetachAction::make(),
-                DeleteAction::make(),
+                DetachAction::make()
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DetachBulkAction::make(),
-                    DeleteBulkAction::make(),
                 ]),
             ]);
     }

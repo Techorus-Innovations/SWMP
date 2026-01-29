@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('supplier_role_user', function (Blueprint $table) {
+        Schema::create('partner_role_user', function (Blueprint $table) {
                 $table->id();
                 $table->foreignUlid('user_id')->nullable()->constrained('users')->onDelete('cascade');
-                $table->foreignUlid('supplier_role_id')->nullable()->constrained('supplier_roles')->onDelete('cascade');
+                $table->foreignUlid('partner_role_id')->nullable()->constrained('partner_roles')->onDelete('cascade');
                 $table->timestamps();
             });
     }
@@ -24,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('supplier_role_user');
+        Schema::dropIfExists('partner_role_user');
     }
 };

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('supplier_roles', function (Blueprint $table) {
+        Schema::create('partner_roles', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->string('name')->unique();
             $table->text('description')->nullable();
@@ -24,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('supplier_roles');
+        Schema::dropIfExists('partner_roles');
     }
 };

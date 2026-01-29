@@ -91,7 +91,7 @@ class Registration extends Register
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
-                'role' => 'supplier',
+                'role' => 'partner',
             ]);
 
             $company = Company::create([

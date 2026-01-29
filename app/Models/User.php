@@ -58,6 +58,12 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
+        // Only allow 'admin' role to access the admin panel
+        if ($panel->getId() === 'admin') {
+            return $this->role === 'admin';
+        }
+
+        // All other panels (like partner) are accessible
         return true;
     }
 
@@ -71,8 +77,8 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasOne(Company::class);
     }
 
-    public function supplierRoles(): BelongsToMany
+    public function partnerRoles(): BelongsToMany
     {
-        return $this->belongsToMany(SupplierRole::class);
+        return $this->belongsToMany(PartnerRole::class);
     }
 }
