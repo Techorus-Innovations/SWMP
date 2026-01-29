@@ -3,7 +3,6 @@
 namespace App\Filament\Admin\Resources\Users\Schemas;
 
 use App\Models\Company;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -22,13 +21,17 @@ class UserForm
                     ->required(),
                 TextInput::make('password')
                     ->password()
-                    ->required(),
+                    ->required(fn (string $operation) => $operation === 'create')
+                    ->dehydrateStateUsing(fn ($state) => filled($state) ? bcrypt($state) : null)
+                    ->dehydrated(fn ($state) => filled($state)),
                 Select::make('company_id')
                     ->label('Company')
                     ->options(Company::pluck('company_name', 'id'))
-                    ->required(),
+                    ->required()
+                    ->disabled(fn (string $operation) => $operation === 'edit'),
                 TextInput::make('role')
-                    ->required(),
+                    ->required()
+                    ->disabled(fn (string $operation) => $operation === 'edit'),
             ]);
     }
 }
