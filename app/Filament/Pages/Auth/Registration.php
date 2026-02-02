@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 class Registration extends Register
 {
@@ -230,11 +231,10 @@ class Registration extends Register
 
     protected function getMobileFormComponent(): Component
     {
-        return TextInput::make('mobile')
+        return PhoneInput::make('mobile')
             ->label(__('Mobile Number'))
-            ->tel()
             ->required()
-            ->maxLength(20);
+            ->onlyCountries(['eg']);
     }
 
     protected function getBusinessPartnerEmailFormComponent(): Component

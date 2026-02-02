@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\BusinessPartners\Tables;
 
 use App\Enums\BusinessPartnerTypeEnum;
+use App\Enums\TaxCategoryEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -15,25 +16,67 @@ class BusinessPartnersTable
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label(__('ID'))
-                    ->searchable(),
+                TextColumn::make('request_id')
+                    ->label(__('Request ID'))
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('user.name')
                     ->label(__('User'))
                     ->searchable(),
-                TextColumn::make('name')
+                TextColumn::make('name1')
                     ->label(__('Business Partner Name'))
                     ->searchable(),
-                TextColumn::make('location')
-                    ->label(__('Location'))
-                    ->searchable(),
-                TextColumn::make('phone_number')
-                    ->label(__('Phone Number'))
-                    ->searchable(),
                 TextColumn::make('type')
-                    ->label(__('Business Partner Type'))
+                    ->label(__('Request Type'))
                     ->formatStateUsing(fn (BusinessPartnerTypeEnum $state): string => $state->label())
                     ->searchable(),
+                TextColumn::make('partnerType.name_en')
+                    ->label(__('Partner Group'))
+                    ->searchable(),
+                TextColumn::make('city')
+                    ->label(__('City'))
+                    ->searchable(),
+                TextColumn::make('country.name_en')
+                    ->label(__('Country'))
+                    ->searchable(),
+                TextColumn::make('mobile')
+                    ->label(__('Mobile'))
+                    ->searchable(),
+                TextColumn::make('email')
+                    ->label(__('Email'))
+                    ->searchable(),
+                TextColumn::make('registration_number')
+                    ->label(__('Registration Number'))
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('tax_number')
+                    ->label(__('Tax Number'))
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('industry.name_en')
+                    ->label(__('Industry'))
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('customerType.name_en')
+                    ->label(__('Customer Type'))
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('tax_category')
+                    ->label(__('Tax Category'))
+                    ->formatStateUsing(fn (TaxCategoryEnum $state) => $state->label())
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('street')
+                    ->label(__('Street'))
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('building')
+                    ->label(__('Building'))
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('postal_code')
+                    ->label(__('Postal Code'))
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('region.name_en')
+                    ->label(__('Region'))
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label(__('Created At'))
                     ->dateTime()

@@ -45,7 +45,7 @@ class BusinessPartner extends Model
     protected function casts(): array
     {
         return [
-            'request_type' => BusinessPartnerTypeEnum::class,
+            'type' => BusinessPartnerTypeEnum::class,
             'tax_category' => TaxCategoryEnum::class,
             'request_id' => 'string',
         ];
