@@ -17,27 +17,27 @@ class PartnerTypesTable
         return $table
             ->columns([
                 TextColumn::make('grouping_code')
-                    ->label('Grouping Code')
+                    ->label(__('Grouping Code'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('name_en')
-                    ->label('Name (English)')
+                    ->label(__('Name (English)'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('name_ar')
-                    ->label('Name (Arabic)')
+                    ->label(__('Name (Arabic)'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('type')
-                    ->label('Type')
+                    ->label(__('Type'))
                     ->formatStateUsing(fn (?PartnerTypeEnum $state) => $state?->label() ?? '-')
                     ->sortable(),
                 TextColumn::make('customerType.name_en')
-                    ->label('Customer Type')
+                    ->label(__('Customer Type'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('tax_cat')
-                    ->label('Tax Category')
+                    ->label(__('Tax Category'))
                     ->formatStateUsing(fn (?TaxCategoryEnum $state) => $state?->label() ?? '-')
                     ->sortable(),
             ])

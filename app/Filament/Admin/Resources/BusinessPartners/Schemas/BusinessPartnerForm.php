@@ -14,13 +14,17 @@ class BusinessPartnerForm
         return $schema
             ->components([
                 Select::make('user_id')
+                    ->label(__('User'))
                     ->relationship('user', 'name')
                     ->required(),
                 TextInput::make('name')
+                    ->label(__('Business Partner Name'))
                     ->required(),
                 TextInput::make('location')
+                    ->label(__('Location'))
                     ->required(),
                 TextInput::make('phone_number')
+                    ->label(__('Phone Number'))
                     ->tel()
                     ->required(),
                 Select::make('type')

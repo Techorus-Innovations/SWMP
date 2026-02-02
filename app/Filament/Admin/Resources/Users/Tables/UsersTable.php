@@ -16,24 +16,28 @@ class UsersTable
         return $table
             ->columns([
                 TextColumn::make('id')
-                    ->label('ID')
+                    ->label(__('ID'))
                     ->searchable(),
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('email')
-                    ->label('Email address')
+                    ->label(__('Email address'))
                     ->searchable(),
                 TextColumn::make('created_at')
+                    ->label(__('Created At'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label(__('Updated At'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('businessPartner.name')
+                    ->label(__('Business Partner'))
                     ->searchable(),
                 TextColumn::make('type')
+                    ->label(__('User Type'))
                     ->formatStateUsing(fn (UserTypeEnum $state): string => $state->label())
                     ->searchable(),
             ])

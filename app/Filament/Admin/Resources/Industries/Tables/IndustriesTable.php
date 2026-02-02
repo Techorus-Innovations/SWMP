@@ -15,15 +15,15 @@ class IndustriesTable
         return $table
             ->columns([
                 TextColumn::make('code')
-                    ->label('Code')
+                    ->label(__('Code'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('name_en')
-                    ->label('Name (English)')
+                    ->label(__('Name (English)'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('name_ar')
-                    ->label('Name (Arabic)')
+                    ->label(__('Name (Arabic)'))
                     ->searchable()
                     ->sortable(),
             ])

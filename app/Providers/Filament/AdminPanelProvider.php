@@ -63,6 +63,7 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->plugins([
+                \Statikbe\FilamentTranslationManager\FilamentChainedTranslationManagerPlugin::make(),
                 FilamentShieldPlugin::make(),
                 BreezyCore::make()->myProfile(
                     shouldRegisterUserMenu: true, // Sets the 'account' link in the panel User Menu (default = true)

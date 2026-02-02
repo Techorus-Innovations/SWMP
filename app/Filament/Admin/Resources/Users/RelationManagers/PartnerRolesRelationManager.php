@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Users\RelationManagers;
 
+use App\Enums\UserTypeEnum;
 use Filament\Actions\AttachAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -21,7 +22,7 @@ class PartnerRolesRelationManager extends RelationManager
 
     public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
     {
-        return $ownerRecord?->role === 'partner';
+        return $ownerRecord?->type === UserTypeEnum::Supplier || $ownerRecord?->type === UserTypeEnum::Customer;
     }
 
     public function form(Schema $schema): Schema
@@ -29,8 +30,10 @@ class PartnerRolesRelationManager extends RelationManager
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label(__('Name'))
                     ->required(),
                 Textarea::make('description')
+                    ->label(__('Description'))
                     ->default(null)
                     ->columnSpanFull(),
             ]);
@@ -42,15 +45,18 @@ class PartnerRolesRelationManager extends RelationManager
             ->recordTitleAttribute('name')
             ->columns([
                 TextColumn::make('id')
-                    ->label('ID')
+                    ->label(__('ID'))
                     ->searchable(),
                 TextColumn::make('name')
+                    ->label(__('Name'))
                     ->searchable(),
                 TextColumn::make('created_at')
+                    ->label(__('Created At'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label(__('Updated At'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

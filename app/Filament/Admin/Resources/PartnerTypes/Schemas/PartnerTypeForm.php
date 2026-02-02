@@ -16,27 +16,27 @@ class PartnerTypeForm
         return $schema
             ->components([
                 TextInput::make('grouping_code')
-                    ->label('Grouping Code')
+                    ->label(__('Grouping Code'))
                     ->required()
                     ->maxLength(255),
                 TextInput::make('name_en')
-                    ->label('Name (English)')
+                    ->label(__('Name (English)'))
                     ->required()
                     ->maxLength(255),
                 TextInput::make('name_ar')
-                    ->label('Name (Arabic)')
+                    ->label(__('Name (Arabic)'))
                     ->required()
                     ->maxLength(255),
                 Select::make('type')
-                    ->label('Type')
+                    ->label(__('Type'))
                     ->options(collect(PartnerTypeEnum::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
                     ->required(),
                 Select::make('cust_type_id')
-                    ->label('Customer Type')
+                    ->label(__('Customer Type'))
                     ->options(CustomerType::pluck('name_en', 'id'))
                     ->nullable(),
                 Select::make('tax_cat')
-                    ->label('Tax Category')
+                    ->label(__('Tax Category'))
                     ->options(collect(TaxCategoryEnum::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
                     ->nullable(),
             ]);

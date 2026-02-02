@@ -22,12 +22,12 @@ class ListBusinessPartners extends ListRecords
     public function getTabs(): array
     {
         return [
-            Tab::make('All')
+            Tab::make(__('All'))
                 ->query(fn($query) => $query),
-            Tab::make('Supplier')
+            Tab::make(__('Supplier'))
                 ->badge(fn($count) => $count)
                 ->query(fn($query) => $query->where('type', BusinessPartnerTypeEnum::Supplier->value)),
-            Tab::make('Customer')
+            Tab::make(__('Customer'))
                 ->badge(fn($count) => $count)
                 ->query(fn($query) => $query->where('type', BusinessPartnerTypeEnum::Customer->value)),
         ];

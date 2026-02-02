@@ -22,15 +22,15 @@ class ListUsers extends ListRecords
     public function getTabs(): array
     {
         return [
-            Tab::make('All')
+            Tab::make(__('All'))
                     ->query(fn ($query) => $query),
-                Tab::make('Admin')
+                Tab::make(__('Admin'))
                     ->badge(fn ($count) => $count)
                     ->query(fn ($query) => $query->where('type', UserTypeEnum::Admin->value)),
-                Tab::make('Customer')
+                Tab::make(__('Customer'))
                     ->badge(fn ($count) => $count)
                     ->query(fn ($query) => $query->where('type', UserTypeEnum::Customer->value)),
-                Tab::make('Supplier')
+                Tab::make(__('Supplier'))
                     ->badge(fn ($count) => $count)
                     ->query(fn ($query) => $query->where('type', UserTypeEnum::Supplier->value)),
         ];

@@ -13,8 +13,10 @@ class PartnerRoleForm
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label(__('Name'))
                     ->required(),
                 Textarea::make('description')
+                    ->label(__('Description'))
                     ->default(null)
                     ->columnSpanFull(),
             ]);

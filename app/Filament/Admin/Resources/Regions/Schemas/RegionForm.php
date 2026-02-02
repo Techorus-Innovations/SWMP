@@ -14,19 +14,19 @@ class RegionForm
         return $schema
             ->components([
                 TextInput::make('code')
-                    ->label('Code')
+                    ->label(__('Code'))
                     ->required()
                     ->maxLength(3),
                 TextInput::make('name_en')
-                    ->label('Name (English)')
+                    ->label(__('Name (English)'))
                     ->required()
                     ->maxLength(255),
                 TextInput::make('name_ar')
-                    ->label('Name (Arabic)')
+                    ->label(__('Name (Arabic)'))
                     ->required()
                     ->maxLength(255),
                 Select::make('country_id')
-                    ->label('Country')
+                    ->label(__('Country'))
                     ->options(Country::pluck('name_en', 'id'))
                     ->required(),
             ]);
