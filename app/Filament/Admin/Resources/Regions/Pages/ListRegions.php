@@ -3,7 +3,9 @@
 namespace App\Filament\Admin\Resources\Regions\Pages;
 
 use App\Filament\Admin\Resources\Regions\RegionResource;
+use App\Filament\Imports\RegionImporter;
 use Filament\Actions\CreateAction;
+use Filament\Actions\ImportAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListRegions extends ListRecords
@@ -14,6 +16,8 @@ class ListRegions extends ListRecords
     {
         return [
             CreateAction::make(),
+            ImportAction::make()
+                ->importer(RegionImporter::class)
         ];
     }
 }
