@@ -2,7 +2,7 @@
 
 namespace App\Filament\Admin\Resources\PartnerTypes\Tables;
 
-use App\Enums\PartnerTypeEnum;
+use App\Enums\BusinessPartnerTypeEnum;
 use App\Enums\TaxCategoryEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -30,7 +30,7 @@ class PartnerTypesTable
                     ->sortable(),
                 TextColumn::make('type')
                     ->label(__('Type'))
-                    ->formatStateUsing(fn (?PartnerTypeEnum $state) => $state?->label() ?? '-')
+                    ->formatStateUsing(fn (?BusinessPartnerTypeEnum $state) => $state?->label() ?? '-')
                     ->sortable(),
                 TextColumn::make('customerType.name_en')
                     ->label(__('Customer Type'))

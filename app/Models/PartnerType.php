@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\PartnerTypeEnum;
+use App\Enums\BusinessPartnerTypeEnum;
 use App\Enums\TaxCategoryEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,7 +19,7 @@ class PartnerType extends Model
     ];
 
     protected $casts = [
-        'type' => PartnerTypeEnum::class,
+        'type' => BusinessPartnerTypeEnum::class,
         'tax_cat' => TaxCategoryEnum::class,
     ];
 

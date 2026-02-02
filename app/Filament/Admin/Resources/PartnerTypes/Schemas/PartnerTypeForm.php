@@ -2,7 +2,7 @@
 
 namespace App\Filament\Admin\Resources\PartnerTypes\Schemas;
 
-use App\Enums\PartnerTypeEnum;
+use App\Enums\BusinessPartnerTypeEnum;
 use App\Enums\TaxCategoryEnum;
 use App\Models\CustomerType;
 use Filament\Forms\Components\Select;
@@ -29,7 +29,7 @@ class PartnerTypeForm
                     ->maxLength(255),
                 Select::make('type')
                     ->label(__('Type'))
-                    ->options(collect(PartnerTypeEnum::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
+                    ->options(collect(BusinessPartnerTypeEnum::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
                     ->required(),
                 Select::make('cust_type_id')
                     ->label(__('Customer Type'))
