@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Filament\Admin\Resources\Companies\Schemas;
+namespace App\Filament\Admin\Resources\BusinessPartners\Schemas;
 
+use App\Enums\BusinessPartnerTypeEnum;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
-class CompanyForm
+class BusinessPartnerForm
 {
     public static function configure(Schema $schema): Schema
     {
@@ -15,12 +16,16 @@ class CompanyForm
                 Select::make('user_id')
                     ->relationship('user', 'name')
                     ->required(),
-                TextInput::make('company_name')
+                TextInput::make('name')
                     ->required(),
                 TextInput::make('location')
                     ->required(),
                 TextInput::make('phone_number')
                     ->tel()
+                    ->required(),
+                Select::make('type')
+                    ->label('Business Partner Type')
+                    ->options(collect(BusinessPartnerTypeEnum::cases())->mapWithKeys(fn (BusinessPartnerTypeEnum $case) => [$case->value => $case->label()]))
                     ->required(),
             ]);
     }

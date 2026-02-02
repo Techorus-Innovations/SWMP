@@ -32,7 +32,7 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
         'type',
-        'company_id',
+        'business_partner_id',
     ];
 
     /**
@@ -73,9 +73,9 @@ class User extends Authenticatable implements FilamentUser
         return LogOptions::defaults()->logFillable()->logOnlyDirty();
     }
 
-    public function company(): HasOne
+    public function businessPartner(): HasOne
     {
-        return $this->hasOne(Company::class);
+        return $this->hasOne(BusinessPartner::class);
     }
 
     public function partnerRoles(): BelongsToMany

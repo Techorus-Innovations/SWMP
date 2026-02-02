@@ -3,7 +3,7 @@
 namespace App\Filament\Admin\Resources\Users\Schemas;
 
 use App\Enums\UserTypeEnum;
-use App\Models\Company;
+use App\Models\BusinessPartner;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -25,9 +25,9 @@ class UserForm
                     ->required(fn (string $operation) => $operation === 'create')
                     ->dehydrateStateUsing(fn ($state) => filled($state) ? bcrypt($state) : null)
                     ->dehydrated(fn ($state) => filled($state)),
-                Select::make('company_id')
-                    ->label('Company')
-                    ->options(Company::pluck('company_name', 'id'))
+                Select::make('business_partner_id')
+                    ->label('Business Partner')
+                    ->options(BusinessPartner::pluck('name', 'id'))
                     ->required()
                     ->disabled(fn (string $operation) => $operation === 'edit'),
                 Select::make('type')

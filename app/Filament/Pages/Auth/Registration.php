@@ -2,10 +2,13 @@
 
 namespace App\Filament\Pages\Auth;
 
-use App\Models\Company;
+use App\Enums\BusinessPartnerTypeEnum;
+use App\Enums\UserTypeEnum;
+use App\Models\BusinessPartner;
 use App\Models\User;
 use Filament\Auth\Pages\Register;
 use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Wizard;
@@ -31,12 +34,13 @@ class Registration extends Register
                             $this->getEmailFormComponent(),
                             $this->getPasswordFormComponent(),
                             $this->getPasswordConfirmationFormComponent(),
+                            $this->getUserTypeFormComponent(),
                         ]),
-                    Step::make('Company Details')
+                    Step::make('Business Partner Details')
                         ->schema([
-                            $this->getCompanyNameFormComponent(),
-                            $this->getCompanyPhoneFormComponent(),
-                            $this->getCompanyLocationFormComponent(),
+                            $this->getBusinessPartnerNameFormComponent(),
+                            $this->getBusinessPartnerPhoneFormComponent(),
+                            $this->getBusinessPartnerLocationFormComponent(),
                             $this->getTermsAndConditionsFormComponent(),
                         ]),
                 ])->submitAction($this->getRegisterFormAction()),
@@ -46,6 +50,19 @@ class Registration extends Register
     protected function getFormActions(): array
     {
         return [];
+    }
+
+    protected function getUserTypeFormComponent(): Component
+    {
+        return Select::make('type')
+            ->label(__('User Type'))
+            ->options(['c' => UserTypeEnum::Customer->label(), 's' => UserTypeEnum::Supplier->label()])
+            ->options(
+                collect(UserTypeEnum::cases())
+                    ->filter(fn (UserTypeEnum $case) => !in_array($case, [UserTypeEnum::Admin]))
+                    ->mapWithKeys(fn (UserTypeEnum $case) => [$case->value => $case->label()])
+            )
+            ->required();
     }
 
     protected function getTermsAndConditionsFormComponent(): Checkbox
@@ -59,26 +76,26 @@ class Registration extends Register
             ]);
     }
 
-    protected function getCompanyNameFormComponent(): Component
+    protected function getBusinessPartnerNameFormComponent(): Component
     {
-        return TextInput::make('company_name')
-            ->label(__('Company Name'))
+        return TextInput::make('business_partner_name')
+            ->label(__('Business Partner Name'))
             ->required()
             ->maxLength(255);
     }
 
-    protected function getCompanyPhoneFormComponent(): Component
+    protected function getBusinessPartnerPhoneFormComponent(): Component
     {
-        return TextInput::make('company_phone')
-            ->label(__('Company Phone Number'))
+        return TextInput::make('business_partner_phone')
+            ->label(__('Business Partner Phone Number'))
             ->required()
             ->maxLength(255);
     }
 
-    protected function getCompanyLocationFormComponent(): Component
+    protected function getBusinessPartnerLocationFormComponent(): Component
     {
-        return TextInput::make('company_location')
-            ->label(__('Company Location'))
+        return TextInput::make('business_partner_location')
+            ->label(__('Business Partner Location'))
             ->required()
             ->maxLength(255);
     }
@@ -91,16 +108,16 @@ class Registration extends Register
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
-                'role' => 'partner',
+                'type' => $data['type'],
             ]);
-
-            $company = Company::create([
-                'company_name' => $data['company_name'],
-                'phone_number' => $data['company_phone'],
-                'location' => $data['company_location'],
+            $businessPartner = BusinessPartner::create([
+                'name' => $data['business_partner_name'],
+                'phone_number' => $data['business_partner_phone'],
+                'location' => $data['business_partner_location'],
+                'type' => $data['type'],
                 'user_id' => $user->id,
             ]);
-            $user->company_id = $company->id;
+            $user->business_partner_id = $businessPartner->id;
             $user->save();
 
             return $user;

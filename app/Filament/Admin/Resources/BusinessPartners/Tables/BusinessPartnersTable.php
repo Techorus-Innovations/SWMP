@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Admin\Resources\Companies\Tables;
+namespace App\Filament\Admin\Resources\BusinessPartners\Tables;
 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -8,7 +8,7 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class CompaniesTable
+class BusinessPartnersTable
 {
     public static function configure(Table $table): Table
     {
@@ -19,11 +19,13 @@ class CompaniesTable
                     ->searchable(),
                 TextColumn::make('user.name')
                     ->searchable(),
-                TextColumn::make('company_name')
+                TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('location')
                     ->searchable(),
                 TextColumn::make('phone_number')
+                    ->searchable(),
+                TextColumn::make('type')
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()

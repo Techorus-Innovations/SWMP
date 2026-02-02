@@ -30,9 +30,9 @@ class UsersTable
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('company.company_name')
+                TextColumn::make('businessPartner.name')
                     ->searchable(),
-                TextColumn::make('role')
+                TextColumn::make('type')
                     ->searchable(),
             ])
             ->filters([
