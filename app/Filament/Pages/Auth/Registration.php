@@ -13,6 +13,7 @@ use App\Models\Region;
 use App\Models\User;
 use Filament\Auth\Pages\Register;
 use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Component;
@@ -53,6 +54,8 @@ class Registration extends Register
                             $this->getTaxCategoryFormComponent(),
                             $this->getMobileFormComponent(),
                             $this->getBusinessPartnerEmailFormComponent(),
+                            $this->getCommercialRegistrationFormComponent(),
+                            $this->getTaxCardFormComponent(),
                             $this->getTermsAndConditionsFormComponent(),
                         ]),
                     Step::make('User Details')
@@ -240,8 +243,27 @@ class Registration extends Register
             ->label(__('Email'))
             ->email()
             ->required()
-            ->maxLength(255)
-            ->unique(User::class, 'email', ignoreRecord: true);
+            ->maxLength(255);
+    }
+
+    protected function getCommercialRegistrationFormComponent(): Component
+    {
+        return FileUpload::make('commercial_registration')
+            ->label(__('Commercial Registration Document'))
+            ->required()
+            ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+            ->maxSize(5120)
+            ->helperText(__('PDF, JPEG, or PNG. Max 5MB.'));
+    }
+
+    protected function getTaxCardFormComponent(): Component
+    {
+        return FileUpload::make('tax_card')
+            ->label(__('Tax Card Document'))
+            ->required()
+            ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+            ->maxSize(5120)
+            ->helperText(__('PDF, JPEG, or PNG. Max 5MB.'));
     }
 
     protected function getTermsAndConditionsFormComponent(): Checkbox
@@ -302,6 +324,8 @@ class Registration extends Register
                 'tax_category' => $data['tax_category'],
                 'mobile' => $data['mobile'],
                 'email' => $data['business_partner_email'],
+                'commercial_registration' => $data['commercial_registration'] ?? null,
+                'tax_card' => $data['tax_card'] ?? null,
             ]);
 
             $user->business_partner_id = $businessPartner->id;

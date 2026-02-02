@@ -38,6 +38,8 @@ class BusinessPartner extends Model
         'tax_category',
         'mobile',
         'email',
+        'commercial_registration',
+        'tax_card',
     ];
 
     protected function casts(): array
