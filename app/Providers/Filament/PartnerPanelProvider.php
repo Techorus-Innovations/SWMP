@@ -29,6 +29,7 @@ class PartnerPanelProvider extends PanelProvider
             ->path('partner')
             ->login()
             ->registration(Registration::class)
+            ->viteTheme('resources/css/filament/partner/theme.css')
             ->colors([
                 'primary' => Color::Amber,
             ])
