@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Users\Schemas;
 
+use App\Enums\UserTypeEnum;
 use App\Models\Company;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -29,7 +30,9 @@ class UserForm
                     ->options(Company::pluck('company_name', 'id'))
                     ->required()
                     ->disabled(fn (string $operation) => $operation === 'edit'),
-                TextInput::make('role')
+                Select::make('type')
+                    ->label('User Type')
+                    ->options(collect(UserTypeEnum::cases())->mapWithKeys(fn (UserTypeEnum $case) => [$case->value => $case->label()]))
                     ->required()
                     ->disabled(fn (string $operation) => $operation === 'edit'),
             ]);

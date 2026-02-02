@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Enums\UserTypeEnum;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -30,7 +31,7 @@ class User extends Authenticatable implements FilamentUser
         'name',
         'email',
         'password',
-        'role',
+        'type',
         'company_id',
     ];
 
@@ -53,18 +54,18 @@ class User extends Authenticatable implements FilamentUser
     {
         return [
             'password' => 'hashed',
+            'type' => UserTypeEnum::class,
         ];
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
-        // Only allow 'admin' role to access the admin panel
         if ($panel->getId() === 'admin') {
-            return $this->role === 'admin';
+            return $this->type === UserTypeEnum::Admin;
         }
-
-        // All other panels (like partner) are accessible
-        return true;
+        else {
+            return $this->type !== UserTypeEnum::Admin;
+        }
     }
 
     public function getActivitylogOptions(): LogOptions
