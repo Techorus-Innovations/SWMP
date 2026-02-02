@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\BusinessPartners\Tables;
 
+use App\Enums\BusinessPartnerTypeEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -26,6 +27,7 @@ class BusinessPartnersTable
                 TextColumn::make('phone_number')
                     ->searchable(),
                 TextColumn::make('type')
+                    ->formatStateUsing(fn (BusinessPartnerTypeEnum $state): string => $state->label())
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()

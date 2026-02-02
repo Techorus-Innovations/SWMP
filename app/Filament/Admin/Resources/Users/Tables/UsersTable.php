@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Users\Tables;
 
+use App\Enums\UserTypeEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -33,6 +34,7 @@ class UsersTable
                 TextColumn::make('businessPartner.name')
                     ->searchable(),
                 TextColumn::make('type')
+                    ->formatStateUsing(fn (UserTypeEnum $state): string => $state->label())
                     ->searchable(),
             ])
             ->filters([
