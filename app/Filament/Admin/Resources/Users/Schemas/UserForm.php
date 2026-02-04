@@ -29,7 +29,7 @@ class UserForm
                     ->dehydrated(fn ($state) => filled($state)),
                 Select::make('business_partner_id')
                     ->label(__('Business Partner'))
-                    ->options(BusinessPartner::pluck('name', 'id'))
+                    ->options(BusinessPartner::pluck('name1', 'id'))
                     ->required()
                     ->disabled(fn (string $operation) => $operation === 'edit'),
                 Select::make('type')
