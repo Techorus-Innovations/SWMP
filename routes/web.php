@@ -11,6 +11,6 @@ Route::get('/', function () {
 
 Route::get('/test', function () {
     $sapService=new SapService();
-    $materials = $sapService->getMaterials();
+    $materials = $sapService->getCsrfToken();
     return $materials;
 });
