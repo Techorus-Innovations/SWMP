@@ -43,4 +43,6 @@ return [
         'ssl_verify' => env('SAP_SSL_VERIFY'),
     ],
 
+    'api_key' => env('API_KEY'),
+
 ];
