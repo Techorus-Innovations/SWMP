@@ -30,6 +30,8 @@ class PartnerStatusController extends Controller
         
         if ($validated['status'] === 'A' && isset($validated['bp_code'])) {
             $businessPartner->bp_code = $validated['bp_code'];
+        } else {
+            $businessPartner->bp_code = null;
         }
         $businessPartner->save();
 
