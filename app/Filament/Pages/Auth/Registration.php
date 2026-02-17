@@ -326,6 +326,7 @@ class Registration extends Register
                 'email' => $data['business_partner_email'],
                 'commercial_registration' => $data['commercial_registration'] ?? null,
                 'tax_card' => $data['tax_card'] ?? null,
+                'status' => 'P',
             ]);
 
             $user->business_partner_id = $businessPartner->id;

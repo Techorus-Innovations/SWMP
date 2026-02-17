@@ -40,6 +40,8 @@ class BusinessPartner extends Model
         'email',
         'commercial_registration',
         'tax_card',
+        'status',
+        'bp_code',
     ];
 
     protected function casts(): array
