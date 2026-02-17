@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'sap' => [
+        'base_url' => env('SAP_BASE_URL'),
+        'username' => env('SAP_USERNAME'),
+        'password' => env('SAP_PASSWORD'),
+        'client' => env('SAP_CLIENT'),
+        'ssl_verify' => env('SAP_SSL_VERIFY'),
+    ],
+
 ];
