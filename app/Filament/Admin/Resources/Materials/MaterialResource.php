@@ -5,6 +5,8 @@ namespace App\Filament\Admin\Resources\Materials;
 use App\Filament\Admin\Resources\Materials\Pages\ListMaterials;
 use App\Filament\Admin\Resources\Materials\Schemas\MaterialForm;
 use App\Filament\Admin\Resources\Materials\Tables\MaterialsTable;
+use App\Filament\Admin\Resources\Materials\Pages\ViewMaterial;
+use App\Filament\Admin\Resources\Materials\RelationManagers\AreasRelationManager;
 use App\Models\Material;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -31,7 +33,7 @@ class MaterialResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            AreasRelationManager::class,
         ];
     }
 
@@ -39,6 +41,7 @@ class MaterialResource extends Resource
     {
         return [
             'index' => ListMaterials::route('/'),
+            'view' => ViewMaterial::route('/{record}'),
         ];
     }
 }

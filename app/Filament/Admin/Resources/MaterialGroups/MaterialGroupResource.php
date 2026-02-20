@@ -7,6 +7,8 @@ use App\Filament\Admin\Resources\MaterialGroups\Pages\EditMaterialGroup;
 use App\Filament\Admin\Resources\MaterialGroups\Pages\ListMaterialGroups;
 use App\Filament\Admin\Resources\MaterialGroups\Schemas\MaterialGroupForm;
 use App\Filament\Admin\Resources\MaterialGroups\Tables\MaterialGroupsTable;
+use App\Filament\Admin\Resources\MaterialGroups\Pages\ViewMaterialGroup;
+use App\Filament\Admin\Resources\MaterialGroups\RelationManagers\MaterialsRelationManager;
 use App\Models\MaterialGroup;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -38,7 +40,7 @@ class MaterialGroupResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            MaterialsRelationManager::class,
         ];
     }
 
@@ -47,6 +49,7 @@ class MaterialGroupResource extends Resource
         return [
             'index' => ListMaterialGroups::route('/'),
             'create' => CreateMaterialGroup::route('/create'),
+            'view' => ViewMaterialGroup::route('/{record}'),
             'edit' => EditMaterialGroup::route('/{record}/edit'),
         ];
     }

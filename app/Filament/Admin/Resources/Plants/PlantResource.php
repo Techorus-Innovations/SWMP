@@ -7,6 +7,8 @@ use App\Filament\Admin\Resources\Plants\Pages\EditPlant;
 use App\Filament\Admin\Resources\Plants\Pages\ListPlants;
 use App\Filament\Admin\Resources\Plants\Schemas\PlantForm;
 use App\Filament\Admin\Resources\Plants\Tables\PlantsTable;
+use App\Filament\Admin\Resources\Plants\Pages\ViewPlant;
+use App\Filament\Admin\Resources\Plants\RelationManagers\AreasRelationManager;
 use App\Models\Plant;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -38,7 +40,7 @@ class PlantResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            AreasRelationManager::class,
         ];
     }
 
@@ -47,6 +49,7 @@ class PlantResource extends Resource
         return [
             'index' => ListPlants::route('/'),
             'create' => CreatePlant::route('/create'),
+            'view' => ViewPlant::route('/{record}'),
             'edit' => EditPlant::route('/{record}/edit'),
         ];
     }

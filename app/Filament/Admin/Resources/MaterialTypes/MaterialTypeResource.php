@@ -7,6 +7,8 @@ use App\Filament\Admin\Resources\MaterialTypes\Pages\EditMaterialType;
 use App\Filament\Admin\Resources\MaterialTypes\Pages\ListMaterialTypes;
 use App\Filament\Admin\Resources\MaterialTypes\Schemas\MaterialTypeForm;
 use App\Filament\Admin\Resources\MaterialTypes\Tables\MaterialTypesTable;
+use App\Filament\Admin\Resources\MaterialTypes\Pages\ViewMaterialType;
+use App\Filament\Admin\Resources\MaterialTypes\RelationManagers\MaterialsRelationManager;
 use App\Models\MaterialType;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -38,7 +40,7 @@ class MaterialTypeResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            MaterialsRelationManager::class,
         ];
     }
 
@@ -47,6 +49,7 @@ class MaterialTypeResource extends Resource
         return [
             'index' => ListMaterialTypes::route('/'),
             'create' => CreateMaterialType::route('/create'),
+            'view' => ViewMaterialType::route('/{record}'),
             'edit' => EditMaterialType::route('/{record}/edit'),
         ];
     }

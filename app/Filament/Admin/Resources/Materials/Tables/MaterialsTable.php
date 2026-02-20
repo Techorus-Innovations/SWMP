@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Materials\Tables;
 
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -36,7 +37,7 @@ class MaterialsTable
                 //
             ])
             ->recordActions([
-                //
+                ViewAction::make(),
             ])
             ->toolbarActions([
                 //
