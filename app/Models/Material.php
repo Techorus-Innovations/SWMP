@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Material extends Model
 {
-    protected $fillable = ['name_en', 'name_ar', 'code', 'material_type_id', 'material_group_id'];
+    protected $fillable = ['name_en', 'name_ar', 'code', 'material_type_id', 'material_group_id', 'sync_at'];
 
     public function materialType()
     {

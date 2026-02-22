@@ -44,10 +44,11 @@ class SyncMaterialsCommand extends Command
             $this->info('Starting materials sync...');
             $syncedCount = 0;
             $failedCount = 0;
+            $syncTime = now();
 
             foreach ($materials as $materialData) {
                 try {
-                    $this->syncMaterial($materialData);
+                    $this->syncMaterial($materialData, $syncTime);
                     $syncedCount++;
                 } catch (\Exception $e) {
                     $failedCount++;
@@ -73,7 +74,7 @@ class SyncMaterialsCommand extends Command
     /**
      * Sync a single material with all its relationships
      */
-    private function syncMaterial(array $materialData): void
+    private function syncMaterial(array $materialData, \Carbon\Carbon $syncTime): void
     {
         // Find or create material type
         $materialType = MaterialType::firstOrCreate(
@@ -101,6 +102,7 @@ class SyncMaterialsCommand extends Command
                 'name_ar' => $materialData['material_name'], // Using same name for both languages
                 'material_type_id' => $materialType->id,
                 'material_group_id' => $materialGroup->id,
+                'sync_at' => $syncTime,
             ]
         );
 
