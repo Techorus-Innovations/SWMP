@@ -21,3 +21,18 @@ Route::get('/test2', function () {
     $materials = $sapService->createCustomer($request_id="6", $partner_group_code="CSW1", $name1="Test", $name2="Customer", $gln_loc_no_1="12345", $gln_loc_no_2="54321", $gln_check_digit="0", $city="Cairo", $street="10", $house_no="1", $postal_code="10001", $country_code="EG", $region_code="GZ", $tax_number="557766", $commercial_registration_number="557766", $industry_code="Z1", $customer_type_code="01", $tax_category="1", $mobile="+20123",$email="john.doe@example.com");
     return $materials;
 });
+
+Route::get('/test3', function () {
+    $sapService=new SapService();
+    $contracts = $sapService->getContracts('1000000000');
+    return $contracts;
+});
+
+
+Route::get('/t', function () {
+    
+        echo "Loaded php.ini: " . php_ini_loaded_file() . "\n";
+        print_r(openssl_get_cert_locations());
+
+
+});

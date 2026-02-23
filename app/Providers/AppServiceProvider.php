@@ -29,6 +29,8 @@ class AppServiceProvider extends ServiceProvider
                 ->visible(outsidePanels: true)
                 ->outsidePanelRoutes([
                     'auth.email-verification',
+                    'auth.login',
+                    'auth.register',
                 ])
                 ->locales(['ar','en']);
         });

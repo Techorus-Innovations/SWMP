@@ -6,6 +6,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Carbon;
 
 class SapService
 {
@@ -45,7 +46,7 @@ class SapService
     }
 
 
-    public function getMaterials(): array
+    public function getMaterials()
     {
         $response = Http::withBasicAuth($this->username, $this->password)
             ->withOptions(['verify' => $this->verify])
@@ -97,6 +98,91 @@ class SapService
 
     }
 
+
+    public function getContracts($businessPartnerCode)
+    {
+        // dd($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr={'$businessPartnerCode'})/Set");
+        $response = Http::withBasicAuth($this->username, $this->password)
+            ->withOptions(['verify' => $this->verify])
+            ->withHeaders(['Accept' => 'application/json',])
+            ->withQueryParameters([
+                '$expand' => 'to_VP',
+                'sap-client' => $this->client,
+            ])
+            ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set");
+
+        if ($response->successful()) {
+            $data = $response->json();
+
+            $contracts = collect($data['d']['results'])->map(function ($item) {
+                // Get the first plant from the results array (if exists)
+                // $plant = $item['to_mplant']['results'][0] ?? null;
+
+                // // Get the first location from the plant's nested results (if exists)
+                // $location = $plant['to_mlocation']['results'][0] ?? null;
+
+                return [
+                    'contract_code' => $item['Contract'],
+                    'contract_start' => $this->parseSapDate($item['CONTRACT_START']),
+                    'contract_end' => $this->parseSapDate($item['CONTRACT_END']),
+
+                    'areas' => collect($item['to_VP']['results'] ?? [])->map(function ($area) {
+                        return [
+                            'area_code' => $area['Area_code'],
+                            'area_description' => $area['Area_code_desc'],
+                            'quantity' => $area['QUNTITY'],
+                            'measuring_unit' => $area['MEINS']
+
+                        ];
+                    })
+                ];
+            })->all();
+
+
+            // return $data;
+            return $contracts;
+
+        }
+        return $response;
+
+
+        //     $materials = collect($data)->map(function ($item) {
+        //         // Get the first plant from the results array (if exists)
+        //         // $plant = $item['to_mplant']['results'][0] ?? null;
+
+        //         // // Get the first location from the plant's nested results (if exists)
+        //         // $location = $plant['to_mlocation']['results'][0] ?? null;
+
+        //         return [
+        //             'material_code' => $item['material'],
+        //             'material_name' => $item['material_name'],
+        //             'material_type_code' => $item['material_type'],
+        //             'material_type_name' => $item['mat_type_des'],
+        //             'material_group_code' => $item['matgroup'],
+        //             'material_group_name' => $item['MATGROUPDES'],
+
+        //             'plants' => collect($item['to_mplant']['results'] ?? [])->map(function ($plant) {
+        //                 return [
+        //                     'plant_code' => $plant['PLANT'],
+        //                     'plant_name' => $plant['MATPALNATDES'],
+        //                     // Map the locations (areas) nested inside each plant
+        //                     'areas' => collect($plant['to_mlocation']['results'] ?? [])->map(function ($loc) {
+        //                         return [
+        //                             'area_code' => $loc['location'],
+        //                             'area_name' => $loc['MATLOCDES'],
+        //                         ];
+        //                     })->all(),
+        //                 ];
+        //             })->all(),
+        //             // 'plant'         => $plant['PLANT'] ?? NULL,
+        //             // 'location'      => $location['location'] ?? NULL,
+        //             // 'location_name' => $location['MATLOCDES'] ?? NULL,
+        //         ];
+        //     });
+        //     return $materials->toArray();
+        // }
+
+    }
 
     public function createPartner($request_id, $request_type, $partner_group_code, $name1, $name2, $gln_loc_no_1, $gln_loc_no_2, $gln_check_digit, $city, $street, $house_no, $postal_code, $country_code, $region_code, $tax_number, $commercial_registration_number, $industry_code, $customer_type_code, $tax_category, $mobile, $email)
     {
@@ -155,6 +241,21 @@ class SapService
 
     }
 
+    private function parseSapDate($sapDate)
+    {
+        if (!$sapDate)
+            return null;
+
+        // Extract the digits (milliseconds) from the string
+        preg_match('/\d+/', $sapDate, $matches);
+
+        if (isset($matches[0])) {
+            // Convert milliseconds to seconds and create Carbon instance
+            return Carbon::createFromTimestamp($matches[0] / 1000)->format('Y-m-d');
+        }
+
+        return null;
+    }
 
 
 }
