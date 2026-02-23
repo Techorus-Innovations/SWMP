@@ -27,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
             $switch
                 ->circular(true)
                 ->visible(outsidePanels: true)
+                ->outsidePanelRoutes([
+                    'auth.email-verification',
+                ])
                 ->locales(['ar','en']);
         });
     }
