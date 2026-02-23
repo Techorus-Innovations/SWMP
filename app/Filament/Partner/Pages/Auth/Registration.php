@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Pages\Auth;
+namespace App\Filament\Partner\Pages\Auth;
 
 use App\Enums\BusinessPartnerTypeEnum;
 use App\Enums\TaxCategoryEnum;

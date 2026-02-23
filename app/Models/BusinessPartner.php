@@ -17,11 +17,12 @@ class BusinessPartner extends Model
 
     protected static function booted()
     {
-        static::created(function ($partner) {
-            // if (config('sap_integration_status')) {
+        static::created(
+            function ($partner) {
+                // if (config('sap_integration_status')) {
                 $sapService = new \App\Services\SapService();
                 $response = $sapService->createPartner(
-                    $request_id = (string)$partner->request_id,
+                    $request_id = (string) $partner->request_id,
                     $request_type = $partner->type->value,
                     $partner_group_code = $partner->partnerType->grouping_code,
                     $name1 = $partner->name1,
@@ -47,7 +48,7 @@ class BusinessPartner extends Model
 
                 // dd($response);
             }
-        // }
+            // }
         );
     }
 
@@ -78,6 +79,12 @@ class BusinessPartner extends Model
         'status',
         'bp_code',
     ];
+
+
+    public function getname()
+    {
+        return $this->name1 . $this->name2;
+    }
 
     protected function casts(): array
     {
