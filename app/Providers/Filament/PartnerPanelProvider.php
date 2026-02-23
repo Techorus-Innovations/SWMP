@@ -19,6 +19,10 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+// use App\Filament\Partner\Pages\Auth\EmailVerification;
+use App\Filament\Partner\Pages\Auth\EmailVerification;
+// use App\Filament\Partner\Pages\Auth\RequestPasswordReset;
+
 
 class PartnerPanelProvider extends PanelProvider
 {
@@ -29,6 +33,10 @@ class PartnerPanelProvider extends PanelProvider
             ->path('partner')
             ->login()
             ->registration(Registration::class)
+            // ->passwordReset(RequestPasswordReset::class)
+            // ->emailVerification(EmailVerification::class)
+            ->passwordReset()
+            ->emailVerification()
             ->viteTheme('resources/css/filament/partner/theme.css')
             ->colors([
                 'primary' => Color::Amber,

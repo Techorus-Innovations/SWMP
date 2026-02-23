@@ -16,8 +16,8 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
-
-class User extends Authenticatable implements FilamentUser
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasUlids, HasRoles, LogsActivity;
