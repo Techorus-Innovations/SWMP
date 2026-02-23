@@ -51,8 +51,8 @@ class Registration extends Register
                             $this->getRegistrationNumberFormComponent(),
                             $this->getTaxNumberFormComponent(),
                             $this->getIndustryTypeFormComponent(),
-                            $this->getCustomerTypeFormComponent(),
-                            $this->getTaxCategoryFormComponent(),
+                            // $this->getCustomerTypeFormComponent(),
+                            // $this->getTaxCategoryFormComponent(),
                             $this->getMobileFormComponent(),
                             $this->getBusinessPartnerEmailFormComponent(),
                             $this->getCommercialRegistrationFormComponent(),
@@ -78,13 +78,14 @@ class Registration extends Register
     protected function getRequestTypeFormComponent(): Component
     {
         return Select::make('request_type')
-            ->label(__('Request Type'))
+            ->label(__('Partner Type'))
             ->options(
                 collect(BusinessPartnerTypeEnum::cases())
                     ->mapWithKeys(fn(BusinessPartnerTypeEnum $case) => [$case->value => $case->label()])
             )
             ->required()
-            ->reactive();
+            ->reactive()
+            ->live();
     }
 
     protected function getPartnerGroupFormComponent(): Component
@@ -108,7 +109,7 @@ class Registration extends Register
             ->label(__('Global Location Number (GLN)'))
             ->hint(__('Exactly 13 characters'))
             ->length(13)
-            ->required()
+            // ->required()
             ->helperText(__('Unique 13-digit identifier for your location'));
     }
 
@@ -205,29 +206,38 @@ class Registration extends Register
             ->label(__('Industry Type'))
             ->options(Industry::pluck('name_en', 'id'))
             ->searchable()
-            ->required();
-    }
-
-    protected function getCustomerTypeFormComponent(): Component
-    {
-        return Select::make('customer_type_id')
-            ->label(__('Customer Type'))
-            ->options(CustomerType::pluck('name_en', 'id'))
-            ->searchable()
-            ->required();
-    }
-
-    protected function getTaxCategoryFormComponent(): Component
-    {
-        return Select::make('tax_category')
-            ->label(__('Tax Category'))
-            ->options(
-                collect(TaxCategoryEnum::cases())
-                    ->mapWithKeys(fn(TaxCategoryEnum $case) => [$case->value => $case->label()])
+            ->visible(
+                fn($get) =>
+                $get('request_type')=== BusinessPartnerTypeEnum::Customer->value
             )
-            ->searchable()
             ->required();
     }
+
+    // protected function getCustomerTypeFormComponent(): Component
+    // {
+    //     return Select::make('customer_type_id')
+    //         ->label(__('Customer Type'))
+    //         ->options(CustomerType::pluck('name_en', 'id'))
+    //         ->searchable()
+            
+    //         ->visible(
+    //             fn($get) =>
+    //             $get('request_type')=== BusinessPartnerTypeEnum::Customer->value
+    //         )
+    //         ->required();
+    // }
+
+    // protected function getTaxCategoryFormComponent(): Component
+    // {
+    //     return Select::make('tax_category')
+    //         ->label(__('Tax Category'))
+    //         ->options(
+    //             collect(TaxCategoryEnum::cases())
+    //                 ->mapWithKeys(fn(TaxCategoryEnum $case) => [$case->value => $case->label()])
+    //         )
+    //         ->searchable()
+    //         ->required();
+    // }
 
     protected function getMobileFormComponent(): Component
     {
@@ -250,7 +260,7 @@ class Registration extends Register
     {
         return FileUpload::make('commercial_registration')
             ->label(__('Commercial Registration Document'))
-            ->required()
+            // ->required()
             ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
             ->maxSize(5120)
             ->helperText(__('PDF, JPEG, or PNG. Max 5MB.'));
@@ -260,7 +270,7 @@ class Registration extends Register
     {
         return FileUpload::make('tax_card')
             ->label(__('Tax Card Document'))
-            ->required()
+            // ->required()
             ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
             ->maxSize(5120)
             ->helperText(__('PDF, JPEG, or PNG. Max 5MB.'));
@@ -303,14 +313,14 @@ class Registration extends Register
             // Create business partner
             $businessPartner = BusinessPartner::create([
                 'user_id' => $user->id,
-                'request_id' => Str::uuid(),
+                'request_id' => 9,
                 'type' => $data['request_type'],
                 'partner_type_id' => $data['partner_type_id'],
                 'gln1' => $gln1,
                 'gln2' => $gln2,
                 'ckgdigit' => $ckgdigit,
-                'name1' => $name1,
-                'name2' => $name2,
+                'name1' => "".$name1,
+                'name2' => "".$name2,
                 'city' => $data['city'],
                 'street' => $data['street'],
                 'building' => $data['building'],
@@ -319,9 +329,9 @@ class Registration extends Register
                 'region_id' => $data['region_id'],
                 'registration_number' => $data['registration_number'],
                 'tax_number' => $data['tax_number'],
-                'industry_id' => $data['industry_id'],
-                'customer_type_id' => $data['customer_type_id'],
-                'tax_category' => $data['tax_category'],
+                'industry_id' => $data['industry_id']??null,
+                // 'customer_type_id' => $data['customer_type_id'],
+                // 'tax_category' => $data['tax_category'],
                 'mobile' => $data['mobile'],
                 'email' => $data['business_partner_email'],
                 'commercial_registration' => $data['commercial_registration'] ?? null,

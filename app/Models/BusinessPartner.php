@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\BusinessPartnerTypeEnum;
-use App\Enums\TaxCategoryEnum;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +13,43 @@ class BusinessPartner extends Model
     use HasUlids;
 
     protected $table = 'business_partners';
+
+
+    protected static function booted()
+    {
+        static::created(function ($partner) {
+            // if (config('sap_integration_status')) {
+                $sapService = new \App\Services\SapService();
+                $response = $sapService->createPartner(
+                    $request_id = (string)$partner->request_id,
+                    $request_type = $partner->type->value,
+                    $partner_group_code = $partner->partnerType->grouping_code,
+                    $name1 = $partner->name1,
+                    $name2 = $partner->name2,
+                    $gln_loc_no_1 = "12345",//$partner->gln1,
+                    $gln_loc_no_2 = $partner->gln2,
+                    $gln_check_digit = $partner->ckgdigit,
+                    $city = $partner->city,
+                    $street = $partner->street,
+                    $house_no = $partner->building,
+                    $postal_code = $partner->postal_code,
+                    $country_code = $partner->country->code,
+                    $region_code = $partner->region->code,
+                    $tax_number = $partner->tax_number,
+                    $commercial_registration_number = $partner->registration_number,
+                    $industry_code = $partner->industry->code,
+                    $customer_type_code = $partner->partnerType->customerType->code,
+                    $tax_category = $partner->partnerType->tax_cat->value,
+                    $mobile = $partner->mobile,
+                    $email = $partner->email
+                );
+
+
+                // dd($response);
+            }
+        // }
+        );
+    }
 
     protected $fillable = [
         'user_id',
@@ -34,8 +70,7 @@ class BusinessPartner extends Model
         'registration_number',
         'tax_number',
         'industry_id',
-        'customer_type_id',
-        'tax_category',
+        // 'customer_type_id',
         'mobile',
         'email',
         'commercial_registration',
@@ -48,8 +83,7 @@ class BusinessPartner extends Model
     {
         return [
             'type' => BusinessPartnerTypeEnum::class,
-            'tax_category' => TaxCategoryEnum::class,
-            'request_id' => 'string',
+            // 'request_id' => 'string',
         ];
     }
 

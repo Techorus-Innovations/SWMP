@@ -41,6 +41,7 @@ return [
         'password' => env('SAP_PASSWORD'),
         'client' => env('SAP_CLIENT'),
         'ssl_verify' => env('SAP_SSL_VERIFY'),
+        'integration_status' => env('SAP_Integration_Status'),
     ],
 
     'api_key' => env('API_KEY'),
