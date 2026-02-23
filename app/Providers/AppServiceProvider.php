@@ -31,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
                     'auth.email-verification',
                     'auth.login',
                     'auth.register',
+                    'filament.partner.pages.pending-approval',
+                    'filament.partner.pages.rejected-request',
                 ])
                 ->locales(['ar','en']);
         });
