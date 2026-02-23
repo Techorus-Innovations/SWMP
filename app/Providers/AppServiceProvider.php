@@ -29,6 +29,8 @@ class AppServiceProvider extends ServiceProvider
                 ->visible(outsidePanels: true)
                 ->outsidePanelRoutes([
                     'auth.email-verification',
+                    'filament.partner.pages.pending-approval',
+                    'filament.partner.pages.rejected-request',
                 ])
                 ->locales(['ar','en']);
         });

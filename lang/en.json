@@ -46,5 +46,9 @@
     "You must accept the terms and conditions to register.": "You must accept the terms and conditions to register.",
     "Partner Group": "Partner Group",
     "Commercial Registration Document": "Commercial Registration Document",
-    "Tax Card Document": "Tax Card Document"
+    "Tax Card Document": "Tax Card Document",
+    "Request Pending Approval": "Request Pending Approval",
+    "Request Rejected": "Request Rejected",
+    "Your registration request is currently under review. We will notify you once it has been approved.": "Your registration request is currently under review. We will notify you once it has been approved.",
+    "Your registration request has been rejected. For more information, please contact support.": "Your registration request has been rejected. For more information, please contact support."
 }

@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Partner\Pages\Auth\Registration;
+use App\Http\Middleware\CheckPartnerStatus;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -21,6 +22,8 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 // use App\Filament\Partner\Pages\Auth\EmailVerification;
 use App\Filament\Partner\Pages\Auth\EmailVerification;
+use App\Filament\Partner\Pages\Auth\PendingApproval;
+use App\Filament\Partner\Pages\Auth\RejectedRequest;
 // use App\Filament\Partner\Pages\Auth\RequestPasswordReset;
 
 
@@ -45,6 +48,8 @@ class PartnerPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Partner/Pages'), for: 'App\Filament\Partner\Pages')
             ->pages([
                 Dashboard::class,
+                PendingApproval::class,
+                RejectedRequest::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Partner/Widgets'), for: 'App\Filament\Partner\Widgets')
             ->widgets([
@@ -64,6 +69,7 @@ class PartnerPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                CheckPartnerStatus::class,
             ]);
     }
 }
