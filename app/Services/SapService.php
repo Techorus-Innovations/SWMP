@@ -54,6 +54,7 @@ class SapService
             ->withQueryParameters([
                 '$expand' => 'to_mplant/to_mlocation',
                 'sap-client' => $this->client,
+
             ])
             ->get($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_ODATA_MATERIAL_SRV/ZC_MATERIAL');
 
@@ -99,7 +100,7 @@ class SapService
     }
 
 
-    public function getContracts($businessPartnerCode)
+    public function getContracts($businessPartnerCode,$pageSize,$pageNumber)
     {
         // dd($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr={'$businessPartnerCode'})/Set");
         $response = Http::withBasicAuth($this->username, $this->password)
@@ -108,6 +109,8 @@ class SapService
             ->withQueryParameters([
                 '$expand' => 'to_VP',
                 'sap-client' => $this->client,
+                '$top' => $pageSize,
+                '$skip' => ($pageNumber-1)*$pageSize,
             ])
             ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set");
 
