@@ -22,4 +22,9 @@ class Material extends Model
     {
         return $this->belongsToMany(PlantArea::class, 'material_area');
     }
+
+    public function draftInbounds()
+    {
+        return $this->belongsToMany(DraftInbound::class, 'draft_inbound_material');
+    }
 }
