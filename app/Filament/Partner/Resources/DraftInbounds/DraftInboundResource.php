@@ -5,7 +5,6 @@ namespace App\Filament\Partner\Resources\DraftInbounds;
 use App\Filament\Partner\Resources\DraftInbounds\Pages\CreateDraftInbound;
 use App\Filament\Partner\Resources\DraftInbounds\Pages\EditDraftInbound;
 use App\Filament\Partner\Resources\DraftInbounds\Pages\ListDraftInbounds;
-use App\Filament\Partner\Resources\DraftInbounds\RelationManagers\MaterialsRelationManager;
 use App\Filament\Partner\Resources\DraftInbounds\Schemas\DraftInboundForm;
 use App\Filament\Partner\Resources\DraftInbounds\Tables\DraftInboundsTable;
 use App\Models\DraftInbound;
@@ -40,9 +39,7 @@ class DraftInboundResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            MaterialsRelationManager::class,
-        ];
+        return [];
     }
 
     public static function getPages(): array
