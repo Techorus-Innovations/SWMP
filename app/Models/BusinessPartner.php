@@ -15,11 +15,14 @@ class BusinessPartner extends Model
     protected $table = 'business_partners';
 
 
+
     protected static function booted()
     {
         static::created(
             function ($partner) {
                 // if (config('sap_integration_status')) {
+                $partner->refresh();
+                // dd($partner);
                 $sapService = new \App\Services\SapService();
                 $response = $sapService->createPartner(
                     $request_id = (string) $partner->request_id,
@@ -27,7 +30,7 @@ class BusinessPartner extends Model
                     $partner_group_code = $partner->partnerType->grouping_code,
                     $name1 = $partner->name1,
                     $name2 = $partner->name2,
-                    $gln_loc_no_1 = "12345",//$partner->gln1,
+                    $gln_loc_no_1 = $partner->gln1,
                     $gln_loc_no_2 = $partner->gln2,
                     $gln_check_digit = $partner->ckgdigit,
                     $city = $partner->city,

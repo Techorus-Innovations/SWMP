@@ -120,7 +120,7 @@ class SapService
     //         $data = $response->json();
 
     //         $contracts = collect($data['d']['results'])->map(function ($item) {
-               
+
     //         return [
     //                 'contract_code' => $item['Contract'],
     //                 'contract_start' => $this->parseSapDate($item['CONTRACT_START']),
@@ -146,10 +146,10 @@ class SapService
 
     // }
 
-    
-    public function getContracts($businessPartnerCode,$pageSize,$pageNumber,$state)
+
+    public function getContracts($businessPartnerCode, $pageSize, $pageNumber, $state)
     {
-        $filter = $state=='active'?'ge':'le';
+        $filter = $state == 'active' ? 'ge' : 'le';
         $now = Carbon::now()->format('Y-m-d\TH:i:s');
         // dd($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr={'$businessPartnerCode'})/Set");
         $response = Http::withBasicAuth($this->username, $this->password)
@@ -160,7 +160,7 @@ class SapService
                 '$inlinecount' => 'allpages',
                 'sap-client' => $this->client,
                 '$top' => $pageSize,
-                '$skip' => ($pageNumber-1)*$pageSize,
+                '$skip' => ($pageNumber - 1) * $pageSize,
                 '$filter' => "CONTRACT_END {$filter} datetime'{$now}'",
             ])
             ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set");
@@ -169,8 +169,8 @@ class SapService
             $data = $response->json();
 
             $contracts = collect($data['d']['results'])->map(function ($item) {
-               
-            return [
+
+                return [
                     'contract_code' => $item['Contract'],
                     'contract_start' => $this->parseSapDate($item['CONTRACT_START']),
                     'contract_end' => $this->parseSapDate($item['CONTRACT_END']),
@@ -187,7 +187,7 @@ class SapService
                 ];
             })->all();
 
-            $contractsData = ['totalCount'=>$data['d']['__count'],'paginatedContracts'=>$contracts];
+            $contractsData = ['totalCount' => $data['d']['__count'], 'paginatedContracts' => $contracts];
 
             return $contractsData;
 
@@ -241,7 +241,7 @@ class SapService
                 'sap-client' => $this->client,
             ])
             ->post($this->baseUrl . '/sap/opu/odata/SAP/ZINT_PORTAL_SRV/PARTNER', $data);
-
+        // dd($response->json());
         return $response->json();
 
         // if ($response->successful()) {

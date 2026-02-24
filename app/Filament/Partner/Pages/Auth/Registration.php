@@ -313,7 +313,7 @@ class Registration extends Register
             // Create business partner
             $businessPartner = BusinessPartner::create([
                 'user_id' => $user->id,
-                'request_id' => 9,
+                // 'request_id' => 9,
                 'type' => $data['request_type'],
                 'partner_type_id' => $data['partner_type_id'],
                 'gln1' => $gln1,
