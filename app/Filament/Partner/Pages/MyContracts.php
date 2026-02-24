@@ -19,21 +19,24 @@ class MyContracts extends Page implements HasTable
 
     public string $activeTab = 'active';
 
-    public function table(Table $table): Table
+    public $allContracts;
+
+    public function mount(): void
     {
         $sapService = new SapService;
-        $activeTab = $this->activeTab;
+        $this->allContracts = collect($sapService->getContracts(filament()->auth()->user()->businessPartner->bp_code));
+    }
 
+    public function table(Table $table): Table
+    {
         return $table
-            ->records(function () use ($sapService, $activeTab) {
+            ->records(function () {
                 $today = Carbon::today();
 
-                $allContracts = collect($sapService->getContracts(filament()->auth()->user()->businessPartner->bp_code));
-
-                $filtered = $allContracts->filter(function ($contract) use ($today, $activeTab) {
+                $filtered = $this->allContracts->filter(function ($contract) use ($today) {
                     $endDate = $contract['contract_end'] ? Carbon::parse($contract['contract_end']) : null;
 
-                    if ($activeTab === 'active') {
+                    if ($this->activeTab === 'active') {
                         return $endDate && $endDate->greaterThanOrEqualTo($today);
                     }
 
