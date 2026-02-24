@@ -11,7 +11,7 @@ class CheckPartnerStatus
     public function handle(Request $request, Closure $next): Response
     {
         // Skip check on logout
-        if ($request->routeIs('filament.partner.auth.logout') || $request->routeIs('filament.partner.pages.email-verification.prompt') ) {
+        if ($request->routeIs('filament.partner.auth.logout')  || $request->routeIs('filament.partner.auth.email-verification.prompt') ) {
             return $next($request);
         }
 
