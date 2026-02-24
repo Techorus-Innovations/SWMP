@@ -100,8 +100,9 @@ class SapService
     }
 
 
-    public function getContracts($businessPartnerCode,$pageSize,$pageNumber)
+    public function getActiveContracts($businessPartnerCode,$pageSize,$pageNumber)
     {
+        $now = Carbon::now()->format('Y-m-d\TH:i:s');
         // dd($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr={'$businessPartnerCode'})/Set");
         $response = Http::withBasicAuth($this->username, $this->password)
             ->withOptions(['verify' => $this->verify])
@@ -111,6 +112,7 @@ class SapService
                 'sap-client' => $this->client,
                 '$top' => $pageSize,
                 '$skip' => ($pageNumber-1)*$pageSize,
+                '$filter' => "CONTRACT_START ge datetime'{$now}'",
             ])
             ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set");
 
@@ -118,13 +120,8 @@ class SapService
             $data = $response->json();
 
             $contracts = collect($data['d']['results'])->map(function ($item) {
-                // Get the first plant from the results array (if exists)
-                // $plant = $item['to_mplant']['results'][0] ?? null;
-
-                // // Get the first location from the plant's nested results (if exists)
-                // $location = $plant['to_mlocation']['results'][0] ?? null;
-
-                return [
+               
+            return [
                     'contract_code' => $item['Contract'],
                     'contract_start' => $this->parseSapDate($item['CONTRACT_START']),
                     'contract_end' => $this->parseSapDate($item['CONTRACT_END']),
@@ -142,48 +139,10 @@ class SapService
             })->all();
 
 
-            // return $data;
             return $contracts;
 
         }
         return $response;
-
-
-        //     $materials = collect($data)->map(function ($item) {
-        //         // Get the first plant from the results array (if exists)
-        //         // $plant = $item['to_mplant']['results'][0] ?? null;
-
-        //         // // Get the first location from the plant's nested results (if exists)
-        //         // $location = $plant['to_mlocation']['results'][0] ?? null;
-
-        //         return [
-        //             'material_code' => $item['material'],
-        //             'material_name' => $item['material_name'],
-        //             'material_type_code' => $item['material_type'],
-        //             'material_type_name' => $item['mat_type_des'],
-        //             'material_group_code' => $item['matgroup'],
-        //             'material_group_name' => $item['MATGROUPDES'],
-
-        //             'plants' => collect($item['to_mplant']['results'] ?? [])->map(function ($plant) {
-        //                 return [
-        //                     'plant_code' => $plant['PLANT'],
-        //                     'plant_name' => $plant['MATPALNATDES'],
-        //                     // Map the locations (areas) nested inside each plant
-        //                     'areas' => collect($plant['to_mlocation']['results'] ?? [])->map(function ($loc) {
-        //                         return [
-        //                             'area_code' => $loc['location'],
-        //                             'area_name' => $loc['MATLOCDES'],
-        //                         ];
-        //                     })->all(),
-        //                 ];
-        //             })->all(),
-        //             // 'plant'         => $plant['PLANT'] ?? NULL,
-        //             // 'location'      => $location['location'] ?? NULL,
-        //             // 'location_name' => $location['MATLOCDES'] ?? NULL,
-        //         ];
-        //     });
-        //     return $materials->toArray();
-        // }
 
     }
 
