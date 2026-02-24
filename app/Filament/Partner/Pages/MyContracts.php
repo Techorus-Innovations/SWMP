@@ -3,7 +3,6 @@
 namespace App\Filament\Partner\Pages;
 
 use App\Services\SapService;
-use Carbon\Carbon;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -19,41 +18,23 @@ class MyContracts extends Page implements HasTable
 
     public string $activeTab = 'active';
 
-    public $allContracts;
+    protected $sapService;
 
-    public function mount(): void
+    public function boot(): void
     {
-        $sapService = new SapService;
-        $this->allContracts = collect($sapService->getContracts(filament()->auth()->user()->businessPartner->bp_code));
+        $this->sapService = new SapService;
     }
 
     public function table(Table $table): Table
     {
         return $table
             ->records(function () {
-                $today = Carbon::today();
-
-                $filtered = $this->allContracts->filter(function ($contract) use ($today) {
-                    $endDate = $contract['contract_end'] ? Carbon::parse($contract['contract_end']) : null;
-
-                    if ($this->activeTab === 'active') {
-                        return $endDate && $endDate->greaterThanOrEqualTo($today);
-                    }
-
-                    // inactive: end date in the past or null
-                    return !$endDate || $endDate->lessThan($today);
-                });
-
                 $currentPage = $this->getTablePage();
                 $perPage = $this->getTableRecordsPerPage() ?? 10;
-
-                $currentItems = $filtered
-                    ->slice(($currentPage - 1) * $perPage, $perPage)
-                    ->values();
-
+                $reponse = $this->sapService->getContracts(filament()->auth()->user()->businessPartner->bp_code, $perPage, $currentPage, $this->activeTab);
                 return new LengthAwarePaginator(
-                    $currentItems,
-                    $filtered->count(),
+                    $reponse['paginatedContracts'],
+                    $reponse['totalCount'],
                     $perPage,
                     $currentPage
                 );
