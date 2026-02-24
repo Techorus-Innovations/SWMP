@@ -24,7 +24,7 @@ Route::get('/test2', function () {
 
 Route::get('/test3', function () {
     $sapService=new SapService();
-    $contracts = $sapService->getContracts('1000000000');
+    $contracts = $sapService->getContracts('1000000000',10,1,'inactive');
     return $contracts;
 });
 

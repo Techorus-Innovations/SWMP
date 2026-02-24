@@ -100,8 +100,56 @@ class SapService
     }
 
 
-    public function getActiveContracts($businessPartnerCode,$pageSize,$pageNumber)
+    // public function getActiveContracts($businessPartnerCode,$pageSize,$pageNumber)
+    // {
+    //     $now = Carbon::now()->format('Y-m-d\TH:i:s');
+    //     // dd($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr={'$businessPartnerCode'})/Set");
+    //     $response = Http::withBasicAuth($this->username, $this->password)
+    //         ->withOptions(['verify' => $this->verify])
+    //         ->withHeaders(['Accept' => 'application/json',])
+    //         ->withQueryParameters([
+    //             '$expand' => 'to_VP',
+    //             'sap-client' => $this->client,
+    //             '$top' => $pageSize,
+    //             '$skip' => ($pageNumber-1)*$pageSize,
+    //             '$filter' => "CONTRACT_END ge datetime'{$now}'",
+    //         ])
+    //         ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set");
+
+    //     if ($response->successful()) {
+    //         $data = $response->json();
+
+    //         $contracts = collect($data['d']['results'])->map(function ($item) {
+               
+    //         return [
+    //                 'contract_code' => $item['Contract'],
+    //                 'contract_start' => $this->parseSapDate($item['CONTRACT_START']),
+    //                 'contract_end' => $this->parseSapDate($item['CONTRACT_END']),
+
+    //                 'areas' => collect($item['to_VP']['results'] ?? [])->map(function ($area) {
+    //                     return [
+    //                         'area_code' => $area['Area_code'],
+    //                         'area_description' => $area['Area_code_desc'],
+    //                         'quantity' => $area['QUNTITY'],
+    //                         'measuring_unit' => $area['MEINS']
+
+    //                     ];
+    //                 })
+    //             ];
+    //         })->all();
+
+
+    //         return $contracts;
+
+    //     }
+    //     return $response;
+
+    // }
+
+    
+    public function getContracts($businessPartnerCode,$pageSize,$pageNumber,$state)
     {
+        $filter = $state=='active'?'ge':'le';
         $now = Carbon::now()->format('Y-m-d\TH:i:s');
         // dd($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr={'$businessPartnerCode'})/Set");
         $response = Http::withBasicAuth($this->username, $this->password)
@@ -109,10 +157,11 @@ class SapService
             ->withHeaders(['Accept' => 'application/json',])
             ->withQueryParameters([
                 '$expand' => 'to_VP',
+                '$inlinecount' => 'allpages',
                 'sap-client' => $this->client,
                 '$top' => $pageSize,
                 '$skip' => ($pageNumber-1)*$pageSize,
-                '$filter' => "CONTRACT_START ge datetime'{$now}'",
+                '$filter' => "CONTRACT_END {$filter} datetime'{$now}'",
             ])
             ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set");
 
@@ -138,8 +187,9 @@ class SapService
                 ];
             })->all();
 
+            $contractsData = ['totalCount'=>$data['d']['__count'],'paginatedContracts'=>$contracts];
 
-            return $contracts;
+            return $contractsData;
 
         }
         return $response;
