@@ -27,6 +27,15 @@ class CheckPartnerStatus
                 if ($partner->status === 'R' && !$request->routeIs('filament.partner.pages.rejected-request')) {
                     return redirect()->route('filament.partner.pages.rejected-request');
                 }
+
+                // If status is NOT P or R, block access to pending/rejected pages
+                if ($partner->status !== 'P' && $request->routeIs('filament.partner.pages.pending-approval')) {
+                    return redirect()->route('filament.partner.pages.dashboard');
+                }
+
+                if ($partner->status !== 'R' && $request->routeIs('filament.partner.pages.rejected-request')) {
+                    return redirect()->route('filament.partner.pages.dashboard');
+                }
             }
         }
 
