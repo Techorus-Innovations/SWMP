@@ -10,6 +10,7 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -73,9 +74,9 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return LogOptions::defaults()->logFillable()->logOnlyDirty();
     }
 
-    public function businessPartner(): HasOne
+    public function businessPartner(): BelongsTo
     {
-        return $this->hasOne(BusinessPartner::class);
+        return $this->belongsTo(BusinessPartner::class);
     }
 
     public function partnerRoles(): BelongsToMany
