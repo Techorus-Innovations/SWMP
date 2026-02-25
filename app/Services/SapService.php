@@ -250,6 +250,56 @@ class SapService
     }
 
 
+    public function getInboundRequest($businessPartnerCode,$inboundRequestCode, $pageSize, $pageNumber)
+    {
+           $response = Http::withBasicAuth($this->username, $this->password)
+            ->withOptions(['verify' => $this->verify])
+            ->withHeaders(['Accept' => 'application/json',])
+            ->withQueryParameters([
+                '$expand' => 'to_VBAP',
+                // '$inlinecount' => 'allpages',
+                'sap-client' => $this->client,
+                // '$orderby' => 'Created_on desc',
+                '$top' => $pageSize,
+                '$skip' => ($pageNumber - 1) * $pageSize,
+                '$filter' => "Inbound_request eq '{$inboundRequestCode}'",
+            ])
+            ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set");
+
+        if ($response->successful()) {
+            $data = $response->json();
+
+            // dd($data);
+            $inboundRequests = collect($data['d']['results'])->map(function ($request) {
+
+                return [
+                    'inbound_request_id' => $request['Inbound_request'],
+                    'created_date' => $this->parseSapDate($request['Created_on']),
+                    'shipping_indicator' => $request['ship_indicator'],
+                    'status' => $request['STATUS_DESC'],
+
+                    'items' => collect($request['to_VBAP']['results'] ?? [])->map(function ($item) {
+                        return [
+                            'material_code' => $item['item'],
+                            'quantity' => $item['QUNTITY'],
+                            'measuring_unit' => $item['MEINS'],
+                            'area_code' => $item['Area_code'],
+                            'area_description' => $item['Area_code_desc'],
+                            'status' => $item['status'],
+                        ];
+                    })
+                ];
+            })->all();
+
+            // $inboundRequestsData = ['totalCount' => $data['d']['__count'], 'paginatedInbounds' => $inboundRequests];
+
+            return $inboundRequests[0];
+
+        }
+        return $response;
+
+    }
+
     public function createPartner($request_id, $request_type, $partner_group_code, $name1, $name2, $gln_loc_no_1, $gln_loc_no_2, $gln_check_digit, $city, $street, $house_no, $postal_code, $country_code, $region_code, $tax_number, $commercial_registration_number, $industry_code, $customer_type_code, $tax_category, $mobile, $email)
     {
         $data = [

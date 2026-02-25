@@ -29,7 +29,7 @@ Route::get('/test3', function () {
 });
 Route::get('/test4', function () {
     $sapService=new SapService();
-    $contracts = $sapService->getInboundRequests('1000000000',10,1);
+    $contracts = $sapService->getInboundRequest('1000000000','1010000732',10,1);
     return $contracts;
 });
 
