@@ -24,9 +24,15 @@ Route::get('/test2', function () {
 
 Route::get('/test3', function () {
     $sapService=new SapService();
-    $contracts = $sapService->getContracts('1000000000',10,1,'inactive');
+    $contracts = $sapService->getInboundRequests('1000000000',10,1);
     return $contracts;
 });
+Route::get('/test4', function () {
+    $sapService=new SapService();
+    $contracts = $sapService->getInboundRequests('1000000000',10,1);
+    return $contracts;
+});
+
 
 
 Route::get('/t', function () {
