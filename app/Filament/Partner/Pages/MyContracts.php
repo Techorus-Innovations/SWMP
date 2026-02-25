@@ -46,6 +46,11 @@ class MyContracts extends Page implements HasTable
                     ->label('Start Date'),
                 TextColumn::make('contract_end')
                     ->label('End Date'),
+                TextColumn::make('areas')
+                    ->label('Areas')
+                    ->state(fn ($record) => collect($record['areas'] ?? [])->pluck('area_description')->all())
+                    ->badge()
+                    ->color('primary'),
             ])
             ->paginated([10, 25, 50])
             ->filters([])
