@@ -14,6 +14,8 @@ class MyContracts extends Page implements HasTable
 {
     use InteractsWithTable;
 
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
+
     protected string $view = 'filament.partner.pages.my-contracts';
 
     public string $activeTab = 'active';

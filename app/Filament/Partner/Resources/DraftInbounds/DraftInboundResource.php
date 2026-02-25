@@ -20,6 +20,8 @@ class DraftInboundResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedInboxArrowDown;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Inbounds';
+
     protected static ?string $navigationLabel = 'Draft Inbounds';
 
     public static function getNavigationBadge(): ?string

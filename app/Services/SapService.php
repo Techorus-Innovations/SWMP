@@ -250,18 +250,14 @@ class SapService
     }
 
 
-    public function getInboundRequest($businessPartnerCode,$inboundRequestCode, $pageSize, $pageNumber)
+    public function getInboundRequestById($businessPartnerCode,$inboundRequestCode)
     {
            $response = Http::withBasicAuth($this->username, $this->password)
             ->withOptions(['verify' => $this->verify])
             ->withHeaders(['Accept' => 'application/json',])
             ->withQueryParameters([
                 '$expand' => 'to_VBAP',
-                // '$inlinecount' => 'allpages',
                 'sap-client' => $this->client,
-                // '$orderby' => 'Created_on desc',
-                '$top' => $pageSize,
-                '$skip' => ($pageNumber - 1) * $pageSize,
                 '$filter' => "Inbound_request eq '{$inboundRequestCode}'",
             ])
             ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set");
@@ -269,7 +265,6 @@ class SapService
         if ($response->successful()) {
             $data = $response->json();
 
-            // dd($data);
             $inboundRequests = collect($data['d']['results'])->map(function ($request) {
 
                 return [
@@ -291,10 +286,7 @@ class SapService
                 ];
             })->all();
 
-            // $inboundRequestsData = ['totalCount' => $data['d']['__count'], 'paginatedInbounds' => $inboundRequests];
-
             return $inboundRequests[0];
-
         }
         return $response;
 
