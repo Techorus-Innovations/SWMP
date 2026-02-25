@@ -91,14 +91,12 @@ class InboundDetails extends Page implements HasTable
             ->columns([
                 TextColumn::make('material_code')
                     ->label('Material Code'),
+                TextColumn::make('material_description')
+                    ->label('Material Description'),
                 TextColumn::make('quantity')
                     ->label('Quantity'),
                 TextColumn::make('measuring_unit')
                     ->label('Unit'),
-                TextColumn::make('area_code')
-                    ->label('Area Code'),
-                TextColumn::make('area_description')
-                    ->label('Area'),
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()

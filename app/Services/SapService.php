@@ -229,11 +229,10 @@ class SapService
 
                     'items' => collect($request['to_VBAP']['results'] ?? [])->map(function ($item) {
                         return [
-                            'material_code' => $item['item'],
                             'quantity' => $item['QUNTITY'],
                             'measuring_unit' => $item['MEINS'],
-                            'area_code' => $item['Area_code'],
-                            'area_description' => $item['Area_code_desc'],
+                            'material_code' => $item['Area_code'],
+                            'material_description' => $item['Area_code_desc'],
                             'status' => $item['status'],
                         ];
                     })
@@ -275,11 +274,10 @@ class SapService
 
                     'items' => collect($request['to_VBAP']['results'] ?? [])->map(function ($item) {
                         return [
-                            'material_code' => $item['item'],
                             'quantity' => $item['QUNTITY'],
                             'measuring_unit' => $item['MEINS'],
-                            'area_code' => $item['Area_code'],
-                            'area_description' => $item['Area_code_desc'],
+                            'material_code' => $item['Area_code'],
+                            'material_description' => $item['Area_code_desc'],
                             'status' => $item['status'],
                         ];
                     })
