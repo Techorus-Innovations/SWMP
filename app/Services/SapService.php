@@ -225,7 +225,6 @@ class SapService
                     'inbound_request_id' => $request['Inbound_request'],
                     'created_date' => $this->parseSapDate($request['Created_on']),
                     'shipping_indicator' => $request['ship_indicator'],
-                    'status' => $request['STATUS_DESC'],
 
                     'items' => collect($request['to_VBAP']['results'] ?? [])->map(function ($item) {
                         return [
@@ -233,7 +232,7 @@ class SapService
                             'measuring_unit' => $item['MEINS'],
                             'material_code' => $item['Area_code'],
                             'material_description' => $item['Area_code_desc'],
-                            'status' => $item['status'],
+                            'status' => $item['STATUS_DESC'],
                         ];
                     })
                 ];
@@ -270,7 +269,6 @@ class SapService
                     'inbound_request_id' => $request['Inbound_request'],
                     'created_date' => $this->parseSapDate($request['Created_on']),
                     'shipping_indicator' => $request['ship_indicator'],
-                    'status' => $request['STATUS_DESC'],
 
                     'items' => collect($request['to_VBAP']['results'] ?? [])->map(function ($item) {
                         return [
@@ -278,7 +276,7 @@ class SapService
                             'measuring_unit' => $item['MEINS'],
                             'material_code' => $item['Area_code'],
                             'material_description' => $item['Area_code_desc'],
-                            'status' => $item['status'],
+                            'status' => $item['STATUS_DESC'],
                         ];
                     })
                 ];

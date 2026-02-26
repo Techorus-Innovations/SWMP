@@ -51,7 +51,7 @@ class InboundDetails extends Page implements HasTable
 
         return $schema->components([
             Section::make(__('Inbound Request Details'))
-                ->columns(4)
+                ->columns(3)
                 ->schema([
                     TextEntry::make('inbound_request_id')
                         ->label(__('Request ID'))
@@ -61,12 +61,7 @@ class InboundDetails extends Page implements HasTable
                         ->state($record['created_date'] ?? '—'),
                     TextEntry::make('shipping_indicator')
                         ->label(__('Shipping Indicator'))
-                        ->state($record['shipping_indicator'] ?? '—'),
-                    TextEntry::make('status')
-                        ->label(__('Status'))
-                        ->state($record['status'] ?? '—')
-                        ->badge()
-                        ->color('primary'),
+                        ->state($record['shipping_indicator'] ?? '—')
                 ]),
         ]);
     }

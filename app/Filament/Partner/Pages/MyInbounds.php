@@ -54,11 +54,7 @@ class MyInbounds extends Page implements HasTable
                 TextColumn::make('created_date')
                     ->label('Created Date'),
                 TextColumn::make('shipping_indicator')
-                    ->label('Shipping Indicator'),
-                TextColumn::make('status')
-                    ->label('Status')
-                    ->badge()
-                    ->color('primary'),
+                    ->label('Shipping Indicator')
             ])
             ->paginated([10, 25, 50])
             ->filters([])
