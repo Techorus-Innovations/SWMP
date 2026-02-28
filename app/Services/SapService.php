@@ -242,6 +242,44 @@ class SapService
         }
         return $response;
     }
+
+    public function getStockByMaterialCodeAndWarehouseCode($businessPartnerCode, $materialCode, $warehouseCode)
+    {
+        $response = Http::withBasicAuth($this->username, $this->password)
+        ->withOptions(['verify' => $this->verify])
+        ->withHeaders(['Accept' => 'application/json',])
+        ->withQueryParameters([
+            '$expand' => 'to_Inbounds',
+            '$inlinecount' => 'allpages',
+            '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne '' and Material eq '$materialCode' and Plant eq '$warehouseCode'",
+            'sap-client' => $this->client
+        ])
+        ->get($this->baseUrl . "/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock");
+
+        if ($response->successful()) {
+            $data = $response->json();
+
+            // dd($data);
+            $stock = collect($data['d']['results'])->map(function ($request) {
+
+                return [
+                    'material_code' => $request['Material'],
+                    'warehouse_code' => $request['Plant'],
+                    'inbounds' => collect($request['to_Inbounds']['results'] ?? [])->map(function ($item) {
+                        return [
+                            'inbound_id' => $item['SalesDocument'],
+                            'quantity' => $item['stock'],
+                            'measuring_unit' => $item['unit'],
+                        ];
+                    })
+                ];
+            })->all();
+
+            return $stock[0];
+
+        }
+        return $response;
+    }
     
     
 
