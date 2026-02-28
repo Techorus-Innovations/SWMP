@@ -25,7 +25,7 @@ class SapService
     }
 
 
-    public function getCsrfToken(): ?string
+    public function getCsrfToken(): ?array
     {
         $response = Http::withBasicAuth($this->username, $this->password)
             ->withOptions(['verify' => $this->verify])
@@ -35,14 +35,13 @@ class SapService
             ])
             ->get($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_ODATA_MATERIAL_SRV/ZC_MATERIAL');
 
-
         if ($response->successful()) {
             $token = $response->headers()["x-csrf-token"][0];
-            return $token;
+            return [
+                "token" => $token, 
+                "headers" => $response->headers()
+            ];
         }
-
-
-
     }
 
 
@@ -361,5 +360,32 @@ class SapService
         return null;
     }
 
+    public function uploadFile($slug, $filePath)
+    {
+        $fileContent = \Illuminate\Support\Facades\Storage::disk('private')->get($filePath);
+        if (!$fileContent) {
+            return null;
+        }
 
+        $tokenResponse = $this->getCsrfToken();
+        $csrfToken = $tokenResponse['token'];
+        $cookies = $tokenResponse['headers']['set-cookie'];
+        
+        $response = Http::withBasicAuth($this->username, $this->password)
+            ->withOptions([
+                'verify' => $this->verify
+            ])
+            ->withHeaders([
+                'x-csrf-token' => $csrfToken,
+                'Accept' => 'application/json',
+                'SLUG' => $slug,
+                'Content-Type' => 'application/octet-stream',
+                'Cookie' => $cookies
+            ])
+            ->withQueryParameters(['sap-client' => $this->client])
+            ->withBody($fileContent, 'application/octet-stream')
+            ->post($this->baseUrl . '/sap/opu/odata/SAP/ZTEST_SEND_FILES_SRV/FileSet');
+
+        return $response->json();
+    }
 }

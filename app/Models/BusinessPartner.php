@@ -48,6 +48,16 @@ class BusinessPartner extends Model
                     $email = $partner->email
                 );
 
+                try {
+                    if (!empty($partner->tax_card)) {
+                        $sapService->uploadFile($partner->request_id . '#TAXCARD', $partner->tax_card);
+                    }
+                    if (!empty($partner->commercial_registration)) {
+                        $sapService->uploadFile($partner->request_id . '#COMCARD', $partner->commercial_registration);
+                    }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('SAP File Upload Failed: ' . $e->getMessage());
+                }
 
                 // dd($response);
             }
