@@ -10,6 +10,7 @@ class DraftInboundsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->where('user_id', auth()->id()))
             ->columns([
                 TextColumn::make('title')
                     ->searchable()

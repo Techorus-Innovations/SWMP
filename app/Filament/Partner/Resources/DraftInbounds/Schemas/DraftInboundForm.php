@@ -36,6 +36,10 @@ class DraftInboundForm
                         ->searchable()
                         ->required()
                         ->distinct(),
+                    TextInput::make('quantity')
+                        ->numeric()
+                        ->required()
+                        ->minValue(1),
                 ])
                 ->defaultItems(0)
                 ->addActionLabel('Add Material')

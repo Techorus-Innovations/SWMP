@@ -26,7 +26,7 @@ class DraftInboundResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) DraftInbound::where('user_id', auth()->id())->count() ?: null;
+        return (string) DraftInbound::where('user_id', auth()->id())->count() ?: 0;
     }
 
     public static function form(Schema $schema): Schema
