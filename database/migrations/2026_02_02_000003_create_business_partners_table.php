@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -13,8 +14,8 @@ return new class extends Migration
     {
         Schema::create('business_partners', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->string('request_id', 40)->unique();
-            $table->foreignId('partner_type_id')->constrained('partner_types')->onDelete('set null');
+            $table->unsignedBigInteger('request_id')->unique();
+            $table->foreignId('partner_type_id')->nullable()->constrained('partner_types')->onDelete('set null');
             $table->char('type', 1);
             
             // GLN fields
@@ -31,14 +32,14 @@ return new class extends Migration
             $table->string('street', 60);
             $table->string('building', 10);
             $table->string('postal_code', 16);
-            $table->foreignId('country_id')->constrained('countries')->onDelete('set null');
-            $table->foreignId('region_id')->constrained('regions')->onDelete('set null');
+            $table->foreignId('country_id')->nullable()->constrained('countries')->onDelete('set null');
+            $table->foreignId('region_id')->nullable()->constrained('regions')->onDelete('set null');
 
             // Registration and tax
             $table->string('registration_number', 20);
             $table->string('tax_number', 20);
-            $table->foreignId('industry_id')->constrained('industries')->onDelete('set null');
-            $table->foreignId('customer_type_id')->constrained('customer_types')->onDelete('set null');
+            $table->foreignId('industry_id')->nullable()->constrained('industries')->onDelete('set null');
+            $table->foreignId('customer_type_id')->nullable()->constrained('customer_types')->onDelete('set null');
             $table->char('tax_category', 1);
             $table->string('mobile');
             $table->string('email');
@@ -47,6 +48,7 @@ return new class extends Migration
             
             $table->timestamps();
         });
+        DB::statement('ALTER TABLE business_partners MODIFY request_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT');
     }
 
     /**

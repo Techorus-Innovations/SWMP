@@ -34,6 +34,13 @@ Route::get('/test4', function () {
 });
 
 
+Route::get('/test5', function () {
+    $sapService=new SapService();
+    $stock = $sapService->getStock('1000000000',10,1);
+    return $stock;
+});
+
+
 
 Route::get('/t', function () {
     

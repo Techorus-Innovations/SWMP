@@ -74,6 +74,7 @@ class SapService
                     'material_type_name' => $item['mat_type_des'],
                     'material_group_code' => $item['matgroup'],
                     'material_group_name' => $item['MATGROUPDES'],
+                    'material_GTIN_code' => $item['mat_GTIN_code'],
 
                     'plants' => collect($item['to_mplant']['results'] ?? [])->map(function ($plant) {
                         return [
@@ -197,6 +198,88 @@ class SapService
     }
 
 
+
+    public function getStock($businessPartnerCode, $pageSize, $pageNumber)
+    {
+           $response = Http::withBasicAuth($this->username, $this->password)
+            ->withOptions(['verify' => $this->verify])
+            ->withHeaders(['Accept' => 'application/json',])
+            ->withQueryParameters([
+                '$expand' => 'to_Inbounds',
+                '$inlinecount' => 'allpages',
+                '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne ''",
+                'sap-client' => $this->client,
+                '$orderby' => 'Material asc',
+                '$top' => $pageSize,
+                '$skip' => ($pageNumber - 1) * $pageSize,
+            ])
+            ->get($this->baseUrl . "/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock");
+
+        if ($response->successful()) {
+            $data = $response->json();
+
+            // dd($data);
+            $stock = collect($data['d']['results'])->map(function ($request) {
+
+                return [
+                    'material_code' => $request['Material'],
+                    'warehouse_code' => $request['Plant'],
+                    'inbounds' => collect($request['to_Inbounds']['results'] ?? [])->map(function ($item) {
+                        return [
+                            'inbound_id' => $item['SalesDocument'],
+                            'quantity' => $item['stock'],
+                            'measuring_unit' => $item['unit'],
+                        ];
+                    })
+                ];
+            })->all();
+
+            $stockData = ['totalCount' => $data['d']['__count'], 'paginatedStock' => $stock];
+
+            return $stockData;
+
+        }
+        return $response;
+    }
+
+    public function getStockByMaterialCodeAndWarehouseCode($businessPartnerCode, $materialCode, $warehouseCode)
+    {
+        $response = Http::withBasicAuth($this->username, $this->password)
+        ->withOptions(['verify' => $this->verify])
+        ->withHeaders(['Accept' => 'application/json',])
+        ->withQueryParameters([
+            '$expand' => 'to_Inbounds',
+            '$inlinecount' => 'allpages',
+            '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne '' and Material eq '$materialCode' and Plant eq '$warehouseCode'",
+            'sap-client' => $this->client
+        ])
+        ->get($this->baseUrl . "/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock");
+
+        if ($response->successful()) {
+            $data = $response->json();
+
+            // dd($data);
+            $stock = collect($data['d']['results'])->map(function ($request) {
+
+                return [
+                    'material_code' => $request['Material'],
+                    'warehouse_code' => $request['Plant'],
+                    'inbounds' => collect($request['to_Inbounds']['results'] ?? [])->map(function ($item) {
+                        return [
+                            'inbound_id' => $item['SalesDocument'],
+                            'quantity' => $item['stock'],
+                            'measuring_unit' => $item['unit'],
+                        ];
+                    })
+                ];
+            })->all();
+
+            return $stock[0];
+
+        }
+        return $response;
+    }
+    
     
 
     public function getInboundRequests($businessPartnerCode, $pageSize, $pageNumber)

@@ -100,6 +100,7 @@ class SyncMaterialsCommand extends Command
             [
                 'name_en' => $materialData['material_name'],
                 'name_ar' => $materialData['material_name'], // Using same name for both languages
+                'gtin_code' => $materialData['material_GTIN_code'],
                 'material_type_id' => $materialType->id,
                 'material_group_id' => $materialGroup->id,
                 'sync_at' => $syncTime,
