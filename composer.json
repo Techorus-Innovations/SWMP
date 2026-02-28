@@ -10,6 +10,7 @@
         "bezhansalleh/filament-language-switch": "^4.0",
         "bezhansalleh/filament-shield": "^4.0",
         "diogogpinto/filament-auth-ui-enhancer": "^2.0",
+        "farayaz/laravel-spy": "^1.4",
         "filament/filament": "^4.0",
         "gboquizosanchez/filament-log-viewer": "^2.2",
         "jacobtims/filament-logger": "^1.0",

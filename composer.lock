@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0823955fb16dd1494f6531c908e87c3d",
+    "content-hash": "d7424b7019a358a20dea9a4af9b07bbe",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -1473,6 +1473,55 @@
                 }
             ],
             "time": "2025-03-06T22:45:56+00:00"
+        },
+        {
+            "name": "farayaz/laravel-spy",
+            "version": "v1.4.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/farayaz/laravel-spy.git",
+                "reference": "108b8d365b6021a3d13f235ff4da4842490e4e42"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/farayaz/laravel-spy/zipball/108b8d365b6021a3d13f235ff4da4842490e4e42",
+                "reference": "108b8d365b6021a3d13f235ff4da4842490e4e42",
+                "shasum": ""
+            },
+            "require": {
+                "laravel/framework": "^10.0|^11.0|^12.0",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "fakerphp/faker": "^1.9.1",
+                "laravel/pint": "^1.0",
+                "mockery/mockery": "^1.4.4",
+                "orchestra/testbench": "^8.0|^9.0",
+                "phpunit/phpunit": "^9.0|^10.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Farayaz\\LaravelSpy\\LaravelSpyServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Farayaz\\LaravelSpy\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "A Laravel package to track outgoing HTTP requests.",
+            "support": {
+                "issues": "https://github.com/farayaz/laravel-spy/issues",
+                "source": "https://github.com/farayaz/laravel-spy/tree/v1.4.2"
+            },
+            "time": "2026-02-21T14:00:01+00:00"
         },
         {
             "name": "filament/actions",
