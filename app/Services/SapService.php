@@ -75,6 +75,7 @@ class SapService
                     'material_type_name' => $item['mat_type_des'],
                     'material_group_code' => $item['matgroup'],
                     'material_group_name' => $item['MATGROUPDES'],
+                    'material_GTIN_code' => $item['mat_GTIN_code'],
 
                     'plants' => collect($item['to_mplant']['results'] ?? [])->map(function ($plant) {
                         return [
