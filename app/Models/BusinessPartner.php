@@ -63,9 +63,6 @@ class BusinessPartner extends Model
                 } catch (\Exception $e) {
                     Log::error('SAP File Upload Failed: ' . $e->getMessage());
                 }
-
-                // dispatch(new \App\Jobs\UploadPartnerFilesToSapJob($partner));
-
                 // dd($response);
             }
             // }
