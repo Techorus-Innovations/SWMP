@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Log;
 
 class BusinessPartner extends Model
 {
@@ -47,17 +48,23 @@ class BusinessPartner extends Model
                     $mobile = $partner->mobile,
                     $email = $partner->email
                 );
+                Log::info($response);
 
                 try {
                     if (!empty($partner->tax_card)) {
-                        $sapService->uploadFile($partner->request_id . '#TAXCARD', $partner->tax_card);
+                        $taxCardResponse = $sapService->uploadFile($partner->request_id . '#TAXCARD', $partner->tax_card);
+                        Log::info($taxCardResponse);
                     }
                     if (!empty($partner->commercial_registration)) {
-                        $sapService->uploadFile($partner->request_id . '#COMCARD', $partner->commercial_registration);
+                        $comCardResponse = $sapService->uploadFile($partner->request_id . '#COMCARD', $partner->commercial_registration);
+                        Log::info($comCardResponse);
                     }
+                    Log::info('SAP File Upload Successfully for partner: ' . $partner->request_id);
                 } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error('SAP File Upload Failed: ' . $e->getMessage());
+                    Log::error('SAP File Upload Failed: ' . $e->getMessage());
                 }
+
+                // dispatch(new \App\Jobs\UploadPartnerFilesToSapJob($partner));
 
                 // dd($response);
             }
