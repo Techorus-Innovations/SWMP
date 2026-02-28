@@ -50,19 +50,22 @@ class BusinessPartner extends Model
                 );
                 Log::info($response);
 
-                try {
-                    if (!empty($partner->tax_card)) {
-                        $taxCardResponse = $sapService->uploadFile($partner->request_id . '#TAXCARD', $partner->tax_card);
-                        Log::info($taxCardResponse);
+                dispatch(function () use ($partner) {
+                    $sapService = new \App\Services\SapService();
+                    try {
+                        if (!empty($partner->tax_card)) {
+                            $taxCardResponse = $sapService->uploadFile($partner->request_id . '#TAXCARD', $partner->tax_card);
+                            Log::info($taxCardResponse);
+                        }
+                        if (!empty($partner->commercial_registration)) {
+                            $comCardResponse = $sapService->uploadFile($partner->request_id . '#COMCARD', $partner->commercial_registration);
+                            Log::info($comCardResponse);
+                        }
+                        Log::info('SAP File Upload Successfully for partner: ' . $partner->request_id);
+                    } catch (\Exception $e) {
+                        Log::error('SAP File Upload Failed: ' . $e->getMessage());
                     }
-                    if (!empty($partner->commercial_registration)) {
-                        $comCardResponse = $sapService->uploadFile($partner->request_id . '#COMCARD', $partner->commercial_registration);
-                        Log::info($comCardResponse);
-                    }
-                    Log::info('SAP File Upload Successfully for partner: ' . $partner->request_id);
-                } catch (\Exception $e) {
-                    Log::error('SAP File Upload Failed: ' . $e->getMessage());
-                }
+                });
                 // dd($response);
             }
             // }
