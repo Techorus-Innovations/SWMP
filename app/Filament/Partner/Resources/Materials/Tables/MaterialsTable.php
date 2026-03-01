@@ -45,7 +45,10 @@ class MaterialsTable
                 TextColumn::make('materialGroup.name_ar')
                     ->label(__('Material Group'))
                     ->visible($isAr)
-                    ->searchable($isAr)
+                    ->searchable($isAr),
+                TextColumn::make('gtin_code')
+                    ->label(__('GTIN Code'))
+                    ->searchable(),
             ])
             ->filters([])
             ->recordActions([

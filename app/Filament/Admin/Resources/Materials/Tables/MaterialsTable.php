@@ -24,6 +24,9 @@ class MaterialsTable
                 TextColumn::make('materialGroup.name_en')
                     ->numeric()
                     ->sortable(),
+                TextColumn::make('gtin_code')
+                    ->label(__('GTIN Code'))
+                    ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
