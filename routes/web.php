@@ -41,6 +41,11 @@ Route::get('/test5', function () {
 });
 
 
+Route::get('/test6', function () {
+    $sapService=new SapService();
+    $stock = $sapService->createInbound("1000000000", "3010000000", ["000000000000000007"=>100 ,"000000000000000012"=> 10],"2026-03-01","13");
+    return $stock;
+});
 
 Route::get('/t', function () {
     

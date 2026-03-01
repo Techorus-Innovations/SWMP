@@ -38,7 +38,7 @@ class SapService
         if ($response->successful()) {
             $token = $response->headers()["x-csrf-token"][0];
             return [
-                "token" => $token, 
+                "token" => $token,
                 "headers" => $response->headers()
             ];
         }
@@ -201,7 +201,7 @@ class SapService
 
     public function getStock($businessPartnerCode, $pageSize, $pageNumber)
     {
-           $response = Http::withBasicAuth($this->username, $this->password)
+        $response = Http::withBasicAuth($this->username, $this->password)
             ->withOptions(['verify' => $this->verify])
             ->withHeaders(['Accept' => 'application/json',])
             ->withQueryParameters([
@@ -245,15 +245,15 @@ class SapService
     public function getStockByMaterialCodeAndWarehouseCode($businessPartnerCode, $materialCode, $warehouseCode)
     {
         $response = Http::withBasicAuth($this->username, $this->password)
-        ->withOptions(['verify' => $this->verify])
-        ->withHeaders(['Accept' => 'application/json',])
-        ->withQueryParameters([
-            '$expand' => 'to_Inbounds',
-            '$inlinecount' => 'allpages',
-            '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne '' and Material eq '$materialCode' and Plant eq '$warehouseCode'",
-            'sap-client' => $this->client
-        ])
-        ->get($this->baseUrl . "/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock");
+            ->withOptions(['verify' => $this->verify])
+            ->withHeaders(['Accept' => 'application/json',])
+            ->withQueryParameters([
+                '$expand' => 'to_Inbounds',
+                '$inlinecount' => 'allpages',
+                '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne '' and Material eq '$materialCode' and Plant eq '$warehouseCode'",
+                'sap-client' => $this->client
+            ])
+            ->get($this->baseUrl . "/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock");
 
         if ($response->successful()) {
             $data = $response->json();
@@ -279,12 +279,12 @@ class SapService
         }
         return $response;
     }
-    
-    
+
+
 
     public function getInboundRequests($businessPartnerCode, $pageSize, $pageNumber)
     {
-           $response = Http::withBasicAuth($this->username, $this->password)
+        $response = Http::withBasicAuth($this->username, $this->password)
             ->withOptions(['verify' => $this->verify])
             ->withHeaders(['Accept' => 'application/json',])
             ->withQueryParameters([
@@ -330,9 +330,9 @@ class SapService
     }
 
 
-    public function getInboundRequestById($businessPartnerCode,$inboundRequestCode)
+    public function getInboundRequestById($businessPartnerCode, $inboundRequestCode)
     {
-           $response = Http::withBasicAuth($this->username, $this->password)
+        $response = Http::withBasicAuth($this->username, $this->password)
             ->withOptions(['verify' => $this->verify])
             ->withHeaders(['Accept' => 'application/json',])
             ->withQueryParameters([
@@ -427,6 +427,77 @@ class SapService
 
     }
 
+
+    public function createInbound($businessPartnerCode, $contractCode, $items,$date,$hour)
+    {
+        $counter = 10;
+        $results = [];
+        foreach ($items as $material => $quantity) {
+            $formatted = sprintf('%06d',$counter);
+            array_push(
+                $results,
+                [
+                    "SoNumber" => $contractCode,
+                    "ITEM" => $formatted,
+                    "Materia" => $material,
+                    "ReqQty" => (string)$quantity
+                ]
+            );
+            $counter+=10;
+        }
+
+
+        $timestampSeconds = strtotime($date);
+
+        $timestampMilliseconds = $timestampSeconds * 1000;
+
+        $sapDateFormat = "/Date(" . $timestampMilliseconds . ")/";
+
+        $data = [
+            "d" => [
+
+                "BpNum" => $businessPartnerCode,
+                "ReceivingDate" => $sapDateFormat,//'\/Date(1772150400000)\/',
+                "ShipmentIndicator" => "0",
+                "SoNumber" => $contractCode,
+                "deliverytime" => "PT".$hour."H00M00S",
+                "soitemsSet" => [
+                    "results" => $results
+                ]
+            ]
+        ];
+
+        // dd(json_encode($data));
+
+        $tokenResponse = $this->getCsrfToken();
+        $csrfToken = $tokenResponse['token'];
+        $cookies = $tokenResponse['headers']['set-cookie'];
+
+
+        $response = Http::withBasicAuth($this->username, $this->password)
+            ->withOptions(['verify' => $this->verify])
+            ->withHeaders([
+                'x-csrf-token' => $csrfToken,
+                'Accept' => 'application/json',
+                'Cookie' => $cookies
+            ])
+            // ->withHeaders(['X-Requested-With' => 'X', 'Accept' => 'application/json'])
+            ->withQueryParameters([
+                'sap-client' => $this->client,
+            ])
+            ->post($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_INB_REQQ_SRV/soheaderSet', $data);
+        dd($response->json());
+        return $response->json();
+
+        // if ($response->successful()) {
+        //     $token = $response->headers()["x-csrf-token"][0];
+        //     return $token;
+        // }
+
+
+
+    }
+
     private function parseSapDate($sapDate)
     {
         if (!$sapDate)
@@ -453,7 +524,7 @@ class SapService
         $tokenResponse = $this->getCsrfToken();
         $csrfToken = $tokenResponse['token'];
         $cookies = $tokenResponse['headers']['set-cookie'];
-        
+
         $response = Http::withBasicAuth($this->username, $this->password)
             ->withOptions([
                 'verify' => $this->verify
