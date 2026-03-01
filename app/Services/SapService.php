@@ -45,6 +45,40 @@ class SapService
     }
 
 
+    public function getDeliverySlotsReservedCounts($date): ?array
+    {
+        $response = Http::withBasicAuth($this->username, $this->password)
+            ->withOptions(['verify' => $this->verify])
+            ->withHeaders(['Accept' => 'application/json'])
+            ->withQueryParameters([
+                'sap-client' => $this->client,
+            ])
+            ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_TIME_SRV/ZC_TIME(D_Date=datetime'" . $date . "T00:00:00')/Set");
+        // dd($response->json());
+
+        if ($response->successful()) {
+            $data = $response->json('d.results');
+
+            $slots = collect($data)->map(function ($slot) {
+                // Get the first plant from the results array (if exists)
+                // $plant = $item['to_mplant']['results'][0] ?? null;
+
+                // // Get the first location from the plant's nested results (if exists)
+                // $location = $plant['to_mlocation']['results'][0] ?? null;
+
+                return [
+                    'hour'=>$slot['delivery_hour'] ,
+                    'count'=> $slot['delivery_count']
+                ];
+                    
+                    })->all();
+                
+            
+            return $slots;
+        }
+    }
+
+
     public function getMaterials()
     {
         $response = Http::withBasicAuth($this->username, $this->password)
@@ -428,22 +462,22 @@ class SapService
     }
 
 
-    public function createInbound($businessPartnerCode, $contractCode, $items,$date,$hour)
+    public function createInbound($businessPartnerCode, $contractCode, $items, $date, $hour)
     {
         $counter = 10;
         $results = [];
         foreach ($items as $material => $quantity) {
-            $formatted = sprintf('%06d',$counter);
+            $formatted = sprintf('%06d', $counter);
             array_push(
                 $results,
                 [
                     "SoNumber" => $contractCode,
                     "ITEM" => $formatted,
                     "Materia" => $material,
-                    "ReqQty" => (string)$quantity
+                    "ReqQty" => (string) $quantity
                 ]
             );
-            $counter+=10;
+            $counter += 10;
         }
 
 
@@ -460,7 +494,7 @@ class SapService
                 "ReceivingDate" => $sapDateFormat,//'\/Date(1772150400000)\/',
                 "ShipmentIndicator" => "0",
                 "SoNumber" => $contractCode,
-                "deliverytime" => "PT".$hour."H00M00S",
+                "deliverytime" => "PT" . $hour . "H00M00S",
                 "soitemsSet" => [
                     "results" => $results
                 ]

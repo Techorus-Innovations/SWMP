@@ -47,6 +47,12 @@ Route::get('/test6', function () {
     return $stock;
 });
 
+
+Route::get('/test7', function () {
+    $sapService=new SapService();
+    $slots = $sapService->getDeliverySlotsReservedCounts("2026-03-01");
+    return $slots;
+});
 Route::get('/t', function () {
     
         echo "Loaded php.ini: " . php_ini_loaded_file() . "\n";
