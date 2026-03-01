@@ -231,6 +231,47 @@ class SapService
 
     }
 
+    public function getContractById($businessPartnerCode, $contractId)
+    {
+        $response = Http::withBasicAuth($this->username, $this->password)
+            ->withOptions(['verify' => $this->verify])
+            ->withHeaders(['Accept' => 'application/json',])
+            ->withQueryParameters([
+                '$expand' => 'to_VP',
+                'sap-client' => $this->client,
+                '$filter' => "Contract eq '$contractId'",
+            ])
+            ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set");
+
+        if ($response->successful()) {
+            $data = $response->json();
+
+            $contracts = collect($data['d']['results'])->map(function ($item) {
+
+                return [
+                    'contract_code' => $item['Contract'],
+                    'contract_start' => $this->parseSapDate($item['CONTRACT_START']),
+                    'contract_end' => $this->parseSapDate($item['CONTRACT_END']),
+
+                    'areas' => collect($item['to_VP']['results'] ?? [])->map(function ($area) {
+                        return [
+                            'area_code' => $area['Area_code'],
+                            'area_description' => $area['Area_code_desc'],
+                            'quantity' => $area['QUNTITY'],
+                            'measuring_unit' => $area['MEINS']
+
+                        ];
+                    })
+                ];
+            })->all();
+
+            return $contracts[0];
+
+        }
+        return $response;
+
+    }
+
 
 
     public function getStock($businessPartnerCode, $pageSize, $pageNumber)
