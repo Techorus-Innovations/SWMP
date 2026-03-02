@@ -12,6 +12,7 @@ class CreateUser extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['business_partner_id'] = auth()->user()?->business_partner_id;
+        $data['type'] = auth()->user()?->type;
 
         return $data;
     }

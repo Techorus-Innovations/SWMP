@@ -25,16 +25,7 @@ class UserForm
                     ->password()
                     ->required(fn (string $operation) => $operation === 'create')
                     ->dehydrateStateUsing(fn ($state) => filled($state) ? bcrypt($state) : null)
-                    ->dehydrated(fn ($state) => filled($state)),
-                Select::make('type')
-                    ->label(__('User Type'))
-                    ->options(
-                        collect(UserTypeEnum::cases())
-                            ->reject(fn (UserTypeEnum $case) => $case === UserTypeEnum::Admin)
-                            ->mapWithKeys(fn (UserTypeEnum $case) => [$case->value => $case->label()])
-                    )
-                    ->required()
-                    ->disabled(fn (string $operation) => $operation === 'edit'),
+                    ->dehydrated(fn ($state) => filled($state))
             ]);
     }
 }
