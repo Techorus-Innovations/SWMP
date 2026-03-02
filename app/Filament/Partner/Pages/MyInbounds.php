@@ -50,11 +50,15 @@ class MyInbounds extends Page implements HasTable
             })
             ->columns([
                 TextColumn::make('inbound_request_id')
-                    ->label('Inbound Request ID'),
+                    ->label(__('Inbound Request ID')),
                 TextColumn::make('created_date')
-                    ->label('Created Date'),
+                    ->label(__('Created Date')),
                 TextColumn::make('shipping_indicator')
-                    ->label('Shipping Indicator')
+                    ->label(__('Shipping Indicator')),
+                TextColumn::make('delivery_date')
+                    ->label(__('Delivery Date')),
+                TextColumn::make('delivery_time')
+                    ->label(__('Delivery Time')),
             ])
             ->paginated([10, 25, 50])
             ->filters([])
