@@ -34,8 +34,7 @@ class DraftInboundForm
     public static function configure(Schema $schema): Schema
     {
         $sapService = new SapService();
-        // $areas = ['1002'];
-        if($schema->getOperation() === 'edit' && $schema->getLivewire()->record->contract_id != null) {
+        if($schema->getOperation() === 'view' || ($schema->getOperation() === 'edit' && $schema->getLivewire()->record->contract_id != null)) {
             $selectedContract = $sapService->getContractById(filament()->auth()->user()->businessPartner->bp_code, $schema->getLivewire()->record->contract_id);
             $areas = collect($selectedContract['areas'])->pluck('area_code')->unique();
         }

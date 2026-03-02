@@ -23,18 +23,21 @@ class CsvInboundProcessor
             if ($childColumnIndex !== null && isset($row[$childColumnIndex]) && str_contains($row[$childColumnIndex], 'gtin')) {
                 // Split by ':' and get last index
                 $parts = explode(':', $row[$childColumnIndex]);
-                $lastPart = end($parts);
+                if(count($parts) == 5) {
+                    $lastPart = end($parts);
+                    
+                    // Split by '.' and get last value
+                    $dotParts = explode('.', $lastPart);
+                    if(count($dotParts) == 3) {
+                        // Remove first character from $dotParts[1]
+                        $secondPart = isset($dotParts[1]) ? substr($dotParts[1], 1) : '';
+                        $results[] = substr($dotParts[1], 0, 1) . ($dotParts[0] ?? '') . $secondPart;
+                    }
+                }
                 
-                // Split by '.' and get last value
-                $dotParts = explode('.', $lastPart);
-                
-                // Remove first character from $dotParts[1]
-                $secondPart = isset($dotParts[1]) ? substr($dotParts[1], 1) : '';
-                
-                $results[] =  "0" . ($dotParts[0] ?? '') . $secondPart;
             }
         }
         
-        return $results;
+        return array_unique($results);
     }
 }

@@ -37,6 +37,7 @@ return [
 
     'sap' => [
         'base_url' => env('SAP_BASE_URL'),
+        'attp_url' => env('SAP_ATTP_URL'),
         'username' => env('SAP_USERNAME'),
         'password' => env('SAP_PASSWORD'),
         'client' => env('SAP_CLIENT'),

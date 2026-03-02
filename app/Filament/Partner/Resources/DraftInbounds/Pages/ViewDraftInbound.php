@@ -4,14 +4,17 @@ namespace App\Filament\Partner\Resources\DraftInbounds\Pages;
 
 use App\Filament\Partner\Resources\DraftInbounds\DraftInboundResource;
 use App\Models\WorkingHours;
+use App\Services\CsvInboundProcessor;
 use App\Services\SapService;
-use DB;
 use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Wizard\Step;
 use Illuminate\Support\Carbon;
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
+use Closure;
 
 class ViewDraftInbound extends ViewRecord
 {
@@ -23,57 +26,101 @@ class ViewDraftInbound extends ViewRecord
             Action::make('submitInbound')
                 ->label('Submit Inbound')
                 ->color('success')
-                ->schema([
-                    DateRangePicker::make('date')
-                        ->displayFormat('YYYY-MM-DD')
-                        ->disableRanges()
-                            // ->firstDayOfWeek(0)
-                        ->minDate(Carbon::now()->addDays(2))
-                        ->maxDate(Carbon::now()->addMonth())
-                        ->autoApply()
-                        ->alwaysShowCalendar()
-                        ->live()
-                        ->singleCalendar()
-                        ->required(),
-                    Select::make('time_slot')
-                        ->label('Select Time Slot')
-                        ->disabled(fn (Get $get): bool => ! filled($get(path: 'date')))
-                        ->options(
-                            function (Get $get) {
-                                if (!$get('date')) {
-                                    return [];
-                                }
-                               
-                                $date = $get('date');
-                                $sapService = new SapService();
-                                $usedSlots = $sapService->getDeliverySlotsReservedCounts($date);
+                ->steps([
+                    Step::make('Upload ATTP file')
+                        ->description('Upload ATTP file')
+                        ->schema([
+                            FileUpload::make('csv_file')
+                            // ->dehydrated(true)
+                            ->label('Upload CSV File')
+                            ->acceptedFileTypes(['text/csv', 'application/csv'])
+                            ->maxSize(5120)
+                            ->required()
+                            ->rules([
+                                fn (): Closure => function (string $attribute, $value, Closure $fail) {
+                                    // if ($value === 'foo') {
+                                    //     $fail('The :attribute is invalid.');
+                                    // }
+                                    $filePath = $value->getPathname();
+                                    
+                                    if (file_exists($filePath)) {
+                                        $processor = new CsvInboundProcessor();
+                                        $results = $processor->processFile($filePath);
+                                        // dd($results);
+                                    }
+                                    $attpGtins = $this->record->materials()->where('attp_required', 'ZT')->pluck('gtin_code')->toArray();
+                                    $missingGtins = [];
+                                    foreach($attpGtins as $gtin) {                                    
+                                        if(!in_array(substr($gtin, 0, -1), $results)) {
+                                            $missingGtins[] = substr($gtin, 0, -1);
+                                        }
+                                    }
+                                    if(count($missingGtins) > 0) {
+                                        $fail('ATTP file missing Gtins: ' . implode(', ', $missingGtins));
+                                    } else {
+                                        $sapService = new SapService;
+                                        $sapService->uploadAttpFile($filePath);
+                                    }
+                                },
+                            ])
+                            ->columnSpanFull(),
 
-                                $day = strtolower(Carbon::parse($date)->format('D'));
-
-                                $workingHours = WorkingHours::where('day', $day)->get();
-
-                                if (!$workingHours) {
-                                    return [];
-                                }
-                                $slots = [];
-                                foreach ($workingHours as $hours) {
-                                    $start = Carbon::parse($hours->start);
-                                    $end = Carbon::parse($hours->end);
-                                    while ($start < $end) {
-                                        $hourKey = $start->format('H');
-                                        $label = $start->format('h:i A');
-                                        if (!isset($usedSlots[$hourKey]) || $usedSlots[$hourKey] < $hours->quantity) {
-                                            $slots[$hourKey] = $label;
+                        ]),
+                    Step::make('Receiving Details')
+                        ->description('Choose receive date and time')
+                        ->schema([
+                            DateRangePicker::make('date')
+                                ->displayFormat('YYYY-MM-DD')
+                                ->disableRanges()
+                                // ->firstDayOfWeek(0)
+                                ->minDate(Carbon::now()->addDays(2))
+                                ->maxDate(Carbon::now()->addMonth())
+                                ->autoApply()
+                                ->alwaysShowCalendar()
+                                ->live()
+                                ->singleCalendar()
+                                ->required(),
+                            Select::make('time_slot')
+                                ->label('Select Time Slot')
+                                ->disabled(fn (Get $get): bool => ! filled($get(path: 'date')))
+                                ->options(
+                                    function (Get $get) {
+                                        if (! $get('date')) {
+                                            return [];
                                         }
 
-                                        $start->addHour();
+                                        $date = $get('date');
+                                        $sapService = new SapService;
+                                        $usedSlots = $sapService->getDeliverySlotsReservedCounts($date);
+
+                                        $day = strtolower(Carbon::parse($date)->format('D'));
+
+                                        $workingHours = WorkingHours::where('day', $day)->get();
+
+                                        if (! $workingHours) {
+                                            return [];
+                                        }
+                                        $slots = [];
+                                        foreach ($workingHours as $hours) {
+                                            $start = Carbon::parse($hours->start);
+                                            $end = Carbon::parse($hours->end);
+                                            while ($start < $end) {
+                                                $hourKey = $start->format('H');
+                                                $label = $start->format('h:i A');
+                                                if (! isset($usedSlots[$hourKey]) || $usedSlots[$hourKey] < $hours->quantity) {
+                                                    $slots[$hourKey] = $label;
+                                                }
+
+                                                $start->addHour();
+                                            }
+                                        }
+
+                                        return $slots;
                                     }
-                                }
-                                return $slots;
-                            }
-                        )
-                        ->live()
-                        ->required(),
+                                )
+                                ->live()
+                                ->required(),
+                        ]),
                 ])
                 ->action(function (array $data) {
                     $date = $data['date'];

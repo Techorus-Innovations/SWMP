@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use Carbon\CarbonInterval;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Carbon;
@@ -12,6 +14,7 @@ class SapService
 {
     public function __construct(
         private string $baseUrl = '',
+        private string $attpUrl = '',
         private string $username = '',
         private string $password = '',
         private string $client = '',
@@ -22,6 +25,7 @@ class SapService
         $this->password = (string) config('services.sap.password');
         $this->client = (string) config('services.sap.client');
         $this->verify = (bool) config('services.sap.ssl_verify');
+        $this->attpUrl = (string) config('services.sap.attp_url');
     }
 
 
@@ -35,6 +39,22 @@ class SapService
             ])
             ->get($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_ODATA_MATERIAL_SRV/ZC_MATERIAL');
 
+        if ($response->successful()) {
+            $token = $response->headers()["x-csrf-token"][0];
+            return [
+                "token" => $token,
+                "headers" => $response->headers()
+            ];
+        }
+    }
+
+    public function getAttpCsrfToken(): ?array
+    {
+        $response = Http::withBasicAuth($this->username, $this->password)
+            ->withOptions(['verify' => $this->verify])
+            ->withHeaders(['x-csrf-token' => 'fetch'])
+            ->get($this->attpUrl . '/sap/opu/odata/sap/ZAATP_FILE_SRV');
+        dd($response);
         if ($response->successful()) {
             $token = $response->headers()["x-csrf-token"][0];
             return [
@@ -98,6 +118,7 @@ class SapService
                     'material_group_code' => $item['matgroup'],
                     'material_group_name' => $item['MATGROUPDES'],
                     'material_GTIN_code' => $item['mat_GTIN_code'],
+                    'attp_required' => $item['ATTP_REQ'],
 
                     'plants' => collect($item['to_mplant']['results'] ?? [])->map(function ($plant) {
                         return [
@@ -364,13 +385,15 @@ class SapService
         if ($response->successful()) {
             $data = $response->json();
 
-            // dd($data);
+            // dd($data);      
             $inboundRequests = collect($data['d']['results'])->map(function ($request) {
 
                 return [
                     'inbound_request_id' => $request['Inbound_request'],
                     'created_date' => $this->parseSapDate($request['Created_on']),
                     'shipping_indicator' => $request['ship_indicator'],
+                    'delivery_time' => $this->parseSapTime($request['delivery_time']),
+                    'delivery_date' => $this->parseSapDate($request['delivery_date']),
 
                     'items' => collect($request['to_VBAP']['results'] ?? [])->map(function ($item) {
                         return [
@@ -415,6 +438,8 @@ class SapService
                     'inbound_request_id' => $request['Inbound_request'],
                     'created_date' => $this->parseSapDate($request['Created_on']),
                     'shipping_indicator' => $request['ship_indicator'],
+                    'delivery_time' => $this->parseSapTime($request['delivery_time']),
+                    'delivery_date' => $this->parseSapDate($request['delivery_date']),
 
                     'items' => collect($request['to_VBAP']['results'] ?? [])->map(function ($item) {
                         return [
@@ -578,6 +603,10 @@ class SapService
         return null;
     }
 
+    private function parseSapTime($sapDuration) {
+        return Carbon::createFromFormat('H', substr($sapDuration, 2, 2))->format('h A');
+    }
+
     public function uploadFile($slug, $filePath)
     {
         $fileContent = \Illuminate\Support\Facades\Storage::disk('private')->get($filePath);
@@ -604,6 +633,35 @@ class SapService
             ->withBody($fileContent, 'application/octet-stream')
             ->post($this->baseUrl . '/sap/opu/odata/SAP/ZTEST_SEND_FILES_SRV/FileSet');
 
+        return $response->json();
+    }
+
+    public function uploadAttpFile($filePath)
+    {
+        $fileContent = File::get($filePath);
+        if (!$fileContent) {
+            return null;
+        }
+
+        $tokenResponse = $this->getAttpCsrfToken();
+        $csrfToken = $tokenResponse['token'];
+        $cookies = $tokenResponse['headers']['set-cookie'];
+
+        $response = Http::withBasicAuth($this->username, $this->password)
+            ->withOptions([
+                'verify' => $this->verify
+            ])
+            ->withHeaders([
+                'x-csrf-token' => $csrfToken,
+                'Accept' => 'application/json',
+                'SLUG' => (string) Carbon::now(),
+                'Content-Type' => 'application/octet-stream',
+                'Cookie' => $cookies
+            ])
+            ->withQueryParameters(['sap-client' => $this->client])
+            ->withBody($fileContent, 'application/octet-stream')
+            ->post($this->attpUrl . '/sap/opu/odata/sap/ZAATP_FILE_SRV/FileSet');
+            dd($response->json());
         return $response->json();
     }
 }
