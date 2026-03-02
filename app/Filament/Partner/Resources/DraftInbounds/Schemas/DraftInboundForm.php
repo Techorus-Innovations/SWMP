@@ -12,7 +12,7 @@ use Filament\Schemas\Schema;
 class DraftInboundForm
 {
     public static function getContractObject(Schema $schema, $sapService) {
-        if($schema->getOperation() === 'edit') {
+        if($schema->getOperation() === 'edit' || $schema->getOperation() === 'view') {
             return TextInput::make('contract_id')
                 ->label('Contract ID')
                 ->hiddenOn('create')
@@ -34,7 +34,7 @@ class DraftInboundForm
     public static function configure(Schema $schema): Schema
     {
         $sapService = new SapService();
-        $areas = '';
+        // $areas = ['1002'];
         if($schema->getOperation() === 'edit' && $schema->getLivewire()->record->contract_id != null) {
             $selectedContract = $sapService->getContractById(filament()->auth()->user()->businessPartner->bp_code, $schema->getLivewire()->record->contract_id);
             $areas = collect($selectedContract['areas'])->pluck('area_code')->unique();
@@ -69,6 +69,8 @@ class DraftInboundForm
                         ->required()
                         ->minValue(1),
                 ])
+                ->reorderable(false)
+                ->columns(2)
                 ->defaultItems(0)
                 ->addActionLabel('Add Material')
                 ->columnSpanFull()

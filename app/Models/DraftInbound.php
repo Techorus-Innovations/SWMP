@@ -15,6 +15,13 @@ class DraftInbound extends Model
 
     public function materials()
     {
-        return $this->belongsToMany(Material::class, 'draft_inbound_material');
+        return $this->belongsToMany(Material::class, 'draft_inbound_material')->withPivot('quantity');
+    }
+
+    public function getMaterialCodesWithQuantity() {
+        return $this->materials->mapWithKeys(function ($material) {
+            return [(String) $material->code => $material->pivot->quantity];
+        })->toArray();
+        
     }
 }

@@ -5,6 +5,7 @@ namespace App\Filament\Partner\Resources\DraftInbounds;
 use App\Filament\Partner\Resources\DraftInbounds\Pages\CreateDraftInbound;
 use App\Filament\Partner\Resources\DraftInbounds\Pages\EditDraftInbound;
 use App\Filament\Partner\Resources\DraftInbounds\Pages\ListDraftInbounds;
+use App\Filament\Partner\Resources\DraftInbounds\Pages\ViewDraftInbound;
 use App\Filament\Partner\Resources\DraftInbounds\Schemas\DraftInboundForm;
 use App\Filament\Partner\Resources\DraftInbounds\Tables\DraftInboundsTable;
 use App\Models\DraftInbound;
@@ -50,6 +51,7 @@ class DraftInboundResource extends Resource
             'index'  => ListDraftInbounds::route('/'),
             'create' => CreateDraftInbound::route('/create'),
             'edit'   => EditDraftInbound::route('/{record}/edit'),
+            'view'   => ViewDraftInbound::route('/{record}'),
         ];
     }
 }

@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('draft_inbound_material', function (Blueprint $table) {
             $table->foreignId('draft_inbound_id')->constrained('draft_inbounds')->cascadeOnDelete();
             $table->foreignId('material_id')->constrained('materials')->cascadeOnDelete();
+            $table->unsignedInteger('quantity');
             $table->primary(['draft_inbound_id', 'material_id']);
         });
     }
