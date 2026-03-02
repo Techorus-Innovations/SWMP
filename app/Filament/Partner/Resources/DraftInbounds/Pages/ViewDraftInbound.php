@@ -3,16 +3,13 @@
 namespace App\Filament\Partner\Resources\DraftInbounds\Pages;
 
 use App\Filament\Partner\Resources\DraftInbounds\DraftInboundResource;
+use App\Models\WorkingHours;
 use App\Services\SapService;
-use DateTime;
+use DB;
 use Filament\Actions\Action;
-use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\Select;
-use Filament\Resources\Pages\EditRecord;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Schema;
-use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Carbon;
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 
@@ -28,36 +25,56 @@ class ViewDraftInbound extends ViewRecord
                 ->color('success')
                 ->schema([
                     DateRangePicker::make('date')
-                            ->displayFormat('YYYY-MM-DD')
-                            ->disableRanges()
+                        ->displayFormat('YYYY-MM-DD')
+                        ->disableRanges()
                             // ->firstDayOfWeek(0)
-                            ->minDate(Carbon::now()->addDays(2))
-                            ->maxDate(Carbon::now()->addMonth())
-                            ->autoApply()
-                            ->alwaysShowCalendar()
-                            ->live()
-                            ->singleCalendar()
-                            ->required(),
+                        ->minDate(Carbon::now()->addDays(2))
+                        ->maxDate(Carbon::now()->addMonth())
+                        ->autoApply()
+                        ->alwaysShowCalendar()
+                        ->live()
+                        ->singleCalendar()
+                        ->required(),
                     Select::make('time_slot')
-                            ->label('Select Time Slot')
-                            ->disabled(fn (Get $get) : bool => ! filled($get(path:'date')))
-                            ->options([
-                                '08' => '08:00 AM',
-                                '09' => '09:00 AM',
-                                '10' => '10:00 AM',
-                                '11' => '11:00 AM',
-                                '12' => '12:00 PM',
-                                '13' => '01:00 PM',
-                                '14' => '02:00 PM',
-                                '15' => '03:00 PM',
-                                '16' => '04:00 PM',
-                                '17' => '05:00 PM',
-                                '18' => '06:00 PM',
-                                '19' => '07:00 PM',
-                                '20' => '08:00 PM',
-                            ])
-                            ->required(),
-                    ])
+                        ->label('Select Time Slot')
+                        ->disabled(fn (Get $get): bool => ! filled($get(path: 'date')))
+                        ->options(
+                            function (Get $get) {
+                                if (!$get('date')) {
+                                    return [];
+                                }
+                               
+                                $date = $get('date');
+                                $sapService = new SapService();
+                                $usedSlots = $sapService->getDeliverySlotsReservedCounts($date);
+
+                                $day = strtolower(Carbon::parse($date)->format('D'));
+
+                                $workingHours = WorkingHours::where('day', $day)->get();
+
+                                if (!$workingHours) {
+                                    return [];
+                                }
+                                $slots = [];
+                                foreach ($workingHours as $hours) {
+                                    $start = Carbon::parse($hours->start);
+                                    $end = Carbon::parse($hours->end);
+                                    while ($start < $end) {
+                                        $hourKey = $start->format('H');
+                                        $label = $start->format('h:i A');
+                                        if (!isset($usedSlots[$hourKey]) || $usedSlots[$hourKey] < $hours->quantity) {
+                                            $slots[$hourKey] = $label;
+                                        }
+
+                                        $start->addHour();
+                                    }
+                                }
+                                return $slots;
+                            }
+                        )
+                        ->live()
+                        ->required(),
+                ])
                 ->action(function (array $data) {
                     $date = $data['date'];
                     $time = $data['time_slot'];
@@ -65,7 +82,7 @@ class ViewDraftInbound extends ViewRecord
                     $contractId = $this->record->contract_id;
                     $materialCodesWithQuantity = $this->record->getMaterialCodesWithQuantity();
                     // dd($materialCodesWithQuantity);
-                    $sapService = new SapService();
+                    $sapService = new SapService;
                     $sapService->createInbound($bpcode, $contractId, $materialCodesWithQuantity, $date, $time);
                 }),
         ];

@@ -58,21 +58,10 @@ class SapService
 
         if ($response->successful()) {
             $data = $response->json('d.results');
-
-            $slots = collect($data)->map(function ($slot) {
-                // Get the first plant from the results array (if exists)
-                // $plant = $item['to_mplant']['results'][0] ?? null;
-
-                // // Get the first location from the plant's nested results (if exists)
-                // $location = $plant['to_mlocation']['results'][0] ?? null;
-
-                return [
-                    'hour'=>$slot['delivery_hour'] ,
-                    'count'=> $slot['delivery_count']
-                ];
-                    
-                    })->all();
-                
+            
+            $slots = collect($data)
+                ->pluck('delivery_count', 'delivery_hour')
+                ->toArray();
             
             return $slots;
         }
