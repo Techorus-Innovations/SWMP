@@ -104,6 +104,7 @@ class SyncMaterialsCommand extends Command
                 'material_type_id' => $materialType->id,
                 'material_group_id' => $materialGroup->id,
                 'sync_at' => $syncTime,
+                'attp_required' => $materialData['attp_required']
             ]
         );
 
