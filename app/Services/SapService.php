@@ -503,7 +503,7 @@ class SapService
                 [
                     "SoNumber" => $contractCode,
                     "ITEM" => $formatted,
-                    "Materia" => $material,
+                    "Materia" => (string) $material,
                     "ReqQty" => (string) $quantity
                 ]
             );
