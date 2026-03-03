@@ -31,6 +31,11 @@ class InboundDetails extends Page implements HasTable
 
     private ?array $response = null;
 
+    public static function canAccess(): bool
+    {
+        return filament()->auth()->user()->canViewInbounds();
+    }
+
     public function boot(): void
     {
         $this->sapService = new SapService;

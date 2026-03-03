@@ -21,6 +21,11 @@ class UserResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    public static function canAccess(): bool
+    {
+        return filament()->auth()->user()->canManageUsers();
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $businessPartnerId = auth()->user()?->business_partner_id;

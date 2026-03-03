@@ -25,6 +25,11 @@ class DraftInboundResource extends Resource
 
     protected static ?string $navigationLabel = 'Draft Inbounds';
 
+    public static function canAccess(): bool
+    {
+        return filament()->auth()->user()->canCreateInbounds();
+    }
+
     public static function getNavigationBadge(): ?string
     {
         return (string) DraftInbound::where('user_id', auth()->id())->count() ?: 0;

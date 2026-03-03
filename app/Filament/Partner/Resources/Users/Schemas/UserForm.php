@@ -25,7 +25,13 @@ class UserForm
                     ->password()
                     ->required(fn (string $operation) => $operation === 'create')
                     ->dehydrateStateUsing(fn ($state) => filled($state) ? bcrypt($state) : null)
-                    ->dehydrated(fn ($state) => filled($state))
+                    ->dehydrated(fn ($state) => filled($state)),
+                Select::make('partnerRoles')
+                    ->label('Roles')
+                    ->relationship('partnerRoles', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable()
             ]);
     }
 }

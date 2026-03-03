@@ -25,6 +25,11 @@ class MyInbounds extends Page implements HasTable
 
     protected $sapService;
 
+    public static function canAccess(): bool
+    {
+        return filament()->auth()->user()->canViewInbounds();
+    }
+
     public function boot(): void
     {
         $this->sapService = new SapService;

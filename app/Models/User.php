@@ -83,4 +83,44 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     {
         return $this->belongsToMany(PartnerRole::class);
     }
+
+    public function canCreateInbounds(): bool
+    {
+        return $this->partnerRoles()->where('name', 'create_inbounds')->exists();
+    }
+
+    public function canViewInbounds(): bool
+    {
+        return $this->partnerRoles()->where('name', 'view_inbounds')->exists();
+    }
+
+    public function canCancelInbounds(): bool
+    {
+        return $this->partnerRoles()->where('name', 'cancel_inbounds')->exists();
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->partnerRoles()->where('name', 'manage_users')->exists();
+    }
+
+    public function canViewStock(): bool
+    {
+        return $this->partnerRoles()->where('name', 'view_stock')->exists();
+    }
+
+    public function canCreateOutbounds(): bool
+    {
+        return $this->partnerRoles()->where('name', 'create_outbounds')->exists();
+    }
+
+    public function canViewOutbounds(): bool
+    {
+        return $this->partnerRoles()->where('name', 'view_outbounds')->exists();
+    }
+
+    public function canCancelOutbounds(): bool
+    {
+        return $this->partnerRoles()->where('name', 'cancel_outbounds')->exists();
+    }
 }

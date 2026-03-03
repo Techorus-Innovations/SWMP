@@ -36,6 +36,11 @@ class StockDetails extends Page implements HasTable
     private ?Material $material = null;
     private ?int $totalInboundQuantity = null;
 
+    public static function canAccess(): bool
+    {
+        return filament()->auth()->user()->canViewStock();
+    }
+
     public function boot(): void
     {
         $this->sapService = new SapService;

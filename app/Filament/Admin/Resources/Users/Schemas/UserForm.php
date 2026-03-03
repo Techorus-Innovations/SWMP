@@ -37,6 +37,12 @@ class UserForm
                     ->options(collect(UserTypeEnum::cases())->mapWithKeys(fn (UserTypeEnum $case) => [$case->value => $case->label()]))
                     ->required()
                     ->disabled(fn (string $operation) => $operation === 'edit'),
+                Select::make('partnerRoles')
+                    ->label('Roles')
+                    ->relationship('partnerRoles', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable(),
             ]);
     }
 }
