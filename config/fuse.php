@@ -55,8 +55,8 @@ return [
         // ],
         'sap' => [
             'threshold' => 50,
-            'timeout' => 10,
-            'min_requests' => 1,
+            'timeout' => 60,
+            'min_requests' => 10,
         ],
     ],
 

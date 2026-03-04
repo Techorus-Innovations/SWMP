@@ -12,6 +12,9 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Schema;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
@@ -31,6 +34,7 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        FilamentView::registerRenderHook(PanelsRenderHook::BODY_START, fn (): View => view('filament.components.service-down-banner'));
         return $panel
             ->default()
             ->id('admin')
