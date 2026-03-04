@@ -3,12 +3,15 @@
 namespace App\Filament\Partner\Resources\DraftInbounds\Pages;
 
 use App\Filament\Partner\Resources\DraftInbounds\DraftInboundResource;
+use App\Models\DraftInbound;
+use App\Models\InboundAttp;
 use App\Models\WorkingHours;
 use App\Services\CsvInboundProcessor;
 use App\Services\SapService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Wizard\Step;
@@ -35,45 +38,6 @@ class ViewDraftInbound extends ViewRecord
                 ->disabled(fn (): bool => $this->circuitBreaker->isOpen())
                 ->tooltip(fn () => $this->circuitBreaker->isOpen() ? 'External service is currently unavailable' : null)
                 ->steps([
-                    Step::make('Upload ATTP file')
-                        ->description('Upload ATTP file')
-                        ->schema([
-                            FileUpload::make('csv_file')
-                            // ->dehydrated(true)
-                            ->label('Upload CSV File')
-                            ->acceptedFileTypes(['text/csv', 'application/csv'])
-                            ->maxSize(5120)
-                            ->required()
-                            ->rules([
-                                fn (): Closure => function (string $attribute, $value, Closure $fail) {
-                                    // if ($value === 'foo') {
-                                    //     $fail('The :attribute is invalid.');
-                                    // }
-                                    $filePath = $value->getPathname();
-                                    
-                                    if (file_exists($filePath)) {
-                                        $processor = new CsvInboundProcessor();
-                                        $results = $processor->processFile($filePath);
-                                        // dd($results);
-                                    }
-                                    $attpGtins = $this->record->materials()->where('attp_required', 'ZT')->pluck('gtin_code')->toArray();
-                                    $missingGtins = [];
-                                    foreach($attpGtins as $gtin) {                                    
-                                        if(!in_array(substr($gtin, 0, -1), $results)) {
-                                            $missingGtins[] = substr($gtin, 0, -1);
-                                        }
-                                    }
-                                    if(count($missingGtins) > 0) {
-                                        $fail('ATTP file missing Gtins: ' . implode(', ', $missingGtins));
-                                    } else {
-                                        $sapService = new SapService;
-                                        $sapService->uploadAttpFile($filePath);
-                                    }
-                                },
-                            ])
-                            ->columnSpanFull(),
-
-                        ]),
                     Step::make('Receiving Details')
                         ->description('Choose receive date and time')
                         ->schema([
@@ -129,6 +93,43 @@ class ViewDraftInbound extends ViewRecord
                                 ->live()
                                 ->required(),
                         ]),
+                    Step::make('Upload ATTP file')
+                        ->description('Upload ATTP file')
+                        ->schema([
+                            FileUpload::make('csv_file')
+                            // ->dehydrated(true)
+                            ->label('Upload CSV File')
+                            ->acceptedFileTypes(['text/csv', 'application/csv'])
+                            ->maxSize(5120)
+                            ->required()
+                            ->rules([
+                                fn (): Closure => function (string $attribute, $value, Closure $fail) {
+                                    $filePath = $value->getPathname();
+                                    
+                                    if (file_exists($filePath)) {
+                                        $processor = new CsvInboundProcessor();
+                                        $results = $processor->processFile($filePath);
+                                        // dd($results);
+                                    }
+                                    $attpGtins = $this->record->materials()->where('attp_required', 'ZT')->pluck('gtin_code')->toArray();
+                                    $missingGtins = [];
+                                    foreach($attpGtins as $gtin) {                                    
+                                        if(!in_array(substr($gtin, 0, -1), $results)) {
+                                            $missingGtins[] = substr($gtin, 0, -1);
+                                        }
+                                    }
+                                    if(count($missingGtins) > 0) {
+                                        $fail('ATTP file missing Gtins: ' . implode(', ', $missingGtins));
+                                    } else {
+                                       
+                                        $sapService = new SapService;
+                                        $sapService->uploadAttpFile($filePath);
+                                    }
+                                },
+                            ])
+                            ->columnSpanFull(),
+
+                        ]),
                 ])
                 ->action(function (array $data) {
                     $date = $data['date'];
@@ -136,9 +137,25 @@ class ViewDraftInbound extends ViewRecord
                     $bpcode = filament()->auth()->user()->businessPartner->bp_code;
                     $contractId = $this->record->contract_id;
                     $materialCodesWithQuantity = $this->record->getMaterialCodesWithQuantity();
+
                     // dd($materialCodesWithQuantity);
                     $sapService = new SapService;
-                    $sapService->createInbound($bpcode, $contractId, $materialCodesWithQuantity, $date, $time);
+                    $response = $sapService->createInbound($bpcode, $contractId, $materialCodesWithQuantity, $date, $time);
+                    preg_match('/Inbound Request(\d+)/', $response['d']['Message'], $matches);
+                    $requestNumber = $matches[1] ?? null;
+                    if($requestNumber != null) {
+                        InboundAttp::create([
+                            "inbound_number" => $requestNumber,
+                            "attp_file" => $data['csv_file']
+                        ]);
+                    }
+                    DraftInbound::where('id', $this->record->id)->delete();
+                    Notification::make()
+                        ->title('Success')
+                        ->body('Inbound created successfully with id: ' . $requestNumber . '.')
+                        ->success()
+                        ->send();
+                    redirect()->route('filament.partner.pages.my-inbounds');
                 }),
         ];
     }

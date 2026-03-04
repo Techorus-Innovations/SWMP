@@ -578,7 +578,6 @@ class SapService
                 'sap-client' => $this->client,
             ])
             ->post($this->baseUrl.'/sap/opu/odata/SAP/ZPRJ_INB_REQQ_SRV/soheaderSet', $data);
-        dd($response->json());
 
         return $response->json();
 
