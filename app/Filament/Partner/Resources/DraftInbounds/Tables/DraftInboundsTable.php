@@ -6,11 +6,13 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Harris21\Fuse\CircuitBreaker;
 
 class DraftInboundsTable
 {
     public static function configure(Table $table): Table
     {
+        $circuitBreaker = new CircuitBreaker('sap');
         return $table
             ->modifyQueryUsing(fn ($query) => $query->where('user_id', auth()->id()))
             ->columns([
@@ -33,8 +35,12 @@ class DraftInboundsTable
                     ->sortable(),
             ])
             ->actions([
-                ViewAction::make(),
-                EditAction::make(),
+                ViewAction::make()
+                    ->disabled(fn() => $circuitBreaker->isOpen())
+                    ->tooltip(fn () => $circuitBreaker->isOpen() ? 'External service is currently unavailable' : null),
+                EditAction::make()
+                    ->disabled(fn() => $circuitBreaker->isOpen())
+                    ->tooltip(fn () => $circuitBreaker->isOpen() ? 'External service is currently unavailable' : null),
             ])
             ->defaultSort('created_at', 'desc');
     }

@@ -12,6 +12,7 @@ use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Wizard\Step;
+use Harris21\Fuse\CircuitBreaker;
 use Illuminate\Support\Carbon;
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 use Closure;
@@ -19,6 +20,11 @@ use Closure;
 class ViewDraftInbound extends ViewRecord
 {
     protected static string $resource = DraftInboundResource::class;
+    private $circuitBreaker;
+
+    public function __construct() {
+        $this->circuitBreaker = new CircuitBreaker('sap');
+    }
 
     protected function getHeaderActions(): array
     {
@@ -26,6 +32,8 @@ class ViewDraftInbound extends ViewRecord
             Action::make('submitInbound')
                 ->label('Submit Inbound')
                 ->color('success')
+                ->disabled(fn (): bool => $this->circuitBreaker->isOpen())
+                ->tooltip(fn () => $this->circuitBreaker->isOpen() ? 'External service is currently unavailable' : null)
                 ->steps([
                     Step::make('Upload ATTP file')
                         ->description('Upload ATTP file')

@@ -34,7 +34,7 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        FilamentView::registerRenderHook(PanelsRenderHook::BODY_START, fn (): View => view('filament.components.service-down-banner'));
+        // FilamentView::registerRenderHook(PanelsRenderHook::BODY_START, fn (): View => view('filament.components.service-down-banner'));
         return $panel
             ->default()
             ->id('admin')
