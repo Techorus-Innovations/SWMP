@@ -60,3 +60,11 @@ Route::get('/t', function () {
 
 
 });
+
+
+
+Route::get('/test8', function () {
+    $sapService=new SapService();
+    $RequestDetails = $sapService->CancelInboundRequest(1010000947);
+    return $RequestDetails;
+});

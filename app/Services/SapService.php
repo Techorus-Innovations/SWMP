@@ -76,7 +76,7 @@ class SapService
         return $this->execute(function () {
             $response = $this->getClient()
                 ->withHeaders(['x-csrf-token' => 'fetch'])
-                ->get($this->baseUrl.'/sap/opu/odata/SAP/ZPRJ_ODATA_MATERIAL_SRV/ZC_MATERIAL');
+                ->get($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_ODATA_MATERIAL_SRV/ZC_MATERIAL');
 
             if ($response->successful()) {
                 $token = $response->headers()['x-csrf-token'][0];
@@ -93,7 +93,7 @@ class SapService
     {
         $response = $this->getClient()
             ->withHeaders(['x-csrf-token' => 'fetch'])
-            ->get($this->attpUrl.'/sap/opu/odata/sap/ZAATP_FILE_SRV');
+            ->get($this->attpUrl . '/sap/opu/odata/sap/ZAATP_FILE_SRV');
         dd($response);
         if ($response->successful()) {
             $token = $response->headers()['x-csrf-token'][0];
@@ -109,7 +109,7 @@ class SapService
     {
         return $this->execute(function () use ($date) {
             $response = $this->getClient()
-                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_TIME_SRV/ZC_TIME(D_Date=datetime'".$date."T00:00:00')/Set");
+                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_TIME_SRV/ZC_TIME(D_Date=datetime'" . $date . "T00:00:00')/Set");
             // dd($response->json());
 
             if ($response->successful()) {
@@ -128,7 +128,7 @@ class SapService
     {
         return $this->execute(function () {
             $response = $this->getClient()
-                ->get($this->baseUrl.'/sap/opu/odata/SAP/ZPRJ_ODATA_MATERIAL_SRV/ZC_MATERIAL', [
+                ->get($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_ODATA_MATERIAL_SRV/ZC_MATERIAL', [
                     '$expand' => 'to_mplant/to_mlocation',
 
                 ]);
@@ -230,7 +230,7 @@ class SapService
             $filter = $state == 'active' ? 'ge' : 'le';
             $now = Carbon::now()->format('Y-m-d\TH:i:s');
             $response = $this->getClient()
-                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set", [
+                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set", [
                     '$expand' => 'to_VP',
                     '$inlinecount' => 'allpages',
                     '$orderby' => 'CONTRACT_END asc',
@@ -274,7 +274,7 @@ class SapService
     {
         return $this->execute(function () use ($businessPartnerCode, $contractId) {
             $response = $this->getClient()
-                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set", [
+                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set", [
                     '$expand' => 'to_VP',
                     '$filter' => "Contract eq '$contractId'",
                 ]);
@@ -313,7 +313,7 @@ class SapService
     {
         return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
             $response = $this->getClient()
-                ->get($this->baseUrl.'/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
+                ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
                     '$expand' => 'to_Inbounds',
                     '$inlinecount' => 'allpages',
                     '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne ''",
@@ -354,7 +354,7 @@ class SapService
     {
         return $this->execute(function () use ($businessPartnerCode, $materialCode, $warehouseCode) {
             $response = $this->getClient()
-                ->get($this->baseUrl.'/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
+                ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
                     '$expand' => 'to_Inbounds',
                     '$inlinecount' => 'allpages',
                     '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne '' and Material eq '$materialCode' and Plant eq '$warehouseCode'",
@@ -391,7 +391,7 @@ class SapService
     {
         return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
             $response = $this->getClient()
-                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set", [
+                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set", [
                     '$expand' => 'to_VBAP',
                     '$inlinecount' => 'allpages',
                     '$orderby' => 'Created_on desc',
@@ -437,7 +437,7 @@ class SapService
     {
         return $this->execute(function () use ($businessPartnerCode, $inboundRequestCode) {
             $response = $this->getClient()
-                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set", [
+                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set", [
                     '$expand' => 'to_VBAP',
                     '$filter' => "Inbound_request eq '{$inboundRequestCode}'",
                 ]);
@@ -468,6 +468,214 @@ class SapService
             }
             return $response;
         });
+
+    }
+
+    public function CancelInboundRequest($inboundRequestCode)
+    {
+        $inboundRequest = $this->getInboundRequestDetails($inboundRequestCode);
+        if ($inboundRequest) {
+            $inboundDeliveryCode = $inboundRequest['inbound_delivery'];
+            $inboundPo = $inboundRequest['po_number'];
+
+            $deliveryItems = $this->getInboundDeliveryItems($inboundDeliveryCode);
+            // dd($inboundDeliveryCode,  $deliveryItems);
+
+            foreach ($deliveryItems as $item) {
+
+                $etag = "*";// $item['etag'];
+                $itemCode = $item['item_code'];
+                $DeliveryItemCancelationStatus = $this->CancelInboundDeliveryItems($inboundDeliveryCode, $itemCode, $etag);
+                if (!$DeliveryItemCancelationStatus) {
+                    return false;
+                }
+            }
+
+            $PoCancelationStatus = $this->CancelPo($inboundPo);
+            if (!$PoCancelationStatus) {
+                return false;
+            }
+            $SalesOrderItems = $this->getSalesOrderItems($inboundRequestCode);
+            // dd($SalesOrderItems);
+            foreach ($SalesOrderItems as $item) {
+
+                $etag = "*";//$item['etag'];
+                $itemCode = $item['sales_order_item'];
+                $SalesOrderItemCancelationStatus = $this->CancelSalesOrderItems($inboundRequestCode, $itemCode, $etag);
+                if ($SalesOrderItemCancelationStatus != "true") {
+                    return false;
+                    return $SalesOrderItemCancelationStatus;
+                }
+            }
+            return true;
+
+        }
+    }
+
+    public function getInboundRequestDetails($inboundRequestCode)
+    {
+        return $this->execute(function () use ($inboundRequestCode) {
+            $response = $this->getClient()
+                ->get($this->baseUrl . "/sap/opu/odata/sap/ZPRJ_GET_INB_PO_SO_SRV/ZI_LIPS", [
+                    '$filter' => "inbound_request eq '{$inboundRequestCode}'",
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+
+                $inboundRequests = collect($data['d']['results'])->map(function ($request) {
+                    return [
+                        'inbound_delivery' => $request['inbound_delivery'],
+                        'po_number' => $request['po_number'],
+                    ];
+                })->all();
+
+                return $inboundRequests[0];
+            }
+            return false;
+        });
+    }
+
+    public function getInboundDeliveryItems($inboundDeliveryCode)
+    {
+        return $this->execute(function () use ($inboundDeliveryCode) {
+            $response = $this->getClient()
+                ->get($this->baseUrl . "/sap/opu/odata4/sap/api_whse_inb_delivery_2/srvd_a2x/sap/warehouseinbounddelivery/0001/WhseInboundDeliveryHead(EWMInboundDelivery='$inboundDeliveryCode')", [
+                    '$expand' => "_WhseInbDeliveryItem",
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                // dd($data);
+                $deliveryItems = collect($data['_WhseInbDeliveryItem'])->map(function ($request) {
+                    return [
+                        'etag' => $request['@odata.etag'],
+                        'goods_receipt_status' => $request['GoodsReceiptStatus'],
+                        'item_code' => $request['EWMInboundDeliveryItem'],
+                    ];
+                });
+
+                return $deliveryItems->where('goods_receipt_status', '1');
+                // return $inboundRequests[0];
+            }
+        });
+    }
+
+
+    public function getSalesOrderItems($inboundRequestCode)
+    {
+        return $this->execute(function () use ($inboundRequestCode) {
+            $response = $this->getClient()
+                ->get($this->baseUrl . "/sap/opu/odata4/sap/api_salesorder/srvd_a2x/sap/salesorder/0001/SalesOrder('$inboundRequestCode')", [
+                    '$expand' => "_Item",
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                // dd($data);
+                $SalesOrderItems = collect($data['_Item'])->map(function ($request) {
+                    return [
+                        'etag' => $request['@odata.etag'],
+                        'sales_order_item' => $request['SalesOrderItem'],
+                        'status' => $request['SDProcessStatus']
+                    ];
+                });
+
+                return $SalesOrderItems->where('status', 'A');
+                // return $inboundRequests[0];
+            }
+
+            return false;
+        });
+    }
+
+
+    public function CancelSalesOrderItems($inboundRequestCode, $salesOrderItem, $etag)
+    {
+        $data = [
+            "SalesDocumentRjcnReason" => "02"
+        ];
+        $tokenResponse = $this->getCsrfToken();
+        $csrfToken = $tokenResponse['token'];
+        $cookies = $tokenResponse['headers']['set-cookie'];
+
+        $response = $this->getClient()
+            ->withHeaders([
+                'x-csrf-token' => $csrfToken,
+                'Accept' => 'application/json',
+                'Cookie' => $cookies,
+                'if-match' => $etag,
+            ])
+            // ->withHeaders(['X-Requested-With' => 'X', 'Accept' => 'application/json'])
+            ->withQueryParameters([
+                'sap-client' => $this->client,
+            ])
+            ->patch($this->baseUrl . "/sap/opu/odata4/sap/api_salesorder/srvd_a2x/sap/salesorder/0001/SalesOrderItem(SalesOrder='$inboundRequestCode',SalesOrderItem='$salesOrderItem')", $data);
+
+        // return $response->json();
+        // dd($response->json());
+        if ($response->successful()) {
+            return "true";
+        }
+        return $response->json();
+
+    }
+
+
+    public function CancelInboundDeliveryItems($inboundDeliveryCode, $inboundDeliveryItem, $etag)
+    {
+
+        $tokenResponse = $this->getCsrfToken();
+        $csrfToken = $tokenResponse['token'];
+        $cookies = $tokenResponse['headers']['set-cookie'];
+
+        $response = $this->getClient()
+            ->withHeaders([
+                'x-csrf-token' => $csrfToken,
+                'Accept' => 'application/json',
+                'Cookie' => $cookies,
+                'if-match' => $etag,
+            ])
+            // ->withHeaders(['X-Requested-With' => 'X', 'Accept' => 'application/json'])
+            ->withQueryParameters([
+                'sap-client' => $this->client,
+            ])
+            ->post($this->baseUrl . "/sap/opu/odata4/sap/api_whse_inb_delivery_2/srvd_a2x/sap/warehouseinbounddelivery/0001/WhseInboundDeliveryItem(EWMInboundDelivery='$inboundDeliveryCode',EWMInboundDeliveryItem='$inboundDeliveryItem')/SAP__self.AdjustDeliveryItemQuantity");
+
+        // return $response->json();
+
+        if ($response->successful()) {
+            return true;
+        }
+
+    }
+
+
+    public function CancelPo($PoCode)
+    {
+
+        $tokenResponse = $this->getCsrfToken();
+        $csrfToken = $tokenResponse['token'];
+        $cookies = $tokenResponse['headers']['set-cookie'];
+
+        $response = $this->getClient()
+            ->withHeaders([
+                'x-csrf-token' => $csrfToken,
+                'Accept' => 'application/json',
+                'Cookie' => $cookies,
+            ])
+            // ->withHeaders(['X-Requested-With' => 'X', 'Accept' => 'application/json'])
+            ->withQueryParameters([
+                'sap-client' => $this->client,
+            ])
+            ->delete($this->baseUrl . "/sap/opu/odata4/sap/api_purchaseorder_2/srvd_a2x/sap/purchaseorder/0001/PurchaseOrder('$PoCode')");
+
+        // return $response->json();
+
+        if ($response->successful()) {
+            return true;
+        }
+        return false;
 
     }
 
@@ -511,7 +719,7 @@ class SapService
         // dd($data);
         $response = $this->getClient()
             ->withHeaders(['X-Requested-With' => 'X'])
-            ->post($this->baseUrl.'/sap/opu/odata/SAP/ZINT_PORTAL_SRV/PARTNER', $data);
+            ->post($this->baseUrl . '/sap/opu/odata/SAP/ZINT_PORTAL_SRV/PARTNER', $data);
 
         // dd($response->json());
         return $response->json();
@@ -545,7 +753,7 @@ class SapService
 
         $timestampMilliseconds = $timestampSeconds * 1000;
 
-        $sapDateFormat = '/Date('.$timestampMilliseconds.')/';
+        $sapDateFormat = '/Date(' . $timestampMilliseconds . ')/';
 
         $data = [
             'd' => [
@@ -554,7 +762,7 @@ class SapService
                 'ReceivingDate' => $sapDateFormat, // '\/Date(1772150400000)\/',
                 'ShipmentIndicator' => '0',
                 'SoNumber' => $contractCode,
-                'deliverytime' => 'PT'.$hour.'H00M00S',
+                'deliverytime' => 'PT' . $hour . 'H00M00S',
                 'soitemsSet' => [
                     'results' => $results,
                 ],
@@ -577,7 +785,7 @@ class SapService
             ->withQueryParameters([
                 'sap-client' => $this->client,
             ])
-            ->post($this->baseUrl.'/sap/opu/odata/SAP/ZPRJ_INB_REQQ_SRV/soheaderSet', $data);
+            ->post($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_INB_REQQ_SRV/soheaderSet', $data);
 
         return $response->json();
 
@@ -590,7 +798,7 @@ class SapService
 
     private function parseSapDate($sapDate)
     {
-        if (! $sapDate) {
+        if (!$sapDate) {
             return null;
         }
 
@@ -613,7 +821,7 @@ class SapService
     public function uploadFile($slug, $filePath)
     {
         $fileContent = \Illuminate\Support\Facades\Storage::disk('private')->get($filePath);
-        if (! $fileContent) {
+        if (!$fileContent) {
             return null;
         }
 
@@ -634,7 +842,7 @@ class SapService
             ])
             ->withQueryParameters(['sap-client' => $this->client])
             ->withBody($fileContent, 'application/octet-stream')
-            ->post($this->baseUrl.'/sap/opu/odata/SAP/ZTEST_SEND_FILES_SRV/FileSet');
+            ->post($this->baseUrl . '/sap/opu/odata/SAP/ZTEST_SEND_FILES_SRV/FileSet');
 
         return $response->json();
     }
@@ -642,7 +850,7 @@ class SapService
     public function uploadAttpFile($filePath)
     {
         $fileContent = File::get($filePath);
-        if (! $fileContent) {
+        if (!$fileContent) {
             return null;
         }
 
@@ -663,7 +871,7 @@ class SapService
             ])
             ->withQueryParameters(['sap-client' => $this->client])
             ->withBody($fileContent, 'application/octet-stream')
-            ->post($this->attpUrl.'/sap/opu/odata/sap/ZAATP_FILE_SRV/FileSet');
+            ->post($this->attpUrl . '/sap/opu/odata/sap/ZAATP_FILE_SRV/FileSet');
         dd($response->json());
 
         return $response->json();
