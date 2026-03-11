@@ -38,11 +38,18 @@ class UserForm
                     ->required()
                     ->disabled(fn (string $operation) => $operation === 'edit'),
                 Select::make('partnerRoles')
-                    ->label('Roles')
+                    ->label(__('Partner Roles'))
                     ->relationship('partnerRoles', 'name')
                     ->multiple()
                     ->preload()
-                    ->searchable(),
+                    ->searchable()
+                    ->hidden(fn () => filament()->auth()->user()->type !== UserTypeEnum::Admin->value),
+                Select::make('role')
+                    ->label(__('System Role'))
+                    ->relationship('roles', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable()
             ]);
     }
 }
