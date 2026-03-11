@@ -14,12 +14,13 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Jacobtims\FilamentLogger\Resources\ActivityResource;
+use Jacobtims\FilamentLogger\Resources\ActivityResource\Schemas\ActivityInfolist;
 use Jacobtims\FilamentLogger\Resources\ActivityResource\Schemas\CustomActivityInfolist;
 
 class CustomActivityResource extends ActivityResource
 {
     public static function infolist(Schema $schema): Schema
     {
-        return CustomActivityInfolist::configure($schema);
+        return ActivityInfolist::configure($schema);
     }
 }

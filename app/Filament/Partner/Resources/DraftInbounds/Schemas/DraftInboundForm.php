@@ -31,21 +31,13 @@ class DraftInboundForm
         }
     }
 
-    public static function configure(Schema $schema): Schema
-    {
-        $sapService = new SapService();
-        if($schema->getOperation() === 'view' || ($schema->getOperation() === 'edit' && $schema->getLivewire()->record->contract_id != null)) {
+    public static function getMaterialObject(Schema $schema, $sapService) {
+        if($schema->getOperation() === 'edit' || $schema->getOperation() === 'view') {
+            if($schema->getOperation() === 'view' || ($schema->getOperation() === 'edit' && $schema->getLivewire()->record->contract_id != null)) {
             $selectedContract = $sapService->getContractById(filament()->auth()->user()->businessPartner->bp_code, $schema->getLivewire()->record->contract_id);
             $areas = collect($selectedContract['areas'])->pluck('area_code')->unique();
         }
-        return $schema->components([
-            TextInput::make('title')
-                ->required()
-                ->maxLength(255),
-            self::getContractObject($schema, $sapService),    
-
-
-            Repeater::make('materials')
+            return Repeater::make('materials')
                 ->label('Materials')
                 ->schema([
                     Select::make('material_id')
@@ -73,7 +65,20 @@ class DraftInboundForm
                 ->defaultItems(0)
                 ->addActionLabel('Add Material')
                 ->columnSpanFull()
-                ->hiddenOn('create'),
+                ->hiddenOn('create');
+        }
+    }
+
+    public static function configure(Schema $schema): Schema
+    {
+        $sapService = new SapService();
+        
+        return $schema->components([
+            TextInput::make('title')
+                ->required()
+                ->maxLength(255),
+            self::getContractObject($schema, $sapService),    
+            self::getMaterialObject($schema, $sapService),    
         ]);
     }
 }
