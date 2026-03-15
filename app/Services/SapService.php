@@ -387,6 +387,93 @@ class SapService
 
     }
 
+
+    public function getOutboundRequests($businessPartnerCode, $pageSize, $pageNumber)
+    {
+        return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
+            $response = $this->getClient()
+                ->get($this->baseUrl . "/sap/opu/odata/sap/ZPRJ_ODATA_VIEW_OUTBOUND_SRV/ZC_OUTVOUND_VIEW(C_KUNNR='$businessPartnerCode')/Set", [
+                    '$expand' => 'to_LIP',
+                    '$inlinecount' => 'allpages',
+                    '$orderby' => 'Delivery_date desc',
+                    '$top' => $pageSize,
+                    '$skip' => ($pageNumber - 1) * $pageSize,
+                ]);
+            if ($response->successful()) {
+                $this->breaker->recordSuccess();
+                $data = $response->json();
+                
+                // dd($data);
+                $outboundRequests = collect($data['d']['results'])->map(function ($request) {
+
+                    return [
+                        'outbound_request_id' => $request['Outbound_delivery'],
+                        // 'delivery_date' => $this->parseSapDate($request['Delivery_date']),
+                        'status' => $request['status'],
+                        'delivery_time' => $this->parseSapTime($request['delivery_time']),
+                        'delivery_date' => $this->parseSapDate($request['Delivery_date']),
+                        'ship_to_party' => $request['ship_to_party'],
+                        'items' => collect($request['to_LIP']['results'] ?? [])->map(function ($item) {
+                            return [
+                                'quantity' => $item['Delivery_quantity'],
+                                'measuring_unit' => $item['Qunt'],
+                                'material_code' => $item['material'],
+                                'material_description' => $item['Description'],
+                                'area_code' => $item['storage_location'],
+                                'inbound_request_reference' => $item['Refernce'],
+                            ];
+                        }),
+                    ];
+                })->all();
+                
+                $outboundRequestsData = ['totalCount' => $data['d']['__count'], 'paginatedOutbounds' => $outboundRequests];
+
+                return $outboundRequestsData;
+            }
+
+            return $response;
+        });
+    }
+
+    // public function getInboundRequestById($businessPartnerCode, $inboundRequestCode)
+    // {
+    //     return $this->execute(function () use ($businessPartnerCode, $inboundRequestCode) {
+    //         $response = $this->getClient()
+    //             ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set", [
+    //                 '$expand' => 'to_VBAP',
+    //                 '$filter' => "Inbound_request eq '{$inboundRequestCode}'",
+    //             ]);
+
+    //         if ($response->successful()) {
+    //             $data = $response->json();
+
+    //             $inboundRequests = collect($data['d']['results'])->map(function ($request) {
+    //                 return [
+    //                     'inbound_request_id' => $request['Inbound_request'],
+    //                     'created_date' => $this->parseSapDate($request['Created_on']),
+    //                     'shipping_indicator' => $request['ship_indicator'],
+    //                     'delivery_time' => $this->parseSapTime($request['delivery_time']),
+    //                     'delivery_date' => $this->parseSapDate($request['delivery_date']),
+
+    //                     'items' => collect($request['to_VBAP']['results'] ?? [])->map(function ($item) {
+    //                         return [
+    //                             'quantity' => $item['QUNTITY'],
+    //                             'measuring_unit' => $item['MEINS'],
+    //                             'material_code' => $item['Area_code'],
+    //                             'material_description' => $item['Area_code_desc'],
+    //                             'status' => $item['STATUS_DESC'],
+    //                         ];
+    //                     }),
+    //                 ];
+    //             })->all();
+    //             return $inboundRequests[0];
+    //         }
+    //         return $response;
+    //     });
+
+    // }
+
+
     public function getInboundRequests($businessPartnerCode, $pageSize, $pageNumber)
     {
         return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
@@ -647,6 +734,8 @@ class SapService
         if ($response->successful()) {
             return true;
         }
+
+        return false;
 
     }
 
