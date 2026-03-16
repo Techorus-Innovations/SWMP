@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\DraftOutbound;
 use App\Models\Material;
 use Harris21\Fuse\CircuitBreaker;
 use Illuminate\Support\Carbon;
@@ -964,6 +965,12 @@ class SapService
         //     return $token;
         // }
 
+    }
+
+    public function createOutbound($businessPartnerCode, $outboundId, $date, $hour)
+    {
+        $outbound = DraftOutbound::where('id', $outboundId)->first();
+        dd($outbound->materials);
     }
 
     private function parseSapDate($sapDate)
