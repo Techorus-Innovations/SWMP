@@ -62,8 +62,8 @@ class MyOutbounds extends Page implements HasTable
                     ->label(__('Status'))
                     ->badge(),
                 IconColumn::make('ship_to_party')
-                    ->label(__('Ship To Party'))
-                    ->state(fn ($record) => $record['ship_to_party'] == filament()->auth()->user()->businessPartner->bp_code)
+                    ->label(__('Shipping Included'))
+                    ->state(fn ($record) => $record['ship_to_party'] != filament()->auth()->user()->businessPartner->bp_code)
                     ->boolean(),
                 TextColumn::make('delivery_date')
                     ->label(__('Delivery Date')),

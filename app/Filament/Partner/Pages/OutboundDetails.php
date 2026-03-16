@@ -71,8 +71,8 @@ class OutboundDetails extends Page implements HasTable
                         ->label(__('Delivery Date'))
                         ->state($record['delivery_date'] ?? '—'),
                     IconEntry::make('ship_to_party')
-                        ->label(__('Ship To Party'))
-                        ->state($record['ship_to_party'] == filament()->auth()->user()->businessPartner->bp_code)
+                        ->label(__('Shipping Included'))
+                        ->state($record['ship_to_party'] != filament()->auth()->user()->businessPartner->bp_code)
                         ->boolean()
                 ]),
         ]);
@@ -104,8 +104,8 @@ class OutboundDetails extends Page implements HasTable
                     ->label('Quantity'),
                 TextColumn::make('measuring_unit')
                     ->label('Unit'),
-                TextColumn::make('area_code')
-                    ->label('Area Code'),
+                // TextColumn::make('area_code')
+                //     ->label('Area Code'),
                 TextColumn::make('inbound_request_reference')
                     ->label('Inbound Request Reference')
                     ->icon('heroicon-o-eye')
