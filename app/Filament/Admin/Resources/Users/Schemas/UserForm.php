@@ -43,7 +43,7 @@ class UserForm
                     ->multiple()
                     ->preload()
                     ->searchable()
-                    ->hidden(fn () => filament()->auth()->user()->type !== UserTypeEnum::Admin->value),
+                    ->hidden(fn ($record) => $record->type == UserTypeEnum::Admin),
                 Select::make('role')
                     ->label(__('System Role'))
                     ->relationship('roles', 'name')

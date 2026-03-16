@@ -435,6 +435,47 @@ class SapService
         });
     }
 
+    public function getOutboundRequestById($businessPartnerCode, $outboundRequestCode)
+    {
+        return $this->execute(function () use ($businessPartnerCode, $outboundRequestCode) {
+            $response = $this->getClient()
+                ->get($this->baseUrl . "/sap/opu/odata/sap/ZPRJ_ODATA_VIEW_OUTBOUND_SRV/ZC_OUTVOUND_VIEW(C_KUNNR='$businessPartnerCode')/Set", [
+                    '$expand' => 'to_LIP',
+                    '$filter' => "Outbound_delivery eq '{$outboundRequestCode}'",
+
+                ]);
+            if ($response->successful()) {
+                $this->breaker->recordSuccess();
+                $data = $response->json();
+                
+                $outboundRequests = collect($data['d']['results'])->map(function ($request) {
+
+                    return [
+                        'outbound_request_id' => $request['Outbound_delivery'],
+                        // 'delivery_date' => $this->parseSapDate($request['Delivery_date']),
+                        'status' => $request['status'],
+                        'delivery_time' => $this->parseSapTime($request['delivery_time']),
+                        'delivery_date' => $this->parseSapDate($request['Delivery_date']),
+                        'ship_to_party' => $request['ship_to_party'],
+                        'items' => collect($request['to_LIP']['results'] ?? [])->map(function ($item) {
+                            return [
+                                'quantity' => $item['Delivery_quantity'],
+                                'measuring_unit' => $item['Qunt'],
+                                'material_code' => $item['material'],
+                                'material_description' => $item['Description'],
+                                'area_code' => $item['storage_location'],
+                                'inbound_request_reference' => $item['Refernce'],
+                            ];
+                        }),
+                    ];
+                })->all();
+                return $outboundRequests[0];
+            }
+
+            return $response;
+        });
+    }
+
     // public function getInboundRequestById($businessPartnerCode, $inboundRequestCode)
     // {
     //     return $this->execute(function () use ($businessPartnerCode, $inboundRequestCode) {
