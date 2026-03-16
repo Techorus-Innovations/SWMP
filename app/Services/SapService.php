@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Material;
 use Harris21\Fuse\CircuitBreaker;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
@@ -350,6 +351,44 @@ class SapService
 
     }
 
+    public function getAllStock($businessPartnerCode)
+    {
+        return $this->execute(function () use ($businessPartnerCode) {
+            $response = $this->getClient()
+                ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
+                    '$expand' => 'to_Inbounds',
+                    '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne ''",
+                    '$orderby' => 'Material asc'
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $locale = app()->getLocale();
+
+                $stock = collect($data['d']['results'])->map(function ($request) use ($locale) {
+                    $material = Material::where('code', $request['Material'])->first();
+                    return [
+                        'material_name' => ($locale === 'ar' ? $material?->name_ar : $material?->name_en),
+                        'material_code' => $request['Material'],
+                        'warehouse_code' => $request['Plant'],
+                        'inbounds' => collect($request['to_Inbounds']['results'] ?? [])->map(function ($item) {
+                            return [
+                                'inbound_id' => $item['SalesDocument'],
+                                'quantity' => $item['stock'],
+                                'measuring_unit' => $item['unit'],
+                            ];
+                        }),
+                    ];
+                })->all();
+                   
+                return $stock;
+            }
+
+            return $response;
+        });
+
+    }
+
     public function getStockByMaterialCodeAndWarehouseCode($businessPartnerCode, $materialCode, $warehouseCode)
     {
         return $this->execute(function () use ($businessPartnerCode, $materialCode, $warehouseCode) {
@@ -530,6 +569,7 @@ class SapService
             if ($response->successful()) {
                 $this->breaker->recordSuccess();
                 $data = $response->json();
+                // dd($data);
 
                 $inboundRequests = collect($data['d']['results'])->map(function ($request) {
 
