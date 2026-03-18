@@ -381,7 +381,7 @@ class SapService
                         }),
                     ];
                 })->all();
-                   
+
                 return $stock;
             }
 
@@ -442,7 +442,7 @@ class SapService
             if ($response->successful()) {
                 $this->breaker->recordSuccess();
                 $data = $response->json();
-                
+
                 // dd($data);
                 $outboundRequests = collect($data['d']['results'])->map(function ($request) {
 
@@ -465,7 +465,7 @@ class SapService
                         }),
                     ];
                 })->all();
-                
+
                 $outboundRequestsData = ['totalCount' => $data['d']['__count'], 'paginatedOutbounds' => $outboundRequests];
 
                 return $outboundRequestsData;
@@ -487,7 +487,7 @@ class SapService
             if ($response->successful()) {
                 $this->breaker->recordSuccess();
                 $data = $response->json();
-                
+
                 $outboundRequests = collect($data['d']['results'])->map(function ($request) {
 
                     return [
@@ -639,6 +639,95 @@ class SapService
         });
 
     }
+
+    public function cancelInboundRequestBatch($inboundRequestCode)
+    {
+        $inboundRequest = $this->getInboundRequestDetails($inboundRequestCode);
+        if ($inboundRequest) {
+            $inboundDeliveryCode = $inboundRequest['inbound_delivery'];
+            $inboundPo = $inboundRequest['po_number'];
+
+            $deliveryItems = $this->getInboundDeliveryItems($inboundDeliveryCode);
+
+            if ($deliveryItems->isNotEmpty()) {
+                $InboundDeliveryItemsCancelationStatus = $this->batchCancelInboundDeliveryItems($inboundDeliveryCode, $deliveryItems);
+
+                if (!$InboundDeliveryItemsCancelationStatus) {
+                    return false;
+                }
+
+            }
+
+            // $PoCancelationStatus = $this->CancelPo($inboundPo);
+            // if (!$PoCancelationStatus) {
+            //     return false;
+            // }
+
+            $SalesOrderItems = $this->getSalesOrderItems($inboundRequestCode);
+            // dd($SalesOrderItems);
+            foreach ($SalesOrderItems as $item) {
+
+                $etag = "*";//$item['etag'];
+                $itemCode = $item['sales_order_item'];
+                $SalesOrderItemCancelationStatus = $this->CancelSalesOrderItems($inboundRequestCode, $itemCode, $etag);
+                if ($SalesOrderItemCancelationStatus != "true") {
+                    return false;
+                    return $SalesOrderItemCancelationStatus;
+                }
+            }
+            return true;
+
+        }
+    }
+
+
+    public function batchCancelInboundDeliveryItems($inboundDeliveryCode, $deliveryItems)
+    {
+
+        $tokenResponse = $this->getCsrfToken();
+        $csrfToken = $tokenResponse['token'];
+        $cookies = $tokenResponse['headers']['set-cookie'];
+        $CRLF = "\r\n";
+
+        $batchData = "--batch_1" . $CRLF;
+        $batchData .= "Content-Type: multipart/mixed; boundary=changeset_s1" . $CRLF . $CRLF;
+
+        $counter = 1;
+        foreach ($deliveryItems as $item) {
+
+            $etag = "*";// $item['etag'];
+            $itemCode = $item['item_code'];
+            $batchData .= "--changeset_s1" . $CRLF;
+            $batchData .= "Content-Type: application/http" . $CRLF;
+            $batchData .= "Content-Transfer-Encoding: binary" . $CRLF;
+            $batchData .= "Content-ID: " . $counter . $CRLF . $CRLF;
+            $batchData .= "POST WhseInboundDeliveryItem(EWMInboundDelivery='" . $inboundDeliveryCode . "',EWMInboundDeliveryItem='" . $itemCode . "')/SAP__self.AdjustDeliveryItemQuantity HTTP/1.1" . $CRLF;
+            $batchData .= "Content-Type: application/json" . $CRLF;
+            $batchData .= "If-Match: " . $etag . $CRLF . $CRLF;
+            $batchData .= "{}" . $CRLF;
+            $counter++;
+        }
+
+        $batchData .= "--changeset_s1--" . $CRLF;
+        $batchData .= "--batch_1--";
+
+        // dd($batchData);
+
+        $response = $this->getClient()
+            ->withHeaders([
+                'x-csrf-token' => $csrfToken,
+                'Cookie' => $cookies,
+                'Content-Type' => 'multipart/mixed;boundary=batch_1',
+                'Accept' => 'multipart/mixed, application/json',
+            ])
+            ->withQueryParameters([
+                'sap-client' => $this->client,
+            ])
+            ->withBody($batchData, 'multipart/mixed;boundary=batch_1')
+            ->post($this->baseUrl . '/sap/opu/odata4/sap/api_whse_inb_delivery_2/srvd_a2x/sap/warehouseinbounddelivery/0001/$batch');
+        return $response->status() == 200;
+    }
+
 
     public function CancelInboundRequest($inboundRequestCode)
     {
@@ -957,7 +1046,7 @@ class SapService
                 'sap-client' => $this->client,
             ])
             ->post($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_INB_REQQ_SRV/soheaderSet', $data);
-
+        dd($response->json());
         return $response->json();
 
         // if ($response->successful()) {
