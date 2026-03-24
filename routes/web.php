@@ -75,3 +75,12 @@ Route::get('/test9', function () {
     return 'test' . (string) Hash::check('185921febfc2ea1cc9dd02d7269f42589307b9c7296f14db2619eda380eccdfe', '$2y$12$ZNUe01hfhsDHVxNd9DdfX..JO/4xSM7hQ5YCjx5S8QIvO83ma98JW');
 });
 
+use App\Models\User;
+use App\Models\PartnerRole;
+
+Route::get('/test10', function () {
+    $allPermissions = PartnerRole::all()->pluck('id')->toArray();
+    // dd($allPermissions);
+    dd(User::find('01kjmqhhkdxb8bv8cy7ggy2gnc')->partnerRoles()->sync($allPermissions));
+    // return 'test' . (string) Hash::check('185921febfc2ea1cc9dd02d7269f42589307b9c7296f14db2619eda380eccdfe', '$2y$12$ZNUe01hfhsDHVxNd9DdfX..JO/4xSM7hQ5YCjx5S8QIvO83ma98JW');
+});

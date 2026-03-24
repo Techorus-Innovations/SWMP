@@ -663,17 +663,16 @@ class SapService
             //     return false;
             // }
 
-            $SalesOrderItems = $this->getSalesOrderItems($inboundRequestCode);
-            // dd($SalesOrderItems);
-            foreach ($SalesOrderItems as $item) {
+            $salesOrderItems = $this->getSalesOrderItems($inboundRequestCode);
+            dd($salesOrderItems);
 
-                $etag = "*";//$item['etag'];
-                $itemCode = $item['sales_order_item'];
-                $SalesOrderItemCancelationStatus = $this->CancelSalesOrderItems($inboundRequestCode, $itemCode, $etag);
-                if ($SalesOrderItemCancelationStatus != "true") {
+            if ($salesOrderItems->isNotEmpty()) {
+                $InboundDeliveryItemsCancelationStatus = $this->batchCancelSalesOrderItems($inboundRequestCode, $salesOrderItems);
+
+                if (!$InboundDeliveryItemsCancelationStatus) {
                     return false;
-                    return $SalesOrderItemCancelationStatus;
                 }
+
             }
             return true;
 
@@ -725,9 +724,58 @@ class SapService
             ])
             ->withBody($batchData, 'multipart/mixed;boundary=batch_1')
             ->post($this->baseUrl . '/sap/opu/odata4/sap/api_whse_inb_delivery_2/srvd_a2x/sap/warehouseinbounddelivery/0001/$batch');
+
         return $response->status() == 200;
     }
 
+    public function batchCancelSalesOrderItems($inboundRequestCode, $salesOrderItems)
+    {
+
+        $tokenResponse = $this->getCsrfToken();
+        $csrfToken = $tokenResponse['token'];
+        $cookies = $tokenResponse['headers']['set-cookie'];
+        $CRLF = "\r\n";
+
+
+        $batchData = "--batch_1" . $CRLF;
+        $batchData .= "Content-Type: multipart/mixed; boundary=changeset_s1" . $CRLF . $CRLF;
+
+        $counter = 1;
+        foreach ($salesOrderItems as $item) {
+
+            $etag = "*";// $item['etag'];
+            $salesOrderItem = $item['sales_order_item'];
+            $batchData .= "--changeset_s1" . $CRLF;
+            $batchData .= "Content-Type: application/http" . $CRLF;
+            $batchData .= "Content-Transfer-Encoding: binary" . $CRLF;
+            $batchData .= "Content-ID: " . $counter . $CRLF . $CRLF;
+            $batchData .= "PATCH SalesOrderItem(SalesOrder='" . $inboundRequestCode . "',SalesOrderItem='" . $salesOrderItem . "') HTTP/1.1" . $CRLF;
+            $batchData .= "Content-Type: application/json" . $CRLF;
+            $batchData .= "If-Match: " . $etag . $CRLF . $CRLF;
+            $batchData .= "{'SalesDocumentRjcnReason' : '02'}" . $CRLF;
+            $counter++;
+        }
+
+        $batchData .= "--changeset_s1--" . $CRLF;
+        $batchData .= "--batch_1--";
+
+
+        $response = $this->getClient()
+            ->withHeaders([
+                'x-csrf-token' => $csrfToken,
+                'Cookie' => $cookies,
+                'Content-Type' => 'multipart/mixed;boundary=batch_1',
+                'Accept' => 'multipart/mixed, application/json',
+            ])
+            ->withQueryParameters([
+                'sap-client' => $this->client,
+            ])
+            ->withBody($batchData, 'multipart/mixed;boundary=batch_1')
+            ->post($this->baseUrl . '/sap/opu/odata4/sap/api_salesorder/srvd_a2x/sap/salesorder/0001/$batch');
+
+        return $response->status() == 200;
+
+    }
 
     public function CancelInboundRequest($inboundRequestCode)
     {
