@@ -56,6 +56,7 @@ class PartnerPanelProvider extends PanelProvider
                 RejectedRequest::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Partner/Widgets'), for: 'App\Filament\Partner\Widgets')
+            ->globalSearch(false)
             ->widgets([
                 AccountWidget::class,
                 FilamentInfoWidget::class,

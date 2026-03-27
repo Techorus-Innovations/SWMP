@@ -51,6 +51,7 @@ class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\Filament\Admin\Widgets')
+            ->globalSearch(false)
             ->widgets([
                 AccountWidget::class,
                 // FilamentInfoWidget::class,
