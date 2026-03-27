@@ -16,7 +16,8 @@ class MaterialGroupForm
                 TextInput::make('name_ar')
                     ->required(),
                 TextInput::make('code')
-                    ->required(),
+                    ->required()
+                    ->unique(ignoreRecord: true),
             ]);
     }
 }
