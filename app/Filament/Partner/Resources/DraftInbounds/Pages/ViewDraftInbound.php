@@ -101,7 +101,7 @@ class ViewDraftInbound extends ViewRecord
                             ->label('Upload CSV File')
                             ->acceptedFileTypes(['text/csv', 'application/csv'])
                             ->maxSize(5120)
-                            ->required()
+                            // ->required()
                             ->rules([
                                 fn (): Closure => function (string $attribute, $value, Closure $fail) {
                                     $filePath = $value->getPathname();
@@ -143,7 +143,7 @@ class ViewDraftInbound extends ViewRecord
                     $response = $sapService->createInbound($bpcode, $contractId, $materialCodesWithQuantity, $date, $time);
                     preg_match('/Inbound Request(\d+)/', $response['d']['Message'], $matches);
                     $requestNumber = $matches[1] ?? null;
-                    if($requestNumber != null) {
+                    if($requestNumber != null && isset($data['csv_file'])) {
                         InboundAttp::create([
                             "inbound_number" => $requestNumber,
                             "attp_file" => $data['csv_file']

@@ -658,13 +658,13 @@ class SapService
 
             }
 
-            // $PoCancelationStatus = $this->CancelPo($inboundPo);
-            // if (!$PoCancelationStatus) {
-            //     return false;
-            // }
+            $PoCancelationStatus = $this->CancelPo($inboundPo);
+            if (!$PoCancelationStatus) {
+                return false;
+            }
 
             $salesOrderItems = $this->getSalesOrderItems($inboundRequestCode);
-            dd($salesOrderItems);
+            // dd($salesOrderItems);
 
             if ($salesOrderItems->isNotEmpty()) {
                 $InboundDeliveryItemsCancelationStatus = $this->batchCancelSalesOrderItems($inboundRequestCode, $salesOrderItems);
@@ -752,13 +752,12 @@ class SapService
             $batchData .= "PATCH SalesOrderItem(SalesOrder='" . $inboundRequestCode . "',SalesOrderItem='" . $salesOrderItem . "') HTTP/1.1" . $CRLF;
             $batchData .= "Content-Type: application/json" . $CRLF;
             $batchData .= "If-Match: " . $etag . $CRLF . $CRLF;
-            $batchData .= "{'SalesDocumentRjcnReason' : '02'}" . $CRLF;
+            $batchData .= '{"SalesDocumentRjcnReason": "02"}' . $CRLF;
             $counter++;
         }
 
         $batchData .= "--changeset_s1--" . $CRLF;
         $batchData .= "--batch_1--";
-
 
         $response = $this->getClient()
             ->withHeaders([
@@ -773,7 +772,9 @@ class SapService
             ->withBody($batchData, 'multipart/mixed;boundary=batch_1')
             ->post($this->baseUrl . '/sap/opu/odata4/sap/api_salesorder/srvd_a2x/sap/salesorder/0001/$batch');
 
+        // dd($response->body());
         return $response->status() == 200;
+
 
     }
 
@@ -886,6 +887,7 @@ class SapService
                         'status' => $request['SDProcessStatus']
                     ];
                 });
+                return $SalesOrderItems;
 
                 return $SalesOrderItems->where('status', 'A');
                 // return $inboundRequests[0];
@@ -1094,7 +1096,7 @@ class SapService
                 'sap-client' => $this->client,
             ])
             ->post($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_INB_REQQ_SRV/soheaderSet', $data);
-        dd($response->json());
+
         return $response->json();
 
         // if ($response->successful()) {
