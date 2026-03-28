@@ -34,7 +34,7 @@ class PlantsTable
                 //
             ])
             ->recordActions([
-                EditAction::make(),
+                // EditAction::make(),
                 ViewAction::make(),
             ])
             ->toolbarActions([

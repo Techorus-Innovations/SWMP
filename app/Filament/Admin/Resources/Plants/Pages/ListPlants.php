@@ -15,9 +15,9 @@ class ListPlants extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
-            ImportAction::make()
-                ->importer(PlantImporter::class)
+            // CreateAction::make(),
+            // ImportAction::make()
+            //     ->importer(PlantImporter::class)
         ];
     }
 }

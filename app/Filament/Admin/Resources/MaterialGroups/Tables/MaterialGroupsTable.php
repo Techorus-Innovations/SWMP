@@ -34,7 +34,7 @@ class MaterialGroupsTable
                 //
             ])
             ->recordActions([
-                EditAction::make(),
+                // EditAction::make(),
                 ViewAction::make(),
             ])
             ->toolbarActions([

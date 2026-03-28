@@ -15,9 +15,9 @@ class ListMaterialGroups extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
-            ImportAction::make()
-                ->importer(MaterialGroupImporter::class)
+            // CreateAction::make(),
+            // ImportAction::make()
+            //     ->importer(MaterialGroupImporter::class)
         ];
     }
 }
