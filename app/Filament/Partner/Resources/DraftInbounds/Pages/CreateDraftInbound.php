@@ -30,4 +30,8 @@ class CreateDraftInbound extends CreateRecord
     {
         $this->record->materials()->sync($this->materialsToSync);
     }
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('edit', ['record' => $this->record]);
+    }
 }

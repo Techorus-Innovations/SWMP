@@ -95,6 +95,11 @@ class ViewDraftInbound extends ViewRecord
                         ]),
                     Step::make('Upload ATTP file')
                         ->description('Upload ATTP file')
+                        ->hidden(function () {
+                            return !$this->record->materials()
+                                ->where('attp_required', 'ZT')
+                                ->exists();
+                        })
                         ->schema([
                             FileUpload::make('csv_file')
                             // ->dehydrated(true)
