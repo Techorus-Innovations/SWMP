@@ -18,19 +18,27 @@ class ListMaterials extends ListRecords
         return [
             // CreateAction::make(),
             Action::make('runCommand')
-            ->label('Run Sync Materials')
-            ->icon('heroicon-m-play')
-            ->color('primary')
-            ->requiresConfirmation()
-            ->action(function () {
-                Artisan::call('materials:sync');
+                ->label('Run Sync Materials')
+                ->icon('heroicon-m-play')
+                ->color('primary')
+                ->requiresConfirmation()
+                ->action(function () {
+                    $exitCode = Artisan::call('materials:sync');
 
-                // Notify the user on completion
-                Notification::make()
-                    ->title('Materials Synced successfully')
-                    ->success()
-                    ->send();
-            }),
+                    if ($exitCode === 0) {
+                        Notification::make()
+                            ->title('Materials synced successfully')
+                            ->success()
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title('Sync failed')
+                            ->body('Materials sync failed')
+                            ->danger()
+                            ->persistent() // Keeps the error visible until dismissed
+                            ->send();
+                    }
+                }),
         ];
     }
 }
