@@ -174,6 +174,8 @@ return [
             ],
         ],
         'exclude' => [
+            App\Filament\Partner\Resources\Users\UserResource::class,
+            App\Filament\Partner\Resources\Materials\MaterialResource::class,
             \Jacobtims\FilamentLogger\Resources\ActivityResource::class,
         ],
     ],
@@ -215,8 +217,9 @@ return [
         'subject' => 'class',
         'prefix' => 'view',
         'exclude' => [
-            \Filament\Admin\Widgets\AccountWidget::class,
-            \Filament\Admin\Widgets\FilamentInfoWidget::class,
+            App\Filament\Partner\Widgets\MyCompany::class,
+            Filament\Widgets\AccountWidget::class,
+            Filament\Widgets\FilamentInfoWidget::class,
         ],
     ],
 
