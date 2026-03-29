@@ -23,8 +23,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 class Registration extends Register
@@ -81,7 +80,7 @@ class Registration extends Register
             ->label(__('Partner Type'))
             ->options(
                 collect(BusinessPartnerTypeEnum::cases())
-                    ->mapWithKeys(fn(BusinessPartnerTypeEnum $case) => [$case->value => $case->label()])
+                    ->mapWithKeys(fn (BusinessPartnerTypeEnum $case) => [$case->value => $case->label()])
             )
             ->required()
             ->reactive()
@@ -93,14 +92,13 @@ class Registration extends Register
         return Select::make('partner_type_id')
             ->label(__('Partner Group'))
             ->options(
-                fn($get) =>
-                $get('request_type')
+                fn ($get) => $get('request_type')
                     ? PartnerType::where('type', $get('request_type'))->pluck('name_en', 'id')
                     : []
             )
             ->searchable()
             ->required()
-            ->disabled(fn($get) => !$get('request_type'));
+            ->disabled(fn ($get) => ! $get('request_type'));
     }
 
     protected function getGlobalLocationNumberFormComponent(): Component
@@ -162,8 +160,9 @@ class Registration extends Register
             ->searchable()
             ->required()
             ->reactive()
-            ->afterStateUpdated(fn($set) => $set('region_id', null));;
+            ->afterStateUpdated(fn ($set) => $set('region_id', null));
     }
+
     protected function resetRegionField(): void
     {
         $this->dispatch('reset-form-field', name: 'region_id');
@@ -174,14 +173,13 @@ class Registration extends Register
         return Select::make('region_id')
             ->label(__('Region'))
             ->options(
-                fn($get) =>
-                $get('country_id')
+                fn ($get) => $get('country_id')
                     ? Region::where('country_id', $get('country_id'))->pluck('name_en', 'id')
                     : []
             )
             ->searchable()
             ->required()
-            ->disabled(fn($get) => !$get('country_id'));
+            ->disabled(fn ($get) => ! $get('country_id'));
     }
 
     protected function getRegistrationNumberFormComponent(): Component
@@ -207,8 +205,7 @@ class Registration extends Register
             ->options(Industry::pluck('name_en', 'id'))
             ->searchable()
             ->visible(
-                fn($get) =>
-                $get('request_type')=== BusinessPartnerTypeEnum::Customer->value
+                fn ($get) => $get('request_type') === BusinessPartnerTypeEnum::Customer->value
             )
             ->required();
     }
@@ -219,7 +216,7 @@ class Registration extends Register
     //         ->label(__('Customer Type'))
     //         ->options(CustomerType::pluck('name_en', 'id'))
     //         ->searchable()
-            
+
     //         ->visible(
     //             fn($get) =>
     //             $get('request_type')=== BusinessPartnerTypeEnum::Customer->value
@@ -263,6 +260,7 @@ class Registration extends Register
             // ->required()
             ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
             ->maxSize(5120)
+            ->storeFiles(false)
             ->helperText(__('PDF, JPEG, or PNG. Max 5MB.'));
     }
 
@@ -273,6 +271,7 @@ class Registration extends Register
             // ->required()
             ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
             ->maxSize(5120)
+            ->storeFiles(false)
             ->helperText(__('PDF, JPEG, or PNG. Max 5MB.'));
     }
 
@@ -291,6 +290,26 @@ class Registration extends Register
     protected function handleRegistration(array $data): Model
     {
         return DB::transaction(function () use ($data) {
+            if (isset($data['commercial_registration']) && $data['commercial_registration'] instanceof TemporaryUploadedFile) {
+                $folder = 'partner-documents'; // The directory inside the disk
+                $filename = time().'-'.$data['commercial_registration']->getClientOriginalName();
+
+                $commercialRegistrationPath = $data['commercial_registration']->storeAs(
+                    $folder,
+                    $filename,
+                    'private'
+                );
+            }
+            if (isset($data['tax_card']) && $data['tax_card'] instanceof TemporaryUploadedFile) {
+                $folder = 'partner-documents'; // The directory inside the disk
+                $filename = time().'-'.$data['tax_card']->getClientOriginalName();
+
+                $taxCardPath = $data['tax_card']->storeAs(
+                    $folder,
+                    $filename,
+                    'private'
+                );
+            }
             // Create user
             $user = User::create([
                 'name' => $data['name'],
@@ -319,8 +338,8 @@ class Registration extends Register
                 'gln1' => $gln1,
                 'gln2' => $gln2,
                 'ckgdigit' => $ckgdigit,
-                'name1' => "".$name1,
-                'name2' => "".$name2,
+                'name1' => ''.$name1,
+                'name2' => ''.$name2,
                 'city' => $data['city'],
                 'street' => $data['street'],
                 'building' => $data['building'],
@@ -329,18 +348,20 @@ class Registration extends Register
                 'region_id' => $data['region_id'],
                 'registration_number' => $data['registration_number'],
                 'tax_number' => $data['tax_number'],
-                'industry_id' => $data['industry_id']??null,
+                'industry_id' => $data['industry_id'] ?? null,
                 // 'customer_type_id' => $data['customer_type_id'],
                 // 'tax_category' => $data['tax_category'],
                 'mobile' => $data['mobile'],
                 'email' => $data['business_partner_email'],
-                'commercial_registration' => $data['commercial_registration'] ?? null,
-                'tax_card' => $data['tax_card'] ?? null,
+                'commercial_registration' => $commercialRegistrationPath ?? null,
+                'tax_card' => $taxCardPath ?? null,
                 'status' => 'P',
             ]);
 
             $user->business_partner_id = $businessPartner->id;
             $user->save();
+
+            $businessPartner->submitToSap();
 
             return $user;
         });

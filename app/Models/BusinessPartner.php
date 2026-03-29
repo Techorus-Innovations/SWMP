@@ -15,48 +15,6 @@ class BusinessPartner extends Model
 
     protected $table = 'business_partners';
 
-
-
-    protected static function booted()
-    {
-        static::created(
-            function ($partner) {
-                // if (config('sap_integration_status')) {
-                $partner->refresh();
-                // dd($partner);
-                $sapService = new \App\Services\SapService();
-                $response = $sapService->createPartner(
-                    $request_id = (string) $partner->request_id,
-                    $request_type = $partner->type->value,
-                    $partner_group_code = $partner->partnerType->grouping_code,
-                    $name1 = $partner->name1,
-                    $name2 = $partner->name2,
-                    $gln_loc_no_1 = $partner->gln1,
-                    $gln_loc_no_2 = $partner->gln2,
-                    $gln_check_digit = $partner->ckgdigit,
-                    $city = $partner->city,
-                    $street = $partner->street,
-                    $house_no = $partner->building,
-                    $postal_code = $partner->postal_code,
-                    $country_code = $partner->country->code,
-                    $region_code = $partner->region->code,
-                    $tax_number = $partner->tax_number,
-                    $commercial_registration_number = $partner->registration_number,
-                    $industry_code = $partner->industry->code,
-                    $customer_type_code = $partner->partnerType->customerType->code,
-                    $tax_category = $partner->partnerType->tax_cat->value,
-                    $mobile = $partner->mobile,
-                    $email = $partner->email
-                );
-                Log::info($response);
-
-                \App\Jobs\UploadPartnerFilesToSap::dispatch($partner)->afterCommit();
-                // dd($response);
-            }
-            // }
-        );
-    }
-
     protected $fillable = [
         'user_id',
         'request_id',
@@ -85,10 +43,41 @@ class BusinessPartner extends Model
         'bp_code',
     ];
 
+    public function submitToSap()
+    {
+        // $this->refresh();
+        $sapService = new \App\Services\SapService;
+        $response = $sapService->createPartner(
+            $request_id = (string) $this->request_id,
+            $request_type = $this->type->value,
+            $partner_group_code = $this->partnerType->grouping_code,
+            $name1 = $this->name1,
+            $name2 = $this->name2,
+            $gln_loc_no_1 = $this->gln1,
+            $gln_loc_no_2 = $this->gln2,
+            $gln_check_digit = $this->ckgdigit,
+            $city = $this->city,
+            $street = $this->street,
+            $house_no = $this->building,
+            $postal_code = $this->postal_code,
+            $country_code = $this->country->code,
+            $region_code = $this->region->code,
+            $tax_number = $this->tax_number,
+            $commercial_registration_number = $this->registration_number,
+            $industry_code = $this->industry->code,
+            $customer_type_code = $this->partnerType->customerType->code,
+            $tax_category = $this->partnerType->tax_cat->value,
+            $mobile = $this->mobile,
+            $email = $this->email
+        );
+        Log::info($response);
+
+        \App\Jobs\UploadPartnerFilesToSap::dispatch($this)->afterCommit();
+    }
 
     public function getname()
     {
-        return $this->name1 . $this->name2;
+        return $this->name1.$this->name2;
     }
 
     protected function casts(): array
