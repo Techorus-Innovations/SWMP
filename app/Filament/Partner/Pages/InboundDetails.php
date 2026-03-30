@@ -62,6 +62,10 @@ class InboundDetails extends Page implements HasTable
                 ->modalHeading(__('Cancel Inbound Request'))
                 ->modalDescription(__('Are you sure you want to cancel this inbound request? This action cannot be undone.'))
                 ->hidden(function () {
+                    if (! filament()->auth()->user()->canCancelInbounds()) {
+                        return true;
+                    }
+
                     foreach ($this->response['items'] as $item) {
                         if ($item['status'] == 'Completely processed' || $item['status'] == 'Partially processed') {
                             return true;
