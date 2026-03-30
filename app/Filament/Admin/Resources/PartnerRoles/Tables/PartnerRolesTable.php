@@ -14,9 +14,9 @@ class PartnerRolesTable
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label(__('ID'))
-                    ->searchable(),
+                // TextColumn::make('id')
+                //     ->label(__('ID'))
+                //     ->searchable(),
                 TextColumn::make('name')
                     ->label(__('Name'))
                     ->searchable(),

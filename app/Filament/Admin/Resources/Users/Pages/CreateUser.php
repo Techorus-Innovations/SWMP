@@ -13,8 +13,8 @@ class CreateUser extends CreateRecord
     protected function afterCreate(): void
     {
         $user = $this->record;
-        
-        $roleName = ($user->type === UserTypeEnum::Admin) ? 'super_admin' : 'partner';
-        $user->assignRole($roleName);
+        if ($user->type !== UserTypeEnum::Admin) {
+            $user->assignRole('partner');
+        }
     }
 }

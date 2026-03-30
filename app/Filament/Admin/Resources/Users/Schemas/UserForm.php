@@ -7,8 +7,8 @@ use App\Models\BusinessPartner;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Spatie\Permission\Models\Role;
 
 class UserForm
 {
@@ -55,7 +55,16 @@ class UserForm
                     ->required(fn (Get $get) => in_array($get('type'), [
                         UserTypeEnum::Customer->value,
                         UserTypeEnum::Supplier->value,
-                    ]))
+                    ])),
+                Select::make('role')
+                    ->label(__('Admin Role'))
+                    ->relationship('roles', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->options(fn (Get $get) => Role::where('name', '!=', 'partner')->pluck('name', 'id'))
+                    ->hidden(fn (Get $get) => $get('type') == null || $get('type') !== UserTypeEnum::Admin->value)
+                    ->required(fn (Get $get) => $get('type') === UserTypeEnum::Admin->value)
+                    ->searchable(),
             ]);
     }
 }
