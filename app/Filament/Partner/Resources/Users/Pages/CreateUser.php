@@ -16,4 +16,9 @@ class CreateUser extends CreateRecord
 
         return $data;
     }
+
+    protected function afterCreate(): void
+    {
+        $this->record->assignRole('partner');
+    }
 }

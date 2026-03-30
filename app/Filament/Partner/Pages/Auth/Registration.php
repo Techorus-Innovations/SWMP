@@ -286,7 +286,6 @@ class Registration extends Register
             ]);
     }
 
-
     protected function handleRegistration(array $data): Model
     {
         return DB::transaction(function () use ($data) {
@@ -360,6 +359,7 @@ class Registration extends Register
 
             $user->business_partner_id = $businessPartner->id;
             $user->save();
+            $user->assignRole('partner');
 
             $businessPartner->submitToSap();
 
