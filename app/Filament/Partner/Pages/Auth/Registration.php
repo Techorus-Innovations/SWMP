@@ -142,7 +142,7 @@ class Registration extends Register
         return TextInput::make('building')
             ->label(__('Building'))
             ->required()
-            ->maxLength(255);
+            ->maxLength(10);
     }
 
     protected function getPostalCodeFormComponent(): Component
