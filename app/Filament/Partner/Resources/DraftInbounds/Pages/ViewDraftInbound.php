@@ -110,7 +110,7 @@ class ViewDraftInbound extends ViewRecord
                                 ->label('Upload CSV File')
                                 ->acceptedFileTypes(['text/csv', 'application/csv'])
                                 ->maxSize(5120)
-                            // ->required()
+                                ->required()
                                 ->rules([
                                     fn (): Closure => function (string $attribute, $value, Closure $fail) {
                                         $filePath = $value->getPathname();
@@ -121,6 +121,7 @@ class ViewDraftInbound extends ViewRecord
                                             // dd($results);
                                         }
                                         $attpGtins = $this->record->materials()->where('attp_required', 'ZT')->pluck('gtin_code')->toArray();
+                                        // dd($attpGtins);
                                         $missingGtins = [];
                                         foreach ($attpGtins as $gtin) {
                                             if (! in_array(substr($gtin, 0, -1), $results)) {
