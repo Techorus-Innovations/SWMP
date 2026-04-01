@@ -8,6 +8,7 @@ use App\Models\BusinessPartner;
 use App\Models\Country;
 use App\Models\CustomerType;
 use App\Models\Industry;
+use App\Models\PartnerRole;
 use App\Models\PartnerType;
 use App\Models\Region;
 use App\Models\User;
@@ -360,6 +361,7 @@ class Registration extends Register
             $user->business_partner_id = $businessPartner->id;
             $user->save();
             $user->assignRole('partner');
+            $user->partnerRoles()->attach(PartnerRole::pluck('id'));
 
             $businessPartner->submitToSap();
 
