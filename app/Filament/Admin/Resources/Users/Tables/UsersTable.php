@@ -33,7 +33,7 @@ class UsersTable
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('businessPartner.name')
+                TextColumn::make('businessPartner.name1')
                     ->label(__('Business Partner'))
                     ->searchable(),
                 TextColumn::make('type')

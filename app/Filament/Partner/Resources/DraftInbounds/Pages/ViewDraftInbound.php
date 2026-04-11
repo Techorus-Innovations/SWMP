@@ -8,7 +8,9 @@ use App\Models\InboundAttp;
 use App\Models\WorkingHours;
 use App\Services\CsvInboundProcessor;
 use App\Services\SapService;
+use Closure;
 use Filament\Actions\Action;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
@@ -18,20 +20,22 @@ use Filament\Schemas\Components\Wizard\Step;
 use Harris21\Fuse\CircuitBreaker;
 use Illuminate\Support\Carbon;
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
-use Closure;
 
 class ViewDraftInbound extends ViewRecord
 {
     protected static string $resource = DraftInboundResource::class;
+
     private $circuitBreaker;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->circuitBreaker = new CircuitBreaker('sap');
     }
 
     protected function getHeaderActions(): array
     {
         return [
+            EditAction::make(),
             Action::make('submitInbound')
                 ->label('Submit Inbound')
                 ->color('success')
@@ -95,39 +99,45 @@ class ViewDraftInbound extends ViewRecord
                         ]),
                     Step::make('Upload ATTP file')
                         ->description('Upload ATTP file')
+                        ->hidden(function () {
+                            return ! $this->record->materials()
+                                ->where('attp_required', 'ZT')
+                                ->exists();
+                        })
                         ->schema([
                             FileUpload::make('csv_file')
                             // ->dehydrated(true)
-                            ->label('Upload CSV File')
-                            ->acceptedFileTypes(['text/csv', 'application/csv'])
-                            ->maxSize(5120)
-                            // ->required()
-                            ->rules([
-                                fn (): Closure => function (string $attribute, $value, Closure $fail) {
-                                    $filePath = $value->getPathname();
-                                    
-                                    if (file_exists($filePath)) {
-                                        $processor = new CsvInboundProcessor();
-                                        $results = $processor->processFile($filePath);
-                                        // dd($results);
-                                    }
-                                    $attpGtins = $this->record->materials()->where('attp_required', 'ZT')->pluck('gtin_code')->toArray();
-                                    $missingGtins = [];
-                                    foreach($attpGtins as $gtin) {                                    
-                                        if(!in_array(substr($gtin, 0, -1), $results)) {
-                                            $missingGtins[] = substr($gtin, 0, -1);
+                                ->label('Upload CSV File')
+                                ->acceptedFileTypes(['text/csv', 'application/csv'])
+                                ->maxSize(5120)
+                                ->required()
+                                ->rules([
+                                    fn (): Closure => function (string $attribute, $value, Closure $fail) {
+                                        $filePath = $value->getPathname();
+
+                                        if (file_exists($filePath)) {
+                                            $processor = new CsvInboundProcessor;
+                                            $results = $processor->processFile($filePath);
+                                            // dd($results);
                                         }
-                                    }
-                                    if(count($missingGtins) > 0) {
-                                        $fail('ATTP file missing Gtins: ' . implode(', ', $missingGtins));
-                                    } else {
-                                       
-                                        $sapService = new SapService;
-                                        $sapService->uploadAttpFile($filePath);
-                                    }
-                                },
-                            ])
-                            ->columnSpanFull(),
+                                        $attpGtins = $this->record->materials()->where('attp_required', 'ZT')->pluck('gtin_code')->toArray();
+                                        // dd($attpGtins);
+                                        $missingGtins = [];
+                                        foreach ($attpGtins as $gtin) {
+                                            if (! in_array(substr($gtin, 0, -1), $results)) {
+                                                $missingGtins[] = substr($gtin, 0, -1);
+                                            }
+                                        }
+                                        if (count($missingGtins) > 0) {
+                                            $fail('ATTP file missing Gtins: '.implode(', ', $missingGtins));
+                                        } else {
+
+                                            $sapService = new SapService;
+                                            $sapService->uploadAttpFile($filePath);
+                                        }
+                                    },
+                                ])
+                                ->columnSpanFull(),
 
                         ]),
                 ])
@@ -143,16 +153,16 @@ class ViewDraftInbound extends ViewRecord
                     $response = $sapService->createInbound($bpcode, $contractId, $materialCodesWithQuantity, $date, $time);
                     preg_match('/Inbound Request(\d+)/', $response['d']['Message'], $matches);
                     $requestNumber = $matches[1] ?? null;
-                    if($requestNumber != null && isset($data['csv_file'])) {
+                    if ($requestNumber != null && isset($data['csv_file'])) {
                         InboundAttp::create([
-                            "inbound_number" => $requestNumber,
-                            "attp_file" => $data['csv_file']
+                            'inbound_number' => $requestNumber,
+                            'attp_file' => $data['csv_file'],
                         ]);
                     }
                     DraftInbound::where('id', $this->record->id)->delete();
                     Notification::make()
                         ->title('Success')
-                        ->body('Inbound created successfully with id: ' . $requestNumber . '.')
+                        ->body('Inbound created successfully with id: '.$requestNumber.'.')
                         ->success()
                         ->send();
                     redirect()->route('filament.partner.pages.my-inbounds');

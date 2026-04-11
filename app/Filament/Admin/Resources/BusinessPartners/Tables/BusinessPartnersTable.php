@@ -25,6 +25,7 @@ class BusinessPartnersTable
                     ->searchable(),
                 TextColumn::make('name1')
                     ->label(__('Business Partner Name'))
+                    ->getStateUsing(fn($record) => $record->name1 . ' ' . $record->name2)
                     ->searchable(),
                 TextColumn::make('type')
                     ->label(__('Request Type'))
@@ -92,7 +93,7 @@ class BusinessPartnersTable
                 //
             ])
             ->recordActions([
-                EditAction::make(),
+                // EditAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

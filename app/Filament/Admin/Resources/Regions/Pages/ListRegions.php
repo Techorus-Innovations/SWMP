@@ -16,8 +16,8 @@ class ListRegions extends ListRecords
     {
         return [
             CreateAction::make(),
-            ImportAction::make()
-                ->importer(RegionImporter::class)
+            // ImportAction::make()
+            //     ->importer(RegionImporter::class)
         ];
     }
 }

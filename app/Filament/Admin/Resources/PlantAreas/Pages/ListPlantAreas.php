@@ -15,9 +15,9 @@ class ListPlantAreas extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
-            ImportAction::make()
-                ->importer(PlantAreaImporter::class)
+            // CreateAction::make(),
+            // ImportAction::make()
+            //     ->importer(PlantAreaImporter::class)
         ];
     }
 }

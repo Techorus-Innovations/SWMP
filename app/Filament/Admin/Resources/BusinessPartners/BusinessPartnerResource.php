@@ -42,8 +42,8 @@ class BusinessPartnerResource extends Resource
     {
         return [
             'index' => ListBusinessPartners::route('/'),
-            'create' => CreateBusinessPartner::route('/create'),
-            'edit' => EditBusinessPartner::route('/{record}/edit'),
+            // 'create' => CreateBusinessPartner::route('/create'),
+            // 'edit' => EditBusinessPartner::route('/{record}/edit'),
         ];
     }
 }

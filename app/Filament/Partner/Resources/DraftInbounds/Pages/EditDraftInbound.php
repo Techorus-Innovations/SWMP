@@ -3,7 +3,6 @@
 namespace App\Filament\Partner\Resources\DraftInbounds\Pages;
 
 use App\Filament\Partner\Resources\DraftInbounds\DraftInboundResource;
-use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
@@ -13,10 +12,15 @@ class EditDraftInbound extends EditRecord
 
     private array $materialsToSync = [];
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make()
+            DeleteAction::make(),
         ];
     }
 
@@ -35,14 +39,13 @@ class EditDraftInbound extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $syncData = collect($data['materials'] ?? [])
-            ->pluck( 'quantity', 'material_id')
+            ->pluck('quantity', 'material_id')
             ->filter()
-            ->unique()
             ->toArray();
         $this->materialsToSync = [];
         foreach ($syncData as $materialId => $quantity) {
             $this->materialsToSync[$materialId] = [
-                'quantity' => $quantity
+                'quantity' => $quantity,
             ];
         }
         // dd($this->materialsToSync);

@@ -16,7 +16,8 @@ class RegionForm
                 TextInput::make('code')
                     ->label(__('Code'))
                     ->required()
-                    ->maxLength(3),
+                    ->maxLength(3)
+                    ->unique(),
                 TextInput::make('name_en')
                     ->label(__('Name (English)'))
                     ->required()

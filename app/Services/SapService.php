@@ -20,6 +20,9 @@ class SapService
         private string $username = '',
         private string $password = '',
         private string $client = '',
+        private string $attpUsername = '',
+        private string $attpPassword = '',
+        private string $attpClient = '',
         private bool $verify = true,
     ) {
         $this->baseUrl = (string) config('services.sap.base_url');
@@ -28,6 +31,9 @@ class SapService
         $this->client = (string) config('services.sap.client');
         $this->verify = (bool) config('services.sap.ssl_verify');
         $this->attpUrl = (string) config('services.sap.attp_url');
+        $this->attpUsername = (string) config('services.sap.attp_username');
+        $this->attpPassword = (string) config('services.sap.attp_password');
+        $this->attpClient = (string) config('services.sap.attp_client');
         $this->breaker = new CircuitBreaker('sap');
     }
 
@@ -73,12 +79,20 @@ class SapService
             ->withQueryParameters(['sap-client' => $this->client]);
     }
 
+    private function getAttpClient()
+    {
+        return Http::withBasicAuth($this->attpUsername, $this->attpPassword)
+            ->withOptions(['verify' => $this->verify])
+            ->acceptJson()
+            ->withQueryParameters(['sap-client' => $this->attpClient]);
+    }
+
     public function getCsrfToken(): ?array
     {
         return $this->execute(function () {
             $response = $this->getClient()
                 ->withHeaders(['x-csrf-token' => 'fetch'])
-                ->get($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_ODATA_MATERIAL_SRV/ZC_MATERIAL');
+                ->get($this->baseUrl.'/sap/opu/odata/SAP/ZPRJ_ODATA_MATERIAL_SRV/ZC_MATERIAL');
 
             if ($response->successful()) {
                 $token = $response->headers()['x-csrf-token'][0];
@@ -93,26 +107,28 @@ class SapService
 
     public function getAttpCsrfToken(): ?array
     {
-        $response = $this->getClient()
-            ->withHeaders(['x-csrf-token' => 'fetch'])
-            ->get($this->attpUrl . '/sap/opu/odata/sap/ZAATP_FILE_SRV');
-        dd($response);
-        if ($response->successful()) {
-            $token = $response->headers()['x-csrf-token'][0];
+        return $this->execute(function () {
+            $response = $this->getAttpClient()
+                ->withHeaders(['x-csrf-token' => 'fetch'])
+                ->get($this->attpUrl.'/sap/opu/odata/sap/ZAATP_FILE_SRV');
 
-            return [
-                'token' => $token,
-                'headers' => $response->headers(),
-            ];
-        }
+            if ($response->successful()) {
+                $token = $response->headers()['x-csrf-token'][0];
+
+                return [
+                    'token' => $token,
+                    'headers' => $response->headers(),
+                    'cookies' => $response->cookies(),
+                ];
+            }
+        });
     }
 
     public function getDeliverySlotsReservedCounts($date): ?array
     {
         return $this->execute(function () use ($date) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_TIME_SRV/ZC_TIME(D_Date=datetime'" . $date . "T00:00:00')/Set");
-            // dd($response->json());
+                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_TIME_SRV/ZC_TIME(D_Date=datetime'".$date."T00:00:00')/Set");
 
             if ($response->successful()) {
                 $data = $response->json('d.results');
@@ -130,7 +146,7 @@ class SapService
     {
         return $this->execute(function () {
             $response = $this->getClient()
-                ->get($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_ODATA_MATERIAL_SRV/ZC_MATERIAL', [
+                ->get($this->baseUrl.'/sap/opu/odata/SAP/ZPRJ_ODATA_MATERIAL_SRV/ZC_MATERIAL', [
                     '$expand' => 'to_mplant/to_mlocation',
 
                 ]);
@@ -232,7 +248,7 @@ class SapService
             $filter = $state == 'active' ? 'ge' : 'le';
             $now = Carbon::now()->format('Y-m-d\TH:i:s');
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set", [
+                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set", [
                     '$expand' => 'to_VP',
                     '$inlinecount' => 'allpages',
                     '$orderby' => 'CONTRACT_END asc',
@@ -276,7 +292,7 @@ class SapService
     {
         return $this->execute(function () use ($businessPartnerCode, $contractId) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set", [
+                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set", [
                     '$expand' => 'to_VP',
                     '$filter' => "Contract eq '$contractId'",
                 ]);
@@ -315,7 +331,7 @@ class SapService
     {
         return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
             $response = $this->getClient()
-                ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
+                ->get($this->baseUrl.'/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
                     '$expand' => 'to_Inbounds',
                     '$inlinecount' => 'allpages',
                     '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne ''",
@@ -356,10 +372,10 @@ class SapService
     {
         return $this->execute(function () use ($businessPartnerCode) {
             $response = $this->getClient()
-                ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
+                ->get($this->baseUrl.'/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
                     '$expand' => 'to_Inbounds',
                     '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne ''",
-                    '$orderby' => 'Material asc'
+                    '$orderby' => 'Material asc',
                 ]);
 
             if ($response->successful()) {
@@ -368,6 +384,7 @@ class SapService
 
                 $stock = collect($data['d']['results'])->map(function ($request) use ($locale) {
                     $material = Material::where('code', $request['Material'])->first();
+
                     return [
                         'material_name' => ($locale === 'ar' ? $material?->name_ar : $material?->name_en),
                         'material_code' => $request['Material'],
@@ -394,7 +411,7 @@ class SapService
     {
         return $this->execute(function () use ($businessPartnerCode, $materialCode, $warehouseCode) {
             $response = $this->getClient()
-                ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
+                ->get($this->baseUrl.'/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
                     '$expand' => 'to_Inbounds',
                     '$inlinecount' => 'allpages',
                     '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne '' and Material eq '$materialCode' and Plant eq '$warehouseCode'",
@@ -427,12 +444,11 @@ class SapService
 
     }
 
-
     public function getOutboundRequests($businessPartnerCode, $pageSize, $pageNumber)
     {
         return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/sap/ZPRJ_ODATA_VIEW_OUTBOUND_SRV/ZC_OUTVOUND_VIEW(C_KUNNR='$businessPartnerCode')/Set", [
+                ->get($this->baseUrl."/sap/opu/odata/sap/ZPRJ_ODATA_VIEW_OUTBOUND_SRV/ZC_OUTVOUND_VIEW(C_KUNNR='$businessPartnerCode')/Set", [
                     '$expand' => 'to_LIP',
                     '$inlinecount' => 'allpages',
                     '$orderby' => 'Delivery_date desc',
@@ -479,7 +495,7 @@ class SapService
     {
         return $this->execute(function () use ($businessPartnerCode, $outboundRequestCode) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/sap/ZPRJ_ODATA_VIEW_OUTBOUND_SRV/ZC_OUTVOUND_VIEW(C_KUNNR='$businessPartnerCode')/Set", [
+                ->get($this->baseUrl."/sap/opu/odata/sap/ZPRJ_ODATA_VIEW_OUTBOUND_SRV/ZC_OUTVOUND_VIEW(C_KUNNR='$businessPartnerCode')/Set", [
                     '$expand' => 'to_LIP',
                     '$filter' => "Outbound_delivery eq '{$outboundRequestCode}'",
 
@@ -509,6 +525,7 @@ class SapService
                         }),
                     ];
                 })->all();
+
                 return $outboundRequests[0];
             }
 
@@ -554,12 +571,11 @@ class SapService
 
     // }
 
-
     public function getInboundRequests($businessPartnerCode, $pageSize, $pageNumber)
     {
         return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set", [
+                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set", [
                     '$expand' => 'to_VBAP',
                     '$inlinecount' => 'allpages',
                     '$orderby' => 'Created_on desc',
@@ -606,7 +622,7 @@ class SapService
     {
         return $this->execute(function () use ($businessPartnerCode, $inboundRequestCode) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set", [
+                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set", [
                     '$expand' => 'to_VBAP',
                     '$filter' => "Inbound_request eq '{$inboundRequestCode}'",
                 ]);
@@ -633,8 +649,10 @@ class SapService
                         }),
                     ];
                 })->all();
+
                 return $inboundRequests[0];
             }
+
             return $response;
         });
 
@@ -652,14 +670,14 @@ class SapService
             if ($deliveryItems->isNotEmpty()) {
                 $InboundDeliveryItemsCancelationStatus = $this->batchCancelInboundDeliveryItems($inboundDeliveryCode, $deliveryItems);
 
-                if (!$InboundDeliveryItemsCancelationStatus) {
+                if (! $InboundDeliveryItemsCancelationStatus) {
                     return false;
                 }
 
             }
 
             $PoCancelationStatus = $this->CancelPo($inboundPo);
-            if (!$PoCancelationStatus) {
+            if (! $PoCancelationStatus) {
                 return false;
             }
 
@@ -669,16 +687,16 @@ class SapService
             if ($salesOrderItems->isNotEmpty()) {
                 $InboundDeliveryItemsCancelationStatus = $this->batchCancelSalesOrderItems($inboundRequestCode, $salesOrderItems);
 
-                if (!$InboundDeliveryItemsCancelationStatus) {
+                if (! $InboundDeliveryItemsCancelationStatus) {
                     return false;
                 }
 
             }
+
             return true;
 
         }
     }
-
 
     public function batchCancelInboundDeliveryItems($inboundDeliveryCode, $deliveryItems)
     {
@@ -688,27 +706,27 @@ class SapService
         $cookies = $tokenResponse['headers']['set-cookie'];
         $CRLF = "\r\n";
 
-        $batchData = "--batch_1" . $CRLF;
-        $batchData .= "Content-Type: multipart/mixed; boundary=changeset_s1" . $CRLF . $CRLF;
+        $batchData = '--batch_1'.$CRLF;
+        $batchData .= 'Content-Type: multipart/mixed; boundary=changeset_s1'.$CRLF.$CRLF;
 
         $counter = 1;
         foreach ($deliveryItems as $item) {
 
-            $etag = "*";// $item['etag'];
+            $etag = '*'; // $item['etag'];
             $itemCode = $item['item_code'];
-            $batchData .= "--changeset_s1" . $CRLF;
-            $batchData .= "Content-Type: application/http" . $CRLF;
-            $batchData .= "Content-Transfer-Encoding: binary" . $CRLF;
-            $batchData .= "Content-ID: " . $counter . $CRLF . $CRLF;
-            $batchData .= "POST WhseInboundDeliveryItem(EWMInboundDelivery='" . $inboundDeliveryCode . "',EWMInboundDeliveryItem='" . $itemCode . "')/SAP__self.AdjustDeliveryItemQuantity HTTP/1.1" . $CRLF;
-            $batchData .= "Content-Type: application/json" . $CRLF;
-            $batchData .= "If-Match: " . $etag . $CRLF . $CRLF;
-            $batchData .= "{}" . $CRLF;
+            $batchData .= '--changeset_s1'.$CRLF;
+            $batchData .= 'Content-Type: application/http'.$CRLF;
+            $batchData .= 'Content-Transfer-Encoding: binary'.$CRLF;
+            $batchData .= 'Content-ID: '.$counter.$CRLF.$CRLF;
+            $batchData .= "POST WhseInboundDeliveryItem(EWMInboundDelivery='".$inboundDeliveryCode."',EWMInboundDeliveryItem='".$itemCode."')/SAP__self.AdjustDeliveryItemQuantity HTTP/1.1".$CRLF;
+            $batchData .= 'Content-Type: application/json'.$CRLF;
+            $batchData .= 'If-Match: '.$etag.$CRLF.$CRLF;
+            $batchData .= '{}'.$CRLF;
             $counter++;
         }
 
-        $batchData .= "--changeset_s1--" . $CRLF;
-        $batchData .= "--batch_1--";
+        $batchData .= '--changeset_s1--'.$CRLF;
+        $batchData .= '--batch_1--';
 
         // dd($batchData);
 
@@ -723,7 +741,7 @@ class SapService
                 'sap-client' => $this->client,
             ])
             ->withBody($batchData, 'multipart/mixed;boundary=batch_1')
-            ->post($this->baseUrl . '/sap/opu/odata4/sap/api_whse_inb_delivery_2/srvd_a2x/sap/warehouseinbounddelivery/0001/$batch');
+            ->post($this->baseUrl.'/sap/opu/odata4/sap/api_whse_inb_delivery_2/srvd_a2x/sap/warehouseinbounddelivery/0001/$batch');
 
         return $response->status() == 200;
     }
@@ -736,28 +754,27 @@ class SapService
         $cookies = $tokenResponse['headers']['set-cookie'];
         $CRLF = "\r\n";
 
-
-        $batchData = "--batch_1" . $CRLF;
-        $batchData .= "Content-Type: multipart/mixed; boundary=changeset_s1" . $CRLF . $CRLF;
+        $batchData = '--batch_1'.$CRLF;
+        $batchData .= 'Content-Type: multipart/mixed; boundary=changeset_s1'.$CRLF.$CRLF;
 
         $counter = 1;
         foreach ($salesOrderItems as $item) {
 
-            $etag = "*";// $item['etag'];
+            $etag = '*'; // $item['etag'];
             $salesOrderItem = $item['sales_order_item'];
-            $batchData .= "--changeset_s1" . $CRLF;
-            $batchData .= "Content-Type: application/http" . $CRLF;
-            $batchData .= "Content-Transfer-Encoding: binary" . $CRLF;
-            $batchData .= "Content-ID: " . $counter . $CRLF . $CRLF;
-            $batchData .= "PATCH SalesOrderItem(SalesOrder='" . $inboundRequestCode . "',SalesOrderItem='" . $salesOrderItem . "') HTTP/1.1" . $CRLF;
-            $batchData .= "Content-Type: application/json" . $CRLF;
-            $batchData .= "If-Match: " . $etag . $CRLF . $CRLF;
-            $batchData .= '{"SalesDocumentRjcnReason": "02"}' . $CRLF;
+            $batchData .= '--changeset_s1'.$CRLF;
+            $batchData .= 'Content-Type: application/http'.$CRLF;
+            $batchData .= 'Content-Transfer-Encoding: binary'.$CRLF;
+            $batchData .= 'Content-ID: '.$counter.$CRLF.$CRLF;
+            $batchData .= "PATCH SalesOrderItem(SalesOrder='".$inboundRequestCode."',SalesOrderItem='".$salesOrderItem."') HTTP/1.1".$CRLF;
+            $batchData .= 'Content-Type: application/json'.$CRLF;
+            $batchData .= 'If-Match: '.$etag.$CRLF.$CRLF;
+            $batchData .= '{"SalesDocumentRjcnReason": "02"}'.$CRLF;
             $counter++;
         }
 
-        $batchData .= "--changeset_s1--" . $CRLF;
-        $batchData .= "--batch_1--";
+        $batchData .= '--changeset_s1--'.$CRLF;
+        $batchData .= '--batch_1--';
 
         $response = $this->getClient()
             ->withHeaders([
@@ -770,11 +787,10 @@ class SapService
                 'sap-client' => $this->client,
             ])
             ->withBody($batchData, 'multipart/mixed;boundary=batch_1')
-            ->post($this->baseUrl . '/sap/opu/odata4/sap/api_salesorder/srvd_a2x/sap/salesorder/0001/$batch');
+            ->post($this->baseUrl.'/sap/opu/odata4/sap/api_salesorder/srvd_a2x/sap/salesorder/0001/$batch');
 
         // dd($response->body());
         return $response->status() == 200;
-
 
     }
 
@@ -790,30 +806,32 @@ class SapService
 
             foreach ($deliveryItems as $item) {
 
-                $etag = "*";// $item['etag'];
+                $etag = '*'; // $item['etag'];
                 $itemCode = $item['item_code'];
                 $DeliveryItemCancelationStatus = $this->CancelInboundDeliveryItems($inboundDeliveryCode, $itemCode, $etag);
-                if (!$DeliveryItemCancelationStatus) {
+                if (! $DeliveryItemCancelationStatus) {
                     return false;
                 }
             }
 
             $PoCancelationStatus = $this->CancelPo($inboundPo);
-            if (!$PoCancelationStatus) {
+            if (! $PoCancelationStatus) {
                 return false;
             }
             $SalesOrderItems = $this->getSalesOrderItems($inboundRequestCode);
             // dd($SalesOrderItems);
             foreach ($SalesOrderItems as $item) {
 
-                $etag = "*";//$item['etag'];
+                $etag = '*'; // $item['etag'];
                 $itemCode = $item['sales_order_item'];
                 $SalesOrderItemCancelationStatus = $this->CancelSalesOrderItems($inboundRequestCode, $itemCode, $etag);
-                if ($SalesOrderItemCancelationStatus != "true") {
+                if ($SalesOrderItemCancelationStatus != 'true') {
                     return false;
+
                     return $SalesOrderItemCancelationStatus;
                 }
             }
+
             return true;
 
         }
@@ -823,7 +841,7 @@ class SapService
     {
         return $this->execute(function () use ($inboundRequestCode) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/sap/ZPRJ_GET_INB_PO_SO_SRV/ZI_LIPS", [
+                ->get($this->baseUrl.'/sap/opu/odata/sap/ZPRJ_GET_INB_PO_SO_SRV/ZI_LIPS', [
                     '$filter' => "inbound_request eq '{$inboundRequestCode}'",
                 ]);
 
@@ -839,6 +857,7 @@ class SapService
 
                 return $inboundRequests[0];
             }
+
             return false;
         });
     }
@@ -847,8 +866,8 @@ class SapService
     {
         return $this->execute(function () use ($inboundDeliveryCode) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata4/sap/api_whse_inb_delivery_2/srvd_a2x/sap/warehouseinbounddelivery/0001/WhseInboundDeliveryHead(EWMInboundDelivery='$inboundDeliveryCode')", [
-                    '$expand' => "_WhseInbDeliveryItem",
+                ->get($this->baseUrl."/sap/opu/odata4/sap/api_whse_inb_delivery_2/srvd_a2x/sap/warehouseinbounddelivery/0001/WhseInboundDeliveryHead(EWMInboundDelivery='$inboundDeliveryCode')", [
+                    '$expand' => '_WhseInbDeliveryItem',
                 ]);
 
             if ($response->successful()) {
@@ -868,13 +887,12 @@ class SapService
         });
     }
 
-
     public function getSalesOrderItems($inboundRequestCode)
     {
         return $this->execute(function () use ($inboundRequestCode) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata4/sap/api_salesorder/srvd_a2x/sap/salesorder/0001/SalesOrder('$inboundRequestCode')", [
-                    '$expand' => "_Item",
+                ->get($this->baseUrl."/sap/opu/odata4/sap/api_salesorder/srvd_a2x/sap/salesorder/0001/SalesOrder('$inboundRequestCode')", [
+                    '$expand' => '_Item',
                 ]);
 
             if ($response->successful()) {
@@ -884,9 +902,10 @@ class SapService
                     return [
                         'etag' => $request['@odata.etag'],
                         'sales_order_item' => $request['SalesOrderItem'],
-                        'status' => $request['SDProcessStatus']
+                        'status' => $request['SDProcessStatus'],
                     ];
                 });
+
                 return $SalesOrderItems;
 
                 return $SalesOrderItems->where('status', 'A');
@@ -897,11 +916,10 @@ class SapService
         });
     }
 
-
     public function CancelSalesOrderItems($inboundRequestCode, $salesOrderItem, $etag)
     {
         $data = [
-            "SalesDocumentRjcnReason" => "02"
+            'SalesDocumentRjcnReason' => '02',
         ];
         $tokenResponse = $this->getCsrfToken();
         $csrfToken = $tokenResponse['token'];
@@ -918,17 +936,17 @@ class SapService
             ->withQueryParameters([
                 'sap-client' => $this->client,
             ])
-            ->patch($this->baseUrl . "/sap/opu/odata4/sap/api_salesorder/srvd_a2x/sap/salesorder/0001/SalesOrderItem(SalesOrder='$inboundRequestCode',SalesOrderItem='$salesOrderItem')", $data);
+            ->patch($this->baseUrl."/sap/opu/odata4/sap/api_salesorder/srvd_a2x/sap/salesorder/0001/SalesOrderItem(SalesOrder='$inboundRequestCode',SalesOrderItem='$salesOrderItem')", $data);
 
         // return $response->json();
         // dd($response->json());
         if ($response->successful()) {
-            return "true";
+            return 'true';
         }
+
         return $response->json();
 
     }
-
 
     public function CancelInboundDeliveryItems($inboundDeliveryCode, $inboundDeliveryItem, $etag)
     {
@@ -948,7 +966,7 @@ class SapService
             ->withQueryParameters([
                 'sap-client' => $this->client,
             ])
-            ->post($this->baseUrl . "/sap/opu/odata4/sap/api_whse_inb_delivery_2/srvd_a2x/sap/warehouseinbounddelivery/0001/WhseInboundDeliveryItem(EWMInboundDelivery='$inboundDeliveryCode',EWMInboundDeliveryItem='$inboundDeliveryItem')/SAP__self.AdjustDeliveryItemQuantity");
+            ->post($this->baseUrl."/sap/opu/odata4/sap/api_whse_inb_delivery_2/srvd_a2x/sap/warehouseinbounddelivery/0001/WhseInboundDeliveryItem(EWMInboundDelivery='$inboundDeliveryCode',EWMInboundDeliveryItem='$inboundDeliveryItem')/SAP__self.AdjustDeliveryItemQuantity");
 
         // return $response->json();
 
@@ -959,7 +977,6 @@ class SapService
         return false;
 
     }
-
 
     public function CancelPo($PoCode)
     {
@@ -978,13 +995,14 @@ class SapService
             ->withQueryParameters([
                 'sap-client' => $this->client,
             ])
-            ->delete($this->baseUrl . "/sap/opu/odata4/sap/api_purchaseorder_2/srvd_a2x/sap/purchaseorder/0001/PurchaseOrder('$PoCode')");
+            ->delete($this->baseUrl."/sap/opu/odata4/sap/api_purchaseorder_2/srvd_a2x/sap/purchaseorder/0001/PurchaseOrder('$PoCode')");
 
         // return $response->json();
 
         if ($response->successful()) {
             return true;
         }
+
         return false;
 
     }
@@ -1029,7 +1047,7 @@ class SapService
         // dd($data);
         $response = $this->getClient()
             ->withHeaders(['X-Requested-With' => 'X'])
-            ->post($this->baseUrl . '/sap/opu/odata/SAP/ZINT_PORTAL_SRV/PARTNER', $data);
+            ->post($this->baseUrl.'/sap/opu/odata/SAP/ZINT_PORTAL_SRV/PARTNER', $data);
 
         // dd($response->json());
         return $response->json();
@@ -1063,7 +1081,7 @@ class SapService
 
         $timestampMilliseconds = $timestampSeconds * 1000;
 
-        $sapDateFormat = '/Date(' . $timestampMilliseconds . ')/';
+        $sapDateFormat = '/Date('.$timestampMilliseconds.')/';
 
         $data = [
             'd' => [
@@ -1072,7 +1090,7 @@ class SapService
                 'ReceivingDate' => $sapDateFormat, // '\/Date(1772150400000)\/',
                 'ShipmentIndicator' => '0',
                 'SoNumber' => $contractCode,
-                'deliverytime' => 'PT' . $hour . 'H00M00S',
+                'deliverytime' => 'PT'.$hour.'H00M00S',
                 'soitemsSet' => [
                     'results' => $results,
                 ],
@@ -1095,7 +1113,7 @@ class SapService
             ->withQueryParameters([
                 'sap-client' => $this->client,
             ])
-            ->post($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_INB_REQQ_SRV/soheaderSet', $data);
+            ->post($this->baseUrl.'/sap/opu/odata/SAP/ZPRJ_INB_REQQ_SRV/soheaderSet', $data);
 
         return $response->json();
 
@@ -1168,7 +1186,7 @@ class SapService
 
     private function parseSapDate($sapDate)
     {
-        if (!$sapDate) {
+        if (! $sapDate) {
             return null;
         }
 
@@ -1191,7 +1209,7 @@ class SapService
     public function uploadFile($slug, $filePath)
     {
         $fileContent = \Illuminate\Support\Facades\Storage::disk('private')->get($filePath);
-        if (!$fileContent) {
+        if (! $fileContent) {
             return null;
         }
 
@@ -1212,7 +1230,7 @@ class SapService
             ])
             ->withQueryParameters(['sap-client' => $this->client])
             ->withBody($fileContent, 'application/octet-stream')
-            ->post($this->baseUrl . '/sap/opu/odata/SAP/ZTEST_SEND_FILES_SRV/FileSet');
+            ->post($this->baseUrl.'/sap/opu/odata/SAP/ZTEST_SEND_FILES_SRV/FileSet');
 
         return $response->json();
     }
@@ -1220,15 +1238,16 @@ class SapService
     public function uploadAttpFile($filePath)
     {
         $fileContent = File::get($filePath);
-        if (!$fileContent) {
+        if (! $fileContent) {
             return null;
         }
 
         $tokenResponse = $this->getAttpCsrfToken();
         $csrfToken = $tokenResponse['token'];
-        $cookies = $tokenResponse['headers']['set-cookie'];
+        $cookie1 = $tokenResponse['cookies']->getCookieByName('SAP_SESSIONID_ATP_120')->getValue();
+        $cookie2 = $tokenResponse['cookies']->getCookieByName('sap-usercontext')->getValue();
 
-        $response = $this->getClient()
+        $response = $this->getAttpClient()
             ->withOptions([
                 'verify' => $this->verify,
             ])
@@ -1237,12 +1256,12 @@ class SapService
                 'Accept' => 'application/json',
                 'SLUG' => (string) Carbon::now(),
                 'Content-Type' => 'application/octet-stream',
-                'Cookie' => $cookies,
+                'Cookie' => "SAP_SESSIONID_ATP_120=$cookie1; sap-usercontext=$cookie2",
             ])
             ->withQueryParameters(['sap-client' => $this->client])
             ->withBody($fileContent, 'application/octet-stream')
-            ->post($this->attpUrl . '/sap/opu/odata/sap/ZAATP_FILE_SRV/FileSet');
-        dd($response->json());
+            ->post($this->attpUrl.'/sap/opu/odata/sap/ZAATP_FILE_SRV/FileSet');
+        // dd($response->json());
 
         return $response->json();
     }

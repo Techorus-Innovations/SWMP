@@ -3,7 +3,9 @@
 namespace App\Filament\Partner\Pages;
 
 use App\Services\SapService;
+use Filament\Actions\Action;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -11,7 +13,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Url;
 
@@ -47,7 +48,50 @@ class InboundDetails extends Page implements HasTable
 
     public function getTitle(): string
     {
-        return __('Inbound Request') . ' #' . $this->inboundRequestId;
+        return __('Inbound Request').' #'.$this->inboundRequestId;
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('cancelInbound')
+                ->label(__('Cancel Inbound'))
+                ->color('danger')
+                ->icon('heroicon-o-x-circle')
+                ->requiresConfirmation()
+                ->modalHeading(__('Cancel Inbound Request'))
+                ->modalDescription(__('Are you sure you want to cancel this inbound request? This action cannot be undone.'))
+                ->hidden(function () {
+                    if (! filament()->auth()->user()->canCancelInbounds()) {
+                        return true;
+                    }
+
+                    foreach ($this->response['items'] as $item) {
+                        if ($item['status'] == 'Completely processed' || $item['status'] == 'Partially processed') {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                })
+                ->action(function () {
+                    $sapService = new SapService;
+                    $status = $sapService->cancelInboundRequestBatch($this->response['inbound_request_id']);
+                    if ($status == true) {
+                        $this->boot();
+                        Notification::make()
+                            ->title(__('Inbound Cancelled'))
+                            ->success()
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title(__('Something went wrong, please try again later'))
+                            ->danger()
+                            ->send();
+                    }
+
+                }),
+        ];
     }
 
     public function infolist(Schema $schema): Schema
@@ -66,7 +110,13 @@ class InboundDetails extends Page implements HasTable
                         ->state($record['created_date'] ?? '—'),
                     TextEntry::make('shipping_indicator')
                         ->label(__('Shipping Indicator'))
-                        ->state($record['shipping_indicator'] ?? '—')
+                        ->state($record['shipping_indicator'] ?? '—'),
+                    TextEntry::make('delivery_date')
+                        ->label(__('Delivery Date'))
+                        ->state($record['delivery_date'] ?? '—'),
+                    TextEntry::make('delivery_time')
+                        ->label(__('Delivery Time'))
+                        ->state($record['delivery_time'] ?? '—'),
                 ]),
         ]);
     }

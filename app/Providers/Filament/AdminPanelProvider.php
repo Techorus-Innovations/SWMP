@@ -2,28 +2,28 @@
 
 namespace App\Providers\Filament;
 
-use DiogoGPinto\AuthUIEnhancer\AuthUIEnhancerPlugin;
-use Filament\Http\Middleware\Authenticate;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Boquizo\FilamentLogViewer\FilamentLogViewerPlugin;
+use DiogoGPinto\AuthUIEnhancer\AuthUIEnhancerPlugin;
+use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
-use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Schema;
-use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
+use Illuminate\Contracts\View\View;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Jacobtims\FilamentLogger\FilamentLoggerPlugin;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
@@ -44,16 +44,17 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Schema::hasTable('general_settings') && GeneralSetting::first() ? GeneralSetting::first()->theme_color : Color::Amber,
             ])
-             ->brandName(Schema::hasTable('general_settings') && GeneralSetting::first() ? GeneralSetting::first()->site_name : '')
+            ->brandName(Schema::hasTable('general_settings') && GeneralSetting::first() ? GeneralSetting::first()->site_name : '')
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\Filament\Admin\Resources')
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\Filament\Admin\Pages')
             ->pages([
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\Filament\Admin\Widgets')
+            ->globalSearch(false)
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
+                // FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -68,7 +69,8 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 \Statikbe\FilamentTranslationManager\FilamentChainedTranslationManagerPlugin::make(),
-                FilamentShieldPlugin::make(),
+                FilamentShieldPlugin::make()
+                    ->navigationGroup('Roles & Permissions'),
                 BreezyCore::make()->myProfile(
                     shouldRegisterUserMenu: true, // Sets the 'account' link in the panel User Menu (default = true)
                     userMenuLabel: 'My Profile', // Customizes the 'account' link label in the panel User Menu (default = null)
@@ -79,7 +81,7 @@ class AdminPanelProvider extends PanelProvider
                 ),
                 FilamentLoggerPlugin::make(),
                 FilamentGeneralSettingsPlugin::make()
-                    ->canAccess(value: fn() => auth()->user()->can('View:GeneralSettingsPage'))
+                    ->canAccess(value: fn () => auth()->user()->can('View:GeneralSettingsPage'))
                     ->setNavigationGroup('Settings')
                     ->setIcon('heroicon-o-cog'),
                 FilamentLogViewerPlugin::make()
