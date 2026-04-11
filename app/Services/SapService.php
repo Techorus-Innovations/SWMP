@@ -1106,11 +1106,65 @@ class SapService
 
     }
 
-    public function createOutbound($businessPartnerCode, $outboundId, $date, $hour)
+    public function createOutbound($shiptoPartyCode, $outboundId, $date, $hour)
     {
         $outbound = DraftOutbound::where('id', $outboundId)->first();
-        dd($outbound->materials);
+        $outboundedMaterial = $outbound->materials->where('quantity','>',0);
+        $inboundRequests = $outboundedMaterial->pluck('inbound_request_id')->unique();
+        $adjustShipToPartyStatus = $this->adjustSalesOrdersShipToParty($inboundRequests, $shiptoPartyCode);
+        dd($adjustShipToPartyStatus);
+         $results = [];
     }
+
+    
+    public function adjustSalesOrdersShipToParty($salesOrdersCodes, $shiptoPartyCode)
+    {
+// 
+        $tokenResponse = $this->getCsrfToken();
+        $csrfToken = $tokenResponse['token'];
+        $cookies = $tokenResponse['headers']['set-cookie'];
+        $CRLF = "\r\n";
+
+
+        $batchData = "--batch_1" . $CRLF;
+        $batchData .= "Content-Type: multipart/mixed; boundary=changeset_s1" . $CRLF . $CRLF;
+
+        $counter = 1;
+        foreach ($salesOrdersCodes as $salesOrdersCode) {
+
+            $etag = "*";// $item['etag'];
+            $batchData .= "--changeset_s1" . $CRLF;
+            $batchData .= "Content-Type: application/http" . $CRLF;
+            $batchData .= "Content-Transfer-Encoding: binary" . $CRLF;
+            $batchData .= "Content-ID: " . $counter . $CRLF . $CRLF;
+            $batchData .= "PATCH A_SalesOrderHeaderPartner(SalesOrder='".$salesOrdersCode."',PartnerFunction='WE') HTTP/1.1" . $CRLF;
+            $batchData .= "Content-Type: application/json" . $CRLF;
+            $batchData .= "If-Match: " . $etag . $CRLF . $CRLF;
+            $batchData .= '{"Customer": "'.$shiptoPartyCode.'"}' . $CRLF;
+            $batchData .= "--changeset_s1--" . $CRLF . $CRLF;
+            $counter++;
+        }
+        $batchData .= "--batch_1--";
+
+        $response = $this->getClient()
+            ->withHeaders([
+                'x-csrf-token' => $csrfToken,
+                'Cookie' => $cookies,
+                'Content-Type' => 'multipart/mixed;boundary=batch_1',
+                'Accept' => 'multipart/mixed, application/json',
+            ])
+            ->withQueryParameters([
+                'sap-client' => $this->client,
+            ])
+            ->withBody($batchData, 'multipart/mixed;boundary=batch_1')
+            ->post($this->baseUrl . '/sap/opu/odata/sap/API_SALES_ORDER_SRV/$batch');
+
+        dd($salesOrdersCodes,$response->body());
+        return $response->status() == 200;
+
+
+    }
+
 
     private function parseSapDate($sapDate)
     {
