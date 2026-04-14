@@ -14,29 +14,35 @@ class MaterialsTable
 
         return $table
             ->columns([
-                TextColumn::make('name_en')
-                    ->label(__('Name'))
-                    ->visible($isEn)
-                    ->searchable($isEn),
-                TextColumn::make('name_ar')
-                    ->label(__('Name'))
-                    ->visible($isAr)
-                    ->searchable( $isAr),
-
                 TextColumn::make('code')
                     ->label(__('Code'))
+                    ->searchable(),
+
+                TextColumn::make('name_en')
+                    ->label(__('Name EN'))
+                    // ->visible($isEn)
+                    // ->searchable($isEn),
+                    ->searchable(),
+                TextColumn::make('name_ar')
+                    ->label(__('Name AR'))
+                    // ->visible($isAr)
+                    // ->searchable($isAr),
+                    ->searchable(),
+
+                TextColumn::make('gtin_code')
+                    ->label(__('GTIN Code'))
                     ->searchable(),
 
                 TextColumn::make('materialType.name_en')
                     ->label(__('Material Type'))
                     ->visible($isEn)
                     ->searchable($isEn),
-                
+
                 TextColumn::make('materialType.name_ar')
                     ->label(__('Material Type'))
                     ->visible($isAr)
                     ->searchable($isAr),
-                
+
                 TextColumn::make('materialGroup.name_en')
                     ->label(__('Material Group'))
                     ->visible($isEn)
@@ -46,9 +52,6 @@ class MaterialsTable
                     ->label(__('Material Group'))
                     ->visible($isAr)
                     ->searchable($isAr),
-                TextColumn::make('gtin_code')
-                    ->label(__('GTIN Code'))
-                    ->searchable(),
             ])
             ->filters([])
             ->recordActions([

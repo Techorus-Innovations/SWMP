@@ -2,6 +2,7 @@
 
 namespace App\Filament\Partner\Pages;
 
+use App\Models\Material;
 use App\Services\SapService;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\TextEntry;
@@ -131,8 +132,17 @@ class InboundDetails extends Page implements HasTable
 
                 $paginated = array_slice($items, ($currentPage - 1) * $perPage, $perPage);
 
+                $enrichedInboundMaterial = collect($paginated ?? [])->map(function ($inboundMaterial) {
+                    $material = Material::where('code', $inboundMaterial['material_code'])->first();
+                    $inboundMaterial['material_name_en'] = $material?->name_en;
+                    $inboundMaterial['material_name_ar'] = $material?->name_ar;
+                    $inboundMaterial['gtin'] = $material?->gtin_code ?? null;
+
+                    return $inboundMaterial;
+                })->toArray();
+
                 return new LengthAwarePaginator(
-                    $paginated,
+                    $enrichedInboundMaterial,
                     count($items),
                     $perPage,
                     $currentPage
@@ -141,8 +151,12 @@ class InboundDetails extends Page implements HasTable
             ->columns([
                 TextColumn::make('material_code')
                     ->label('Material Code'),
-                TextColumn::make('material_description')
-                    ->label('Material Description'),
+                TextColumn::make('material_name_en')
+                    ->label('Material Name EN'),
+                TextColumn::make('material_name_ar')
+                    ->label('Material Name AR'),
+                TextColumn::make('gtin')
+                    ->label('Gtin'),
                 TextColumn::make('quantity')
                     ->label('Quantity'),
                 TextColumn::make('measuring_unit')

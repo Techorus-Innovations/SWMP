@@ -2,6 +2,7 @@
 
 namespace App\Filament\Partner\Pages;
 
+use App\Models\Material;
 use App\Services\SapService;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -73,7 +74,7 @@ class OutboundDetails extends Page implements HasTable
                     IconEntry::make('ship_to_party')
                         ->label(__('Shipping Included'))
                         ->state($record['ship_to_party'] != filament()->auth()->user()->businessPartner->bp_code)
-                        ->boolean()
+                        ->boolean(),
                 ]),
         ]);
     }
@@ -88,8 +89,17 @@ class OutboundDetails extends Page implements HasTable
 
                 $paginated = array_slice($items, ($currentPage - 1) * $perPage, $perPage);
 
+                $enrichedOutboundMaterial = collect($paginated ?? [])->map(function ($outboundMaterial) {
+                    $material = Material::where('code', $outboundMaterial['material_code'])->first();
+                    $outboundMaterial['material_name_en'] = $material?->name_en;
+                    $outboundMaterial['material_name_ar'] = $material?->name_ar;
+                    $outboundMaterial['gtin'] = $material?->gtin_code ?? null;
+
+                    return $outboundMaterial;
+                })->toArray();
+
                 return new LengthAwarePaginator(
-                    $paginated,
+                    $enrichedOutboundMaterial,
                     count($items),
                     $perPage,
                     $currentPage
@@ -98,8 +108,12 @@ class OutboundDetails extends Page implements HasTable
             ->columns([
                 TextColumn::make('material_code')
                     ->label('Material Code'),
-                TextColumn::make('material_description')
-                    ->label('Material Description'),
+                TextColumn::make('material_name_en')
+                    ->label('Material Name EN'),
+                TextColumn::make('material_name_ar')
+                    ->label('Material Name AR'),
+                TextColumn::make('gtin')
+                    ->label('Gtin'),
                 TextColumn::make('quantity')
                     ->label('Quantity'),
                 TextColumn::make('measuring_unit')
