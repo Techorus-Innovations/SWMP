@@ -86,7 +86,7 @@ class OutboundDetails extends Page implements HasTable
                 $items = collect($this->response['items'] ?? [])->toArray();
                 $currentPage = $this->getTablePage();
                 $perPage = $this->getTableRecordsPerPage() ?? 10;
-                $search = $this->getTableSearch();
+
                 $paginated = array_slice($items, ($currentPage - 1) * $perPage, $perPage);
 
                 $enrichedOutboundMaterial = collect($paginated ?? [])->map(function ($outboundMaterial) {
@@ -96,22 +96,7 @@ class OutboundDetails extends Page implements HasTable
                     $outboundMaterial['gtin'] = $material?->gtin_code ?? null;
 
                     return $outboundMaterial;
-                });
-
-                // Custom search filtering
-                if ($search) {
-                    $enrichedOutboundMaterial = $enrichedOutboundMaterial->filter(function ($outboundMaterial) use ($search) {
-                        $search = mb_strtolower($search);
-
-                        return
-                            (isset($outboundMaterial['material_code']) && str_contains(mb_strtolower($outboundMaterial['material_code']), $search)) ||
-                            (isset($outboundMaterial['material_name_en']) && str_contains(mb_strtolower($outboundMaterial['material_name_en']), $search)) ||
-                            (isset($outboundMaterial['material_name_ar']) && str_contains(mb_strtolower($outboundMaterial['material_name_ar']), $search)) ||
-                            (isset($outboundMaterial['gtin']) && str_contains(mb_strtolower($outboundMaterial['gtin']), $search));
-                    });
-                }
-
-                $enrichedOutboundMaterial = $enrichedOutboundMaterial->values()->toArray();
+                })->toArray();
 
                 return new LengthAwarePaginator(
                     $enrichedOutboundMaterial,
@@ -122,17 +107,13 @@ class OutboundDetails extends Page implements HasTable
             })
             ->columns([
                 TextColumn::make('material_code')
-                    ->label('Material Code')
-                    ->searchable(),
+                    ->label('Material Code'),
                 TextColumn::make('material_name_en')
-                    ->label('Material Name EN')
-                    ->searchable(),
+                    ->label('Material Name EN'),
                 TextColumn::make('material_name_ar')
-                    ->label('Material Name AR')
-                    ->searchable(),
+                    ->label('Material Name AR'),
                 TextColumn::make('gtin')
-                    ->label('Gtin')
-                    ->searchable(),
+                    ->label('Gtin'),
                 TextColumn::make('quantity')
                     ->label('Quantity'),
                 TextColumn::make('measuring_unit')

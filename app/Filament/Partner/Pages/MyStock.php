@@ -42,7 +42,6 @@ class MyStock extends Page implements HasTable
             ->records(function () {
                 $currentPage = $this->getTablePage();
                 $perPage = $this->getTableRecordsPerPage() ?? 10;
-                $search = $this->getTableSearch();
                 $response = $this->sapService->getStock(
                     filament()->auth()->user()->businessPartner->bp_code,
                     $perPage,
@@ -60,43 +59,24 @@ class MyStock extends Page implements HasTable
                     $stock['gtin'] = $material?->gtin_code ?? null;
 
                     return $stock;
-                });
-
-                // Custom search filtering
-                if ($search) {
-                    $enrichedStock = $enrichedStock->filter(function ($stock) use ($search) {
-                        $search = mb_strtolower($search);
-
-                        return
-                            (isset($stock['material_code']) && str_contains(mb_strtolower($stock['material_code']), $search)) ||
-                            (isset($stock['material_name_en']) && str_contains(mb_strtolower($stock['material_name_en']), $search)) ||
-                            (isset($stock['material_name_ar']) && str_contains(mb_strtolower($stock['material_name_ar']), $search)) ||
-                            (isset($stock['gtin']) && str_contains(mb_strtolower($stock['gtin']), $search));
-                    });
-                }
-
-                $enrichedStock = $enrichedStock->values()->toArray();
+                })->toArray();
 
                 return new LengthAwarePaginator(
                     $enrichedStock,
                     $response['totalCount'],
                     $perPage,
-                    $currentPage,
+                    $currentPage
                 );
             })
             ->columns([
                 TextColumn::make('material_code')
-                    ->label(__('Material Code'))
-                    ->searchable(),
+                    ->label(__('Material Code')),
                 TextColumn::make('material_name_en')
-                    ->label(__('Material Name EN'))
-                    ->searchable(),
+                    ->label(__('Material Name EN')),
                 TextColumn::make('material_name_ar')
-                    ->label(__('Material Name AR'))
-                    ->searchable(),
+                    ->label(__('Material Name AR')),
                 TextColumn::make('gtin')
-                    ->label(__('Gtin'))
-                    ->searchable(),
+                    ->label(__('Gtin')),
                 TextColumn::make('warehouse_code')
                     ->label(__('Warehouse')),
                 TextColumn::make('total_quantity')
