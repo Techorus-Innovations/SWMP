@@ -7,22 +7,30 @@ use App\Models\DraftOutbound;
 use App\Models\WorkingHours;
 use App\Services\SapService;
 use Carbon\Carbon;
-use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas\Components\Utilities\Get;
 use Harris21\Fuse\CircuitBreaker;
+use Livewire\Attributes\On;
 use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 
 class EditDraftOutbound extends EditRecord
 {
     protected static string $resource = DraftOutboundResource::class;
+
     private $circuitBreaker;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->circuitBreaker = new CircuitBreaker('sap');
+    }
+
+    #[On('materials-updated')]
+    public function refreshHeaderActions(): void
+    {
+        $this->record->refresh();
     }
 
     protected function getHeaderActions(): array
@@ -31,7 +39,8 @@ class EditDraftOutbound extends EditRecord
             Action::make('submitOutbound')
                 ->label('Submit Outbound')
                 ->color('success')
-                ->disabled(fn (): bool => $this->circuitBreaker->isOpen())
+                ->hidden(fn ($record): bool => count($record->materials) == 0 || $record->materials->sum('quantity') == 0)
+                ->disabled(fn ($record): bool => $this->circuitBreaker->isOpen())
                 ->tooltip(fn () => $this->circuitBreaker->isOpen() ? 'External service is currently unavailable' : null)
                 ->schema([
                     DateRangePicker::make('date')
@@ -91,7 +100,7 @@ class EditDraftOutbound extends EditRecord
                     $time = $data['time_slot'];
                     $bpcode = filament()->auth()->user()->businessPartner->bp_code;
                     $outboundId = $this->record->id;
-                    
+
                     $sapService = new SapService;
                     $response = $sapService->createOutbound($bpcode, $outboundId, $date, $time);
                     DraftOutbound::where('id', $outboundId)->delete();

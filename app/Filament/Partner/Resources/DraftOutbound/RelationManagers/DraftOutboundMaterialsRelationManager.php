@@ -74,6 +74,9 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
                         ];
                     })
                     ->label('Quantity')
+                    ->afterStateUpdated(function () {
+                        $this->dispatch('materials-updated');
+                    })
                     ->suffix(function (DraftOutboundMaterial $record) {
                         return $record->quantity_unit;
                     })
@@ -106,6 +109,8 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
                                 'inbound_request_item_code' => $inbound['item_number'],
                             ]);
                         }
+
+                        $this->dispatch('materials-updated');
                     }),
             ])
             ->actions([
@@ -121,6 +126,8 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
                         $this->getRelationship()
                             ->where('material_code', $record->material_code)
                             ->delete();
+
+                        $this->dispatch('materials-updated');
                     }),
             ])
             ->bulkActions([])
