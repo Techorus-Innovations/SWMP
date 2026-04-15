@@ -152,9 +152,9 @@ class InboundDetails extends Page implements HasTable
                 TextColumn::make('material_code')
                     ->label('Material Code'),
                 TextColumn::make('material_name_en')
-                    ->label('Material Name EN'),
+                    ->label('Material Name (EN)'),
                 TextColumn::make('material_name_ar')
-                    ->label('Material Name AR'),
+                    ->label('Material Name (AR)'),
                 TextColumn::make('gtin')
                     ->label('Gtin'),
                 TextColumn::make('quantity')

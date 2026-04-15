@@ -56,7 +56,7 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
             ->recordTitleAttribute('material_id')
             ->columns([
                 TextColumn::make('material.name_en')
-                    ->label('Material')
+                    ->label(__('Material Name (EN)'))
                     ->searchable()
                     ->sortable(),
 
