@@ -72,8 +72,8 @@ class StockDetails extends Page implements HasTable
     public function infolist(Schema $schema): Schema
     {
         $record = $this->response;
-        $locale = app()->getLocale();
-        $materialName = $locale === 'ar' ? $this->material?->name_ar : $this->material?->name_en;
+        // $locale = app()->getLocale();
+        // $materialName = $locale === 'ar' ? $this->material?->name_ar : $this->material?->name_en;
 
         return $schema->components([
             Section::make(__('Stock Summary'))
@@ -82,9 +82,15 @@ class StockDetails extends Page implements HasTable
                     TextEntry::make('material_code')
                         ->label(__('Material Code'))
                         ->state($record['material_code'] ?? '—'),
-                    TextEntry::make('material_name')
-                        ->label(__('Material Name') ?? '-')
-                        ->state($materialName),
+                    TextEntry::make('name_en')
+                        ->label(__('Material Name (EN)') ?? '-')
+                        ->state($this->material?->name_en),
+                    TextEntry::make('name_ar')
+                        ->label(__('Material Name (AR)') ?? '-')
+                        ->state($this->material?->name_ar),
+                    TextEntry::make('gtin')
+                        ->label(__('GTIN Code') ?? '-')
+                        ->state($this->material?->gtin_code),
                     TextEntry::make('warehouse_code')
                         ->label(__('Warehouse'))
                         ->state($record['warehouse_code'] ?? '—'),
