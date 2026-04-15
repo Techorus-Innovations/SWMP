@@ -353,6 +353,8 @@ class SapService
                                 'inbound_id' => $item['SalesDocument'],
                                 'quantity' => $item['stock'],
                                 'measuring_unit' => $item['unit'],
+                                'item_number' => $item['item_number'],
+                                'location' => $item['location'],
                             ];
                         }),
                     ];
@@ -394,6 +396,8 @@ class SapService
                                 'inbound_id' => $item['SalesDocument'],
                                 'quantity' => $item['stock'],
                                 'measuring_unit' => $item['unit'],
+                                'item_number' => $item['item_number'],
+                                'location' => $item['location'],
                             ];
                         }),
                     ];
@@ -430,6 +434,8 @@ class SapService
                                 'inbound_id' => $item['SalesDocument'],
                                 'quantity' => $item['stock'],
                                 'measuring_unit' => $item['unit'],
+                                'item_number' => $item['item_number'],
+                                'location' => $item['location'],
                             ];
                         }),
                     ];
@@ -1130,11 +1136,78 @@ class SapService
         $outboundedMaterial = $outbound->materials->where('quantity','>',0);
         $inboundRequests = $outboundedMaterial->pluck('inbound_request_id')->unique();
         $adjustShipToPartyStatus = $this->adjustSalesOrdersShipToParty($inboundRequests, $shiptoPartyCode);
-        dd($adjustShipToPartyStatus);
+        if($adjustShipToPartyStatus){
+            dd($outboundedMaterial);
+        }
          $results = [];
     }
 
     
+    public function createOutboundDelivery($businessPartnerCode, $contractCode, $items, $date, $hour)
+    {
+        $counter = 10;
+        $results = [];
+        foreach ($items as $material => $quantity) {
+            $formatted = sprintf('%06d', $counter);
+            array_push(
+                $results,
+                [
+                    'SoNumber' => $contractCode,
+                    'ITEM' => $formatted,
+                    'Materia' => (string) $material,
+                    'ReqQty' => (string) $quantity,
+                ]
+            );
+            $counter += 10;
+        }
+
+        $timestampSeconds = strtotime($date);
+
+        $timestampMilliseconds = $timestampSeconds * 1000;
+
+        $sapDateFormat = '/Date('.$timestampMilliseconds.')/';
+
+        $data = [
+            'd' => [
+
+                'BpNum' => $businessPartnerCode,
+                'ReceivingDate' => $sapDateFormat, // '\/Date(1772150400000)\/',
+                'ShipmentIndicator' => '0',
+                'SoNumber' => $contractCode,
+                'deliverytime' => 'PT'.$hour.'H00M00S',
+                'soitemsSet' => [
+                    'results' => $results,
+                ],
+            ],
+        ];
+
+        // dd(json_encode($data));
+
+        $tokenResponse = $this->getCsrfToken();
+        $csrfToken = $tokenResponse['token'];
+        $cookies = $tokenResponse['headers']['set-cookie'];
+
+        $response = $this->getClient()
+            ->withHeaders([
+                'x-csrf-token' => $csrfToken,
+                'Accept' => 'application/json',
+                'Cookie' => $cookies,
+            ])
+            // ->withHeaders(['X-Requested-With' => 'X', 'Accept' => 'application/json'])
+            ->withQueryParameters([
+                'sap-client' => $this->client,
+            ])
+            ->post($this->baseUrl.'/sap/opu/odata/SAP/ZPRJ_INB_REQQ_SRV/soheaderSet', $data);
+
+        return $response->json();
+
+        // if ($response->successful()) {
+        //     $token = $response->headers()["x-csrf-token"][0];
+        //     return $token;
+        // }
+
+    }
+
     public function adjustSalesOrdersShipToParty($salesOrdersCodes, $shiptoPartyCode)
     {
 // 
@@ -1177,8 +1250,8 @@ class SapService
             ->withBody($batchData, 'multipart/mixed;boundary=batch_1')
             ->post($this->baseUrl . '/sap/opu/odata/sap/API_SALES_ORDER_SRV/$batch');
 
-        dd($salesOrdersCodes,$response->body());
-        return $response->status() == 200;
+        // dd($response->successful());
+        return $response->successful();
 
 
     }

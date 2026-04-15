@@ -30,6 +30,7 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
     {
         $sapService = new SapService;
         $this->stock = $sapService->getAllStock(filament()->auth()->user()->businessPartner->bp_code);
+        // dd($this->stock);
         $this->options = collect($this->stock)->pluck('material_name', 'material_code');
     }
 
@@ -96,10 +97,13 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
                         $selectedStock = collect($this->stock)
                             ->firstWhere('material_code', $data['material_code']);
                         foreach ($selectedStock['inbounds'] as $inbound) {
+                            // dd($selectedStock);
                             $this->getRelationship()->create([
                                 'material_code' => $selectedStock['material_code'],
                                 'max_quantity' => $inbound['quantity'],
                                 'inbound_request_id' => $inbound['inbound_id'],
+                                'quantity_unit' => $inbound['measuring_unit'],
+                                'inbound_request_item_code' => $inbound['item_number'],
                             ]);
                         }
                     }),
