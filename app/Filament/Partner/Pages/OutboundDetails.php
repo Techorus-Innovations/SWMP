@@ -107,21 +107,21 @@ class OutboundDetails extends Page implements HasTable
             })
             ->columns([
                 TextColumn::make('material_code')
-                    ->label('Material Code'),
+                    ->label(__('Material Code')),
                 TextColumn::make('material_name_en')
-                    ->label('Material Name EN'),
+                    ->label(__('Material Name EN')),
                 TextColumn::make('material_name_ar')
-                    ->label('Material Name AR'),
+                    ->label(__('Material Name AR')),
                 TextColumn::make('gtin')
-                    ->label('Gtin'),
+                    ->label(__('GTIN Code')),
                 TextColumn::make('quantity')
-                    ->label('Quantity'),
+                    ->label(__('Quantity')),
                 TextColumn::make('measuring_unit')
-                    ->label('Unit'),
+                    ->label(__('Unit')),
                 // TextColumn::make('area_code')
-                //     ->label('Area Code'),
+                //     ->label(__('Area Code')),
                 TextColumn::make('inbound_request_reference')
-                    ->label('Inbound Request Reference')
+                    ->label(__('Inbound Request Reference'))
                     ->icon('heroicon-o-eye')
                     ->url(fn ($record) => InboundDetails::getUrl([
                         'inboundRequestId' => $record['inbound_request_reference'],

@@ -20,22 +20,22 @@ class MaterialsRelationManager extends RelationManager
             ->recordTitleAttribute(app()->getLocale() === 'ar' ? 'name_ar' : 'name_en')
             ->columns([
                 TextColumn::make('code')
-                    ->label('Code')
+                    ->label(__('Code'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('name_en')
-                    ->label('Name (EN)')
+                    ->label(__('Name (EN)'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('name_ar')
-                    ->label('Name (AR)')
+                    ->label(__('Name (AR)'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('materialType.name_en')
-                    ->label('Type')
+                    ->label(__('Type'))
                     ->sortable(),
             ])
             ->headerActions([

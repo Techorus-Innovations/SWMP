@@ -21,20 +21,22 @@ class DraftInboundsTable
             ->modifyQueryUsing(fn ($query) => $query->where('user_id', auth()->id()))
             ->columns([
                 TextColumn::make('title')
+                    ->label(__('Title'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('contract_id')
-                    ->label('Contract ID')
+                    ->label(__('Contract ID'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('materials_count')
-                    ->label('Materials')
+                    ->label(__('Materials'))
                     ->counts('materials')
                     ->sortable(),
 
                 TextColumn::make('created_at')
+                    ->label(__('Created At'))
                     ->dateTime()
                     ->sortable(),
             ])

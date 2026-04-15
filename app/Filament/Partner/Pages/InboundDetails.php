@@ -156,7 +156,7 @@ class InboundDetails extends Page implements HasTable
                 TextColumn::make('material_name_ar')
                     ->label('Material Name AR'),
                 TextColumn::make('gtin')
-                    ->label('Gtin'),
+                    ->label('GTIN Code'),
                 TextColumn::make('quantity')
                     ->label('Quantity'),
                 TextColumn::make('measuring_unit')

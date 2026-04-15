@@ -14,7 +14,7 @@ class MaterialAddRequestForm
                 ->required()
                 ->maxLength(255),
             TextInput::make('gtin')
-                ->label('GTIN')
+                ->label('GTIN Code')
                 ->required()
                 ->maxLength(255),
         ]);

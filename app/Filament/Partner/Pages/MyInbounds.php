@@ -72,7 +72,7 @@ class MyInbounds extends Page implements HasTable
             ->filters([])
             ->actions([
                 Action::make('view')
-                    ->label('View Items')
+                    ->label(__('View Items'))
                     ->icon('heroicon-o-eye')
                     ->url(fn ($record) => InboundDetails::getUrl([
                         'inboundRequestId' => $record['inbound_request_id'],

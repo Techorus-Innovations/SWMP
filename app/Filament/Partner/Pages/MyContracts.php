@@ -43,13 +43,13 @@ class MyContracts extends Page implements HasTable
             })
             ->columns([
                 TextColumn::make('contract_code')
-                    ->label('Contract Code'),
+                    ->label(__('Contract Code')),
                 TextColumn::make('contract_start')
-                    ->label('Start Date'),
+                    ->label(__('Start Date')),
                 TextColumn::make('contract_end')
-                    ->label('End Date'),
+                    ->label(__('End Date')),
                 TextColumn::make('areas')
-                    ->label('Areas')
+                    ->label(__('Areas'))
                     ->state(fn ($record) => collect($record['areas'] ?? [])->pluck('area_description')->all())
                     ->badge()
                     ->color('primary'),

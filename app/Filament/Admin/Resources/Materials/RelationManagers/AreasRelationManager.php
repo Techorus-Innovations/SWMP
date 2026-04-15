@@ -17,9 +17,9 @@ class AreasRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('name_en')
             ->columns([
-                Tables\Columns\TextColumn::make('name_en'),
-                Tables\Columns\TextColumn::make('name_ar'),
-                Tables\Columns\TextColumn::make('code'),
+                Tables\Columns\TextColumn::make('name_en')->label(__('Name (EN)')),
+                Tables\Columns\TextColumn::make('name_ar')->label(__('Name (AR)')),
+                Tables\Columns\TextColumn::make('code')->label(__('Code')),
             ])
             ->filters([
                 //

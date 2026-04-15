@@ -15,12 +15,14 @@ class MaterialAddRequestsTable
             ->modifyQueryUsing(fn ($query) => $query->where('user_id', auth()->id()))
             ->columns([
                 TextColumn::make('name')
+                    ->label(__('Name'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('gtin')
-                    ->label('GTIN')
+                    ->label(__('GTIN Code'))
                     ->searchable(),
                 TextColumn::make('status')
+                    ->label(__('Status'))
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'pending' => 'warning',
@@ -29,6 +31,7 @@ class MaterialAddRequestsTable
                         default => 'gray',
                     }),
                 TextColumn::make('created_at')
+                    ->label(__('Created At'))
                     ->dateTime()
                     ->sortable(),
             ])
