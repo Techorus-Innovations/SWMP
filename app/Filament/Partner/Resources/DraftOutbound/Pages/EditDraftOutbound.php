@@ -96,13 +96,15 @@ class EditDraftOutbound extends EditRecord
                         ->required(),
                 ])
                 ->action(function (array $data) {
+                    dd($this->record->ship_to_party);
                     $date = $data['date'];
                     $time = $data['time_slot'];
                     $bpcode = filament()->auth()->user()->businessPartner->bp_code;
+                    $shiptoParty = $this->record->ship_to_party;
                     $outboundId = $this->record->id;
 
                     $sapService = new SapService;
-                    $response = $sapService->createOutbound($bpcode, $outboundId, $date, $time);
+                    $response = $sapService->createOutbound($bpcode,$shiptoParty, $outboundId, $date, $time);
                     DraftOutbound::where('id', $outboundId)->delete();
                     Notification::make()
                         ->title('Success')
