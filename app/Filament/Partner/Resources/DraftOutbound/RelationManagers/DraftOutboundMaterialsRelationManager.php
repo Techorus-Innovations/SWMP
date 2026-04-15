@@ -116,6 +116,7 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
             ->actions([
 
                 Action::make('deleteGroup')
+                    ->label(__('Delete Material Group'))
                     ->label('Delete Material Group')
                     ->icon('heroicon-o-trash')
                     ->color('danger')
