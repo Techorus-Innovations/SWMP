@@ -16,6 +16,12 @@ class DraftOutboundsTable
                 $query->where('business_partner_id', auth()->user()->business_partner_id);
             })
             ->columns([
+                TextColumn::make('shipping_type')
+                    ->label('Shipping Type')
+                    ->state(fn ($record) => $record->ship_to_party === filament()->auth()->user()->businessPartner->bp_code
+                        ? 'Receive from Warehouse'
+                        : '—'
+                    ),
                 TextColumn::make('ship_to_party')
                     ->label('Ship To Party')
                     ->searchable()
