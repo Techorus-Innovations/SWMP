@@ -21,7 +21,7 @@ class PlantAreaResource extends Resource
 {
     protected static ?string $model = PlantArea::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMap;
 
     protected static UnitEnum|string|null $navigationGroup = 'Materials Management';
 

@@ -21,7 +21,7 @@ class PlantResource extends Resource
 {
     protected static ?string $model = Plant::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingStorefront;
 
     protected static UnitEnum|string|null $navigationGroup = 'Materials Management';
 

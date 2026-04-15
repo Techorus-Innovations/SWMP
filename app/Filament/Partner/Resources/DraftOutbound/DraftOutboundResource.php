@@ -20,7 +20,7 @@ class DraftOutboundResource extends Resource
 {
     protected static ?string $model = DraftOutbound::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedInboxArrowDown;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowUpTray;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Outbounds';
 

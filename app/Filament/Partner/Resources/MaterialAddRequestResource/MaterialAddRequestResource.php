@@ -19,7 +19,7 @@ class MaterialAddRequestResource extends Resource
 {
     protected static ?string $model = MaterialAddRequest::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPlusCircle;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentPlus;
 
     protected static UnitEnum|string|null $navigationGroup = 'Materials';
 
