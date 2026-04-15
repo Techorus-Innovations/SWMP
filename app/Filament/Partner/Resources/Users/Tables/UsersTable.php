@@ -4,6 +4,7 @@ namespace App\Filament\Partner\Resources\Users\Tables;
 
 use App\Enums\UserTypeEnum;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
@@ -15,9 +16,9 @@ class UsersTable
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID')
-                    ->searchable(),
+                // TextColumn::make('id')
+                //     ->label('ID')
+                //     ->searchable(),
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('email')
@@ -33,6 +34,7 @@ class UsersTable
             ])
             ->recordActions([
                 EditAction::make(),
+                DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
