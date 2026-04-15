@@ -665,6 +665,47 @@ class SapService
 
     }
 
+    
+    public function cancelOutboundRequestBatch($outboundRequestCode)
+    {
+        // $inboundRequest = $this->getInboundRequestDetails($inboundRequestCode);
+        // if ($inboundRequest) {
+        //     $inboundDeliveryCode = $inboundRequest['inbound_delivery'];
+        //     $inboundPo = $inboundRequest['po_number'];
+
+        //     $deliveryItems = $this->getInboundDeliveryItems($inboundDeliveryCode);
+
+        //     if ($deliveryItems->isNotEmpty()) {
+        //         $InboundDeliveryItemsCancelationStatus = $this->batchCancelInboundDeliveryItems($inboundDeliveryCode, $deliveryItems);
+
+        //         if (!$InboundDeliveryItemsCancelationStatus) {
+        //             return false;
+        //         }
+
+        //     }
+
+        //     $PoCancelationStatus = $this->CancelPo($inboundPo);
+        //     if (!$PoCancelationStatus) {
+        //         return false;
+        //     }
+
+        //     $salesOrderItems = $this->getSalesOrderItems($inboundRequestCode);
+        //     // dd($salesOrderItems);
+
+        //     if ($salesOrderItems->isNotEmpty()) {
+        //         $InboundDeliveryItemsCancelationStatus = $this->batchCancelSalesOrderItems($inboundRequestCode, $salesOrderItems);
+
+        //         if (!$InboundDeliveryItemsCancelationStatus) {
+        //             return false;
+        //         }
+
+        //     }
+
+            return true;
+
+        // }
+    }
+
     public function cancelInboundRequestBatch($inboundRequestCode)
     {
         $inboundRequest = $this->getInboundRequestDetails($inboundRequestCode);
@@ -1146,19 +1187,71 @@ class SapService
             // dd($outboundedMaterials);
             $OutboundDeliveryResponse = $this->createOutboundDelivery($outboundedMaterials);
             if ($OutboundDeliveryResponse->successful()) {
-                dd($OutboundDeliveryResponse->json()['d']);
                 $OutboundDeliveryCode = $OutboundDeliveryResponse->json()['d']['DeliveryDocument'];
                 $updateOutboundDeliveryDateTimeStatus = $this->updateOutboundDeliveryDateTime($OutboundDeliveryCode, $sapDateFormat, $sapTimeFormat);
                 if ($updateOutboundDeliveryDateTimeStatus)
                 {
                     $OutboundRequest = $this->getOutboundRequestById($businessPartnerCode, $OutboundDeliveryCode);
-                    dd($OutboundRequest);
+                    $OutboundRequestItems = $OutboundRequest['items'];
+                    $this->OutboundDeliveryItemsStorage($OutboundDeliveryCode, $OutboundRequestItems,$outboundedMaterials);
+                    dd($OutboundRequestItems);
                 }
             }
         }
         $results = [];
     }
 
+
+    public function OutboundDeliveryItemsStorage($OutboundDeliveryCode, $OutboundRequestItems,$outboundedMaterials)
+    {
+        
+        $tokenResponse = $this->getCsrfToken();
+        $csrfToken = $tokenResponse['token'];
+        $cookies = $tokenResponse['headers']['set-cookie'];
+        $CRLF = "\r\n";
+
+
+        $batchData = "--batch_1" . $CRLF;
+        $batchData .= "Content-Type: multipart/mixed; boundary=changeset_s1" . $CRLF . $CRLF;
+
+        $counter = 1;
+        foreach ($OutboundRequestItems as $item) {
+            $itemCode = $item['item_code'];
+            $outboundedMaterial = $outboundedMaterials->where('inbound_request_id',$item['inbound_request_reference'] )->where('material_code',$item['material_code'] )->first();
+            dd($item,$itemCode, $outboundedMaterial  );
+
+            $etag = "*";// $item['etag'];
+            $batchData .= "--changeset_s1" . $CRLF;
+            $batchData .= "Content-Type: application/http" . $CRLF;
+            $batchData .= "Content-Transfer-Encoding: binary" . $CRLF;
+            $batchData .= "Content-ID: " . $counter . $CRLF . $CRLF;
+            $batchData .= "PATCH A_OutbDeliveryItem(DeliveryDocument='" . $OutboundDeliveryCode . "',DeliveryDocumentItem='" . $itemCode . "') HTTP/1.1" . $CRLF;
+            $batchData .= "Content-Type: application/json" . $CRLF;
+            $batchData .= "If-Match: " . $etag . $CRLF . $CRLF;
+            $batchData .= '{"Customer": "' . $shiptoPartyCode . '"}' . $CRLF;
+            $batchData .= "--changeset_s1--" . $CRLF . $CRLF;
+            $counter++;
+        }
+        $batchData .= "--batch_1--";
+
+        $response = $this->getClient()
+            ->withHeaders([
+                'x-csrf-token' => $csrfToken,
+                'Cookie' => $cookies,
+                'Content-Type' => 'multipart/mixed;boundary=batch_1',
+                'Accept' => 'multipart/mixed, application/json',
+            ])
+            ->withQueryParameters([
+                'sap-client' => $this->client,
+            ])
+            ->withBody($batchData, 'multipart/mixed;boundary=batch_1')
+            ->post($this->baseUrl . '/sap/opu/odata/sap/API_SALES_ORDER_SRV/$batch');
+
+        // dd($response->successful());
+        return $response->successful();
+
+
+    }
 
     public function updateOutboundDeliveryDateTime($OutboundDeliveryCode, $sapDateFormat, $sapTimeFormat)
     {
