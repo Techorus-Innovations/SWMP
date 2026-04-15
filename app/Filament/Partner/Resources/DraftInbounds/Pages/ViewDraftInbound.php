@@ -39,6 +39,7 @@ class ViewDraftInbound extends ViewRecord
             Action::make('submitInbound')
                 ->label('Submit Inbound')
                 ->color('success')
+                ->hidden(fn ($record): bool => count($record->materials) == 0 || $record->materials->sum('pivot.quantity') == 0)
                 ->disabled(fn (): bool => $this->circuitBreaker->isOpen())
                 ->tooltip(fn () => $this->circuitBreaker->isOpen() ? 'External service is currently unavailable' : null)
                 ->steps([
