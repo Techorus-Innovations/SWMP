@@ -26,6 +26,7 @@ class StockDetails extends Page implements HasTable
     /** Populated from URL query parameter */
     #[Url]
     public string $materialCode = '';
+
     /** Populated from URL query parameter */
     #[Url]
     public string $warehouseCode = '';
@@ -33,7 +34,9 @@ class StockDetails extends Page implements HasTable
     protected $sapService;
 
     private ?array $response = null;
+
     private ?Material $material = null;
+
     private ?int $totalInboundQuantity = null;
 
     public static function canAccess(): bool
@@ -49,7 +52,7 @@ class StockDetails extends Page implements HasTable
             $this->materialCode,
             $this->warehouseCode
         );
-         // Fetch material details from database
+        // Fetch material details from database
         $this->material = Material::where('code', $this->materialCode)->first();
 
         // Calculate total inbound quantity
@@ -62,8 +65,8 @@ class StockDetails extends Page implements HasTable
     {
         $locale = app()->getLocale();
         $materialName = $locale === 'ar' ? $this->material?->name_ar : $this->material?->name_en;
-        
-        return __('Stock Details') . ' - ' . $materialName;
+
+        return __('Stock Details').' - '.$materialName;
     }
 
     public function infolist(Schema $schema): Schema
@@ -112,7 +115,11 @@ class StockDetails extends Page implements HasTable
             })
             ->columns([
                 TextColumn::make('inbound_id')
-                    ->label(__('Inbound ID')),
+                    ->label(__('Inbound ID'))
+                    ->icon('heroicon-o-eye')
+                    ->url(fn ($record) => InboundDetails::getUrl([
+                        'inboundRequestId' => $record['inbound_id'],
+                    ])),
                 TextColumn::make('quantity')
                     ->label(__('Quantity')),
                 TextColumn::make('measuring_unit')
