@@ -3,8 +3,10 @@
 namespace App\Filament\Partner\Pages;
 
 use App\Services\SapService;
-use Filament\Pages\Page;
+use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Pages\Page;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -15,7 +17,7 @@ class MyInbounds extends Page implements HasTable
 {
     use InteractsWithTable;
 
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-inbox-arrow-down';
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::ArrowsPointingIn;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Inbounds';
 
@@ -46,6 +48,7 @@ class MyInbounds extends Page implements HasTable
                     $perPage,
                     $currentPage
                 );
+
                 return new LengthAwarePaginator(
                     $response['paginatedInbounds'],
                     $response['totalCount'],
