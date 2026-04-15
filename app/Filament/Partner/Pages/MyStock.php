@@ -4,8 +4,8 @@ namespace App\Filament\Partner\Pages;
 
 use App\Models\Material;
 use App\Services\SapService;
-use Filament\Pages\Page;
 use Filament\Actions\Action;
+use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -47,13 +47,17 @@ class MyStock extends Page implements HasTable
                     $perPage,
                     $currentPage
                 );
-                
+
                 // Enrich stock data with material details and total quantity
-                $locale = app()->getLocale();
-                $enrichedStock = collect($response['paginatedStock'] ?? [])->map(function ($stock) use ($locale) {
+                // $locale = app()->getLocale();
+                $enrichedStock = collect($response['paginatedStock'] ?? [])->map(function ($stock) {
                     $material = Material::where('code', $stock['material_code'])->first();
-                    $stock['material_name'] = ($locale === 'ar' ? $material?->name_ar : $material?->name_en);
+                    $stock['material_name_en'] = $material?->name_en;
+                    $stock['material_name_ar'] = $material?->name_ar;
+                    // $stock['material_name'] = ($locale === 'ar' ? $material?->name_ar : $material?->name_en);
                     $stock['total_quantity'] = collect($stock['inbounds'] ?? [])->sum('quantity');
+                    $stock['gtin'] = $material?->gtin_code ?? null;
+
                     return $stock;
                 })->toArray();
 
@@ -67,13 +71,17 @@ class MyStock extends Page implements HasTable
             ->columns([
                 TextColumn::make('material_code')
                     ->label(__('Material Code')),
-                TextColumn::make('material_name')
-                    ->label(__('Material Name')),
+                TextColumn::make('material_name_en')
+                    ->label(__('Material Name EN')),
+                TextColumn::make('material_name_ar')
+                    ->label(__('Material Name AR')),
+                TextColumn::make('gtin')
+                    ->label(__('Gtin')),
                 TextColumn::make('warehouse_code')
                     ->label(__('Warehouse')),
                 TextColumn::make('total_quantity')
                     ->label(__('Total Quantity'))
-                    ->badge()
+                    ->badge(),
             ])
             ->paginated([10, 25, 50])
             ->filters([])

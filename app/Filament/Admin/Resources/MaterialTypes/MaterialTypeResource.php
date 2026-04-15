@@ -21,7 +21,7 @@ class MaterialTypeResource extends Resource
 {
     protected static ?string $model = MaterialType::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
 
     protected static UnitEnum|string|null $navigationGroup = 'Materials Management';
 

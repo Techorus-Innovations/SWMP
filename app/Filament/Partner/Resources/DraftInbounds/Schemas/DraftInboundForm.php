@@ -11,19 +11,22 @@ use Filament\Schemas\Schema;
 
 class DraftInboundForm
 {
-    public static function getContractObject(Schema $schema, $sapService) {
-        if($schema->getOperation() === 'edit' || $schema->getOperation() === 'view') {
+    public static function getContractObject(Schema $schema, $sapService)
+    {
+        if ($schema->getOperation() === 'edit' || $schema->getOperation() === 'view') {
             return TextInput::make('contract_id')
                 ->label('Contract ID')
                 ->hiddenOn('create')
                 ->disabled();
         } else {
+            // dd($sapService->getContracts(filament()->auth()->user()->businessPartner->bp_code, 100, 1, 'active')['paginatedContracts']);
+
             return Select::make('contract_id')
                 ->label('Contract')
                 ->options(
                     collect($sapService->getContracts(filament()->auth()->user()->businessPartner->bp_code, 100, 1, 'active')['paginatedContracts'])->mapWithKeys(fn ($m) => [
-                                    $m['contract_code'] => $m['contract_code'],
-                                ])
+                        $m['contract_code'] => $m['contract_code'].' - '.$m['contract_end'].' - ('.collect($m['areas'] ?? [])->pluck('area_description')->implode(' - ').')',
+                    ])
                 )
                 ->hiddenOn('edit')
                 ->searchable()
@@ -31,25 +34,27 @@ class DraftInboundForm
         }
     }
 
-    public static function getMaterialObject(Schema $schema, $sapService) {
-        if($schema->getOperation() === 'edit' || $schema->getOperation() === 'view') {
-            if($schema->getOperation() === 'view' || ($schema->getOperation() === 'edit' && $schema->getLivewire()->record->contract_id != null)) {
-            $selectedContract = $sapService->getContractById(filament()->auth()->user()->businessPartner->bp_code, $schema->getLivewire()->record->contract_id);
-            $areas = collect($selectedContract['areas'])->pluck('area_code')->unique();
-        }
+    public static function getMaterialObject(Schema $schema, $sapService)
+    {
+        if ($schema->getOperation() === 'edit' || $schema->getOperation() === 'view') {
+            if ($schema->getOperation() === 'view' || ($schema->getOperation() === 'edit' && $schema->getLivewire()->record->contract_id != null)) {
+                $selectedContract = $sapService->getContractById(filament()->auth()->user()->businessPartner->bp_code, $schema->getLivewire()->record->contract_id);
+                $areas = collect($selectedContract['areas'])->pluck('area_code')->unique();
+            }
+
             return Repeater::make('materials')
                 ->label('Materials')
                 ->schema([
                     Select::make('material_id')
                         ->label('Material')
                         ->options(
-                            function() use($areas): array {
+                            function () use ($areas): array {
                                 return Material::whereHas('areas', function ($query) use ($areas) {
                                     $query->whereIn('code', $areas);
                                 })->get()
-                                ->mapWithKeys(fn ($m) => [
-                                    $m->id => (app()->getLocale() === 'ar' ? $m->name_ar : $m->name_en),
-                                ])->toArray();
+                                    ->mapWithKeys(fn ($m) => [
+                                        $m->id => (app()->getLocale() === 'ar' ? $m->name_ar : $m->name_en),
+                                    ])->toArray();
                             }
                         )
                         ->searchable()
@@ -71,14 +76,14 @@ class DraftInboundForm
 
     public static function configure(Schema $schema): Schema
     {
-        $sapService = new SapService();
-        
+        $sapService = new SapService;
+
         return $schema->components([
             TextInput::make('title')
                 ->required()
                 ->maxLength(255),
-            self::getContractObject($schema, $sapService),    
-            self::getMaterialObject($schema, $sapService),    
+            self::getContractObject($schema, $sapService),
+            self::getMaterialObject($schema, $sapService),
         ]);
     }
 }
