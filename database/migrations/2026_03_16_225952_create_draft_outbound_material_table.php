@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('material_code');
             $table->unsignedInteger('quantity')->default(0);
             $table->unsignedInteger('max_quantity');
-            $table->unsignedInteger('inbound_request_id');
+            $table->string('inbound_request_id');
             $table->timestamps();
         });
     }
