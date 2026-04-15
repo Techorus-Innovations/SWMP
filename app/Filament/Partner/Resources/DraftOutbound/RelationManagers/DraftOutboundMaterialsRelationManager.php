@@ -56,7 +56,7 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
             ->recordTitleAttribute('material_id')
             ->columns([
                 TextColumn::make('material.name_en')
-                    ->label(__('Material'))
+                    ->label(__('Material Name (EN)'))
                     ->searchable()
                     ->sortable(),
 
@@ -100,13 +100,13 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
                         $selectedStock = collect($this->stock)
                             ->firstWhere('material_code', $data['material_code']);
                         foreach ($selectedStock['inbounds'] as $inbound) {
-                            // dd($selectedStock);
                             $this->getRelationship()->create([
                                 'material_code' => $selectedStock['material_code'],
                                 'max_quantity' => $inbound['quantity'],
                                 'inbound_request_id' => $inbound['inbound_id'],
                                 'quantity_unit' => $inbound['measuring_unit'],
                                 'inbound_request_item_code' => $inbound['item_number'],
+                                'location' => $inbound['location'],
                             ]);
                         }
 

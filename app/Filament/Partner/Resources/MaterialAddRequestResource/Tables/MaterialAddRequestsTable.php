@@ -24,6 +24,7 @@ class MaterialAddRequestsTable
                 TextColumn::make('status')
                     ->label(__('Status'))
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state))
                     ->color(fn (string $state): string => match ($state) {
                         'pending' => 'warning',
                         'accepted' => 'success',

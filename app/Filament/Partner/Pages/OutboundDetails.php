@@ -4,8 +4,10 @@ namespace App\Filament\Partner\Pages;
 
 use App\Models\Material;
 use App\Services\SapService;
+use Filament\Actions\Action;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -35,6 +37,43 @@ class OutboundDetails extends Page implements HasTable
     public static function canAccess(): bool
     {
         return filament()->auth()->user()->canViewOutbounds();
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('cancelOutbound')
+                ->label(__('Cancel Outbound'))
+                ->color('danger')
+                ->icon('heroicon-o-x-circle')
+                ->requiresConfirmation()
+                ->modalHeading(__('Cancel Outbound Request'))
+                ->modalDescription(__('Are you sure you want to cancel this outbound request? This action cannot be undone.'))
+                ->hidden(function () {
+                    if (! filament()->auth()->user()->canCancelOutbounds()) {
+                        return true;
+                    }
+
+                    return false;
+                })
+                ->action(function () {
+                    $sapService = new SapService;
+                    $status = $sapService->cancelOutboundRequestBatch($this->response['outbound_request_id']);
+                    if ($status == true) {
+                        $this->boot();
+                        Notification::make()
+                            ->title(__('Outbound Cancelled'))
+                            ->success()
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title(__('Something went wrong, please try again later'))
+                            ->danger()
+                            ->send();
+                    }
+
+                }),
+        ];
     }
 
     public function boot(): void
@@ -109,9 +148,9 @@ class OutboundDetails extends Page implements HasTable
                 TextColumn::make('material_code')
                     ->label(__('Material Code')),
                 TextColumn::make('material_name_en')
-                    ->label(__('Material Name EN')),
+                    ->label(__('Material Name (EN)')),
                 TextColumn::make('material_name_ar')
-                    ->label(__('Material Name AR')),
+                    ->label(__('Material Name (AR)')),
                 TextColumn::make('gtin')
                     ->label(__('GTIN Code')),
                 TextColumn::make('quantity')
