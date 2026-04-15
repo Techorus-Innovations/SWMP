@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('draft_outbound_material', function (Blueprint $table) {
-            $table->unsignedInteger('quantity_unit')->after('max_quantity');
-            $table->unsignedInteger('inbound_request_item_code')->after('inbound_request_id');
+            $table->string('quantity_unit')->after('max_quantity');
+            $table->string('inbound_request_item_code')->after('inbound_request_id');
         });
     }
 

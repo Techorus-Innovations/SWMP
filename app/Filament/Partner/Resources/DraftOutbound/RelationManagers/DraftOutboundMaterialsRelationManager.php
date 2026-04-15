@@ -5,15 +5,12 @@ namespace App\Filament\Partner\Resources\DraftOutbound\RelationManagers;
 use App\Models\DraftOutboundMaterial;
 use App\Services\SapService;
 use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\TextInputColumn;
-use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
 
 class DraftOutboundMaterialsRelationManager extends RelationManager
@@ -77,6 +74,9 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
                         ];
                     })
                     ->label('Quantity')
+                    ->suffix(function (DraftOutboundMaterial $record) {
+                        return $record->quantity_unit;
+                    })
                     ->sortable(),
 
                 TextColumn::make('max_quantity')
