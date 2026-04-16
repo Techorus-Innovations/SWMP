@@ -665,7 +665,7 @@ class SapService
 
     }
 
-    
+
     public function cancelOutboundRequestBatch($outboundRequestCode)
     {
         // $inboundRequest = $this->getInboundRequestDetails($inboundRequestCode);
@@ -701,7 +701,7 @@ class SapService
 
         //     }
 
-            return true;
+        return true;
 
         // }
     }
@@ -1172,7 +1172,7 @@ class SapService
 
     }
 
-    public function createOutbound($businessPartnerCode,$shiptoPartyCode, $outboundId, $date, $hour)
+    public function createOutbound($businessPartnerCode, $shiptoPartyCode, $outboundId, $date, $hour)
     {
 
 
@@ -1189,22 +1189,22 @@ class SapService
             if ($OutboundDeliveryResponse->successful()) {
                 $OutboundDeliveryCode = $OutboundDeliveryResponse->json()['d']['DeliveryDocument'];
                 $updateOutboundDeliveryDateTimeStatus = $this->updateOutboundDeliveryDateTime($OutboundDeliveryCode, $sapDateFormat, $sapTimeFormat);
-                if ($updateOutboundDeliveryDateTimeStatus)
-                {
+                if ($updateOutboundDeliveryDateTimeStatus) {
                     $OutboundRequest = $this->getOutboundRequestById($businessPartnerCode, $OutboundDeliveryCode);
                     $OutboundRequestItems = $OutboundRequest['items'];
-                    $this->OutboundDeliveryItemsStorage($OutboundDeliveryCode, $OutboundRequestItems,$outboundedMaterials);
-                    dd($OutboundRequestItems);
+                    $adjustOutboundDeliveryItemsStorageStatus = $this->adjustOutboundDeliveryItemsStorage($OutboundDeliveryCode, $OutboundRequestItems, $outboundedMaterials);
+                    if ($adjustOutboundDeliveryItemsStorageStatus) {
+                        return $OutboundDeliveryCode;
+                    }
                 }
             }
         }
-        $results = [];
     }
 
 
-    public function OutboundDeliveryItemsStorage($OutboundDeliveryCode, $OutboundRequestItems,$outboundedMaterials)
+    public function adjustOutboundDeliveryItemsStorage($OutboundDeliveryCode, $OutboundRequestItems, $outboundedMaterials)
     {
-        
+
         $tokenResponse = $this->getCsrfToken();
         $csrfToken = $tokenResponse['token'];
         $cookies = $tokenResponse['headers']['set-cookie'];
@@ -1217,8 +1217,8 @@ class SapService
         $counter = 1;
         foreach ($OutboundRequestItems as $item) {
             $itemCode = $item['item_code'];
-            $outboundedMaterial = $outboundedMaterials->where('inbound_request_id',$item['inbound_request_reference'] )->where('material_code',$item['material_code'] )->first();
-            dd($item,$itemCode, $outboundedMaterial  );
+            $outboundedMaterial = $outboundedMaterials->where('inbound_request_id', $item['inbound_request_reference'])->where('material_code', $item['material_code'])->first();
+            $itemLocation = $outboundedMaterial['location'];
 
             $etag = "*";// $item['etag'];
             $batchData .= "--changeset_s1" . $CRLF;
@@ -1228,7 +1228,7 @@ class SapService
             $batchData .= "PATCH A_OutbDeliveryItem(DeliveryDocument='" . $OutboundDeliveryCode . "',DeliveryDocumentItem='" . $itemCode . "') HTTP/1.1" . $CRLF;
             $batchData .= "Content-Type: application/json" . $CRLF;
             $batchData .= "If-Match: " . $etag . $CRLF . $CRLF;
-            $batchData .= '{"Customer": "' . $shiptoPartyCode . '"}' . $CRLF;
+            $batchData .= '{"StorageLocation": "' . $itemLocation . '"}' . $CRLF;
             $batchData .= "--changeset_s1--" . $CRLF . $CRLF;
             $counter++;
         }
@@ -1245,9 +1245,8 @@ class SapService
                 'sap-client' => $this->client,
             ])
             ->withBody($batchData, 'multipart/mixed;boundary=batch_1')
-            ->post($this->baseUrl . '/sap/opu/odata/sap/API_SALES_ORDER_SRV/$batch');
+            ->post($this->baseUrl . '/sap/opu/odata/sap/API_OUTBOUND_DELIVERY_SRV/$batch');
 
-        // dd($response->successful());
         return $response->successful();
 
 
