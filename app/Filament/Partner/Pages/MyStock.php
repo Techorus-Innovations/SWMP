@@ -76,7 +76,7 @@ class MyStock extends Page implements HasTable
                 TextColumn::make('material_name_ar')
                     ->label(__('Material Name (AR)')),
                 TextColumn::make('gtin')
-                    ->label(__('Gtin')),
+                    ->label(__('GTIN Code')),
                 TextColumn::make('warehouse_code')
                     ->label(__('Warehouse')),
                 TextColumn::make('total_quantity')
