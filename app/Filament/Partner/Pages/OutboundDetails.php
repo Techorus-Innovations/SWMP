@@ -102,18 +102,19 @@ class OutboundDetails extends Page implements HasTable
                         ->label(__('Request ID'))
                         ->state($record['outbound_request_id'] ?? '—'),
                     TextEntry::make('status')
-                        ->label(__('status'))
+                        ->badge()
+                        ->label(__('Status'))
                         ->state($record['status'] ?? '—'),
-                    TextEntry::make('delivery_time')
-                        ->label(__('Delivery Time'))
-                        ->state($record['delivery_time'] ?? '—'),
-                    TextEntry::make('delivery_date')
-                        ->label(__('Delivery Date'))
-                        ->state($record['delivery_date'] ?? '—'),
                     IconEntry::make('ship_to_party')
                         ->label(__('Shipping Included'))
                         ->state($record['ship_to_party'] != filament()->auth()->user()->businessPartner->bp_code)
                         ->boolean(),
+                    TextEntry::make('delivery_date')
+                        ->label(__('Delivery Date'))
+                        ->state($record['delivery_date'] ?? '—'),
+                    TextEntry::make('delivery_time')
+                        ->label(__('Delivery Time'))
+                        ->state($record['delivery_time'] ?? '—'),
                 ]),
         ]);
     }
