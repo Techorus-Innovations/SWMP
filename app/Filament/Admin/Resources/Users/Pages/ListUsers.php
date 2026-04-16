@@ -23,16 +23,16 @@ class ListUsers extends ListRecords
     {
         return [
             Tab::make(__('All'))
-                    ->query(fn ($query) => $query),
-                Tab::make(__('Admin'))
-                    ->badge(fn ($count) => $count)
-                    ->query(fn ($query) => $query->where('type', UserTypeEnum::Admin->value)),
-                Tab::make(__('Customer'))
-                    ->badge(fn ($count) => $count)
-                    ->query(fn ($query) => $query->where('type', UserTypeEnum::Customer->value)),
-                Tab::make(__('Supplier'))
-                    ->badge(fn ($count) => $count)
-                    ->query(fn ($query) => $query->where('type', UserTypeEnum::Supplier->value)),
+                ->query(fn ($query) => $query),
+            Tab::make(__('Admin'))
+                ->badge(fn ($count) => $count)
+                ->query(fn ($query) => $query->where('type', UserTypeEnum::Admin->value)),
+            Tab::make(__('Customer'))
+                ->badge(fn ($count) => $count)
+                ->query(fn ($query) => $query->where('type', UserTypeEnum::Customer->value)),
+            // Tab::make(__('Supplier'))
+            //     ->badge(fn ($count) => $count)
+            //     ->query(fn ($query) => $query->where('type', UserTypeEnum::Supplier->value)),
         ];
     }
 }
