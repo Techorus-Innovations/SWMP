@@ -16,19 +16,25 @@ class PlantAreasTable
         return $table
             ->columns([
                 TextColumn::make('name_en')
+                    ->label(__('Name (EN)'))
                     ->searchable(),
                 TextColumn::make('name_ar')
+                    ->label(__('Name (AR)'))
                     ->searchable(),
                 TextColumn::make('code')
+                    ->label(__('Code'))
                     ->searchable(),
                 TextColumn::make('plant.name_en')
+                    ->label(__('Plant Name (EN)'))
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('created_at')
+                    ->label(__('Created At'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label(__('Updated At'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

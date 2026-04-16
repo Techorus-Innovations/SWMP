@@ -36,7 +36,7 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
         return $schema
             ->components([
                 Select::make('material_code')
-                    ->label('Material')
+                    ->label(__('Material'))
                     ->options(function () {
                         $appliedCodes = $this->getRelationship()->pluck('material_code')
                             ->toArray();
@@ -61,7 +61,7 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
                     ->sortable(),
 
                 TextColumn::make('material.code')
-                    ->label('Material Code')
+                    ->label(__('Material Code'))
                     ->searchable(),
 
                 TextInputColumn::make('quantity')
@@ -73,7 +73,7 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
                             "max:{$record->max_quantity}",
                         ];
                     })
-                    ->label('Quantity')
+                    ->label(__('Quantity'))
                     ->afterStateUpdated(function () {
                         $this->dispatch('materials-updated');
                     })
@@ -83,11 +83,11 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
                     ->sortable(),
 
                 TextColumn::make('max_quantity')
-                    ->label('Max Quantity')
+                    ->label(__('Max Quantity'))
                     ->sortable(),
 
                 TextColumn::make('inbound_request_id')
-                    ->label('Inbound Request ID')
+                    ->label(__('Inbound Request ID'))
                     ->sortable(),
             ])
             ->filters([
@@ -95,7 +95,7 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
             ])
             ->headerActions([
                 CreateAction::make()
-                    ->label('Add Items')
+                    ->label(__('Add Items'))
                     ->action(function (array $data): void {
                         $selectedStock = collect($this->stock)
                             ->firstWhere('material_code', $data['material_code']);
@@ -116,6 +116,7 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
             ->actions([
 
                 Action::make('deleteGroup')
+                    ->label(__('Delete Material Group'))
                     ->label('Delete Material Group')
                     ->icon('heroicon-o-trash')
                     ->color('danger')

@@ -17,19 +17,19 @@ class DraftOutboundsTable
             })
             ->columns([
                 TextColumn::make('shipping_type')
-                    ->label('Shipping Type')
+                    ->label(__('Shipping Type'))
                     ->state(fn ($record) => $record->ship_to_party === filament()->auth()->user()->businessPartner->bp_code
-                        ? 'Receive from Warehouse'
+                        ? __('Receive from Warehouse')
                         : '—'
                     ),
                 TextColumn::make('ship_to_party')
-                    ->label('Ship To Party')
+                    ->label(__('Ship To Party'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('created_at')
                     ->dateTime()
-                    ->label('Created At')
+                    ->label(__('Created At'))
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

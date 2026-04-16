@@ -4,8 +4,10 @@ namespace App\Filament\Partner\Pages;
 
 use App\Models\Material;
 use App\Services\SapService;
+use Filament\Actions\Action;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -37,6 +39,43 @@ class OutboundDetails extends Page implements HasTable
         return filament()->auth()->user()->canViewOutbounds();
     }
 
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('cancelOutbound')
+                ->label(__('Cancel Outbound'))
+                ->color('danger')
+                ->icon('heroicon-o-x-circle')
+                ->requiresConfirmation()
+                ->modalHeading(__('Cancel Outbound Request'))
+                ->modalDescription(__('Are you sure you want to cancel this outbound request? This action cannot be undone.'))
+                ->hidden(function () {
+                    if (! filament()->auth()->user()->canCancelOutbounds()) {
+                        return true;
+                    }
+
+                    return false;
+                })
+                ->action(function () {
+                    $sapService = new SapService;
+                    $status = $sapService->cancelOutboundRequestBatch($this->response['outbound_request_id']);
+                    if ($status == true) {
+                        $this->boot();
+                        Notification::make()
+                            ->title(__('Outbound Cancelled'))
+                            ->success()
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title(__('Something went wrong, please try again later'))
+                            ->danger()
+                            ->send();
+                    }
+
+                }),
+        ];
+    }
+
     public function boot(): void
     {
         $this->sapService = new SapService;
@@ -63,18 +102,19 @@ class OutboundDetails extends Page implements HasTable
                         ->label(__('Request ID'))
                         ->state($record['outbound_request_id'] ?? '—'),
                     TextEntry::make('status')
-                        ->label(__('status'))
+                        ->badge()
+                        ->label(__('Status'))
                         ->state($record['status'] ?? '—'),
-                    TextEntry::make('delivery_time')
-                        ->label(__('Delivery Time'))
-                        ->state($record['delivery_time'] ?? '—'),
-                    TextEntry::make('delivery_date')
-                        ->label(__('Delivery Date'))
-                        ->state($record['delivery_date'] ?? '—'),
                     IconEntry::make('ship_to_party')
                         ->label(__('Shipping Included'))
                         ->state($record['ship_to_party'] != filament()->auth()->user()->businessPartner->bp_code)
                         ->boolean(),
+                    TextEntry::make('delivery_date')
+                        ->label(__('Delivery Date'))
+                        ->state($record['delivery_date'] ?? '—'),
+                    TextEntry::make('delivery_time')
+                        ->label(__('Delivery Time'))
+                        ->state($record['delivery_time'] ?? '—'),
                 ]),
         ]);
     }
@@ -107,21 +147,21 @@ class OutboundDetails extends Page implements HasTable
             })
             ->columns([
                 TextColumn::make('material_code')
-                    ->label('Material Code'),
+                    ->label(__('Material Code')),
                 TextColumn::make('material_name_en')
                     ->label(__('Material Name (EN)')),
                 TextColumn::make('material_name_ar')
                     ->label(__('Material Name (AR)')),
                 TextColumn::make('gtin')
-                    ->label('Gtin'),
+                    ->label(__('GTIN Code')),
                 TextColumn::make('quantity')
-                    ->label('Quantity'),
+                    ->label(__('Quantity')),
                 TextColumn::make('measuring_unit')
-                    ->label('Unit'),
+                    ->label(__('Unit')),
                 // TextColumn::make('area_code')
-                //     ->label('Area Code'),
+                //     ->label(__('Area Code')),
                 TextColumn::make('inbound_request_reference')
-                    ->label('Inbound Request Reference')
+                    ->label(__('Inbound Request Reference'))
                     ->icon('heroicon-o-eye')
                     ->url(fn ($record) => InboundDetails::getUrl([
                         'inboundRequestId' => $record['inbound_request_reference'],

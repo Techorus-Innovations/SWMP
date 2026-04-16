@@ -76,7 +76,7 @@ class MyOutbounds extends Page implements HasTable
             ->filters([])
             ->actions([
                 Action::make('view')
-                    ->label('View Items')
+                    ->label(__('View Items'))
                     ->icon('heroicon-o-eye')
                     ->url(fn ($record) => OutboundDetails::getUrl([
                         'outboundRequestId' => $record['outbound_request_id'],

@@ -14,12 +14,14 @@ class MaterialAddRequestsTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label(__('Name'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('gtin')
-                    ->label('GTIN')
+                    ->label(__('GTIN Code'))
                     ->searchable(),
                 TextColumn::make('status')
+                    ->label(__('Status'))
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => ucfirst($state))
                     ->color(fn (string $state): string => match ($state) {
@@ -29,36 +31,37 @@ class MaterialAddRequestsTable
                         default => 'gray',
                     }),
                 TextColumn::make('user.name')
-                    ->label('Requested By')
+                    ->label(__('Requested By'))
                     ->sortable()
                     ->searchable(),
                 TextColumn::make('created_at')
+                    ->label(__('Created At'))
                     ->dateTime()
                     ->sortable(),
             ])
             ->recordActions([
                 Action::make('accept')
-                    ->label('Accept')
+                    ->label(__('Accept'))
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
                     ->requiresConfirmation()
                     ->action(function ($record) {
                         $record->update(['status' => 'accepted']);
                         Notification::make()
-                            ->title('Request accepted')
+                            ->title(__('Request accepted'))
                             ->success()
                             ->send();
                     })
                     ->hidden(fn ($record) => $record->status !== 'pending'),
                 Action::make('reject')
-                    ->label('Reject')
+                    ->label(__('Reject'))
                     ->color('danger')
                     ->icon('heroicon-o-x-circle')
                     ->requiresConfirmation()
                     ->action(function ($record) {
                         $record->update(['status' => 'rejected']);
                         Notification::make()
-                            ->title('Request rejected')
+                            ->title(__('Request rejected'))
                             ->danger()
                             ->send();
                     })
