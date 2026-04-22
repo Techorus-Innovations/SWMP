@@ -9,6 +9,7 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Filament\Actions\Action;
 
 class MyContracts extends Page implements HasTable
 {
@@ -48,16 +49,16 @@ class MyContracts extends Page implements HasTable
                     ->label(__('Start Date')),
                 TextColumn::make('contract_end')
                     ->label(__('End Date')),
-                TextColumn::make('areas')
-                    ->label(__('Areas'))
-                    ->state(fn ($record) => collect($record['areas'] ?? [])->pluck('area_description')->all())
-                    ->badge()
-                    ->color('primary'),
             ])
             ->paginated([10, 25, 50])
             ->filters([])
             ->actions([
-                // ViewAction::make()
+                Action::make('view')
+                    ->label(__('View Details'))
+                    ->icon('heroicon-o-eye')
+                    ->url(fn ($record) => MyContractDetails::getUrl([
+                        'contractId' => $record['contract_code'],
+                    ])),
             ])
             ->bulkActions([]);
     }
