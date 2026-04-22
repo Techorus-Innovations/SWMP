@@ -27,6 +27,12 @@ class MaterialsTable
                 TextColumn::make('gtin_code')
                     ->label(__('GTIN Code'))
                     ->searchable(),
+                TextColumn::make('default_unit')
+                    ->label(__('Default Unit'))
+                    ->searchable(),
+                TextColumn::make('pal_to_default_unit')
+                    ->label(__('PAL to Default Unit'))
+                    ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

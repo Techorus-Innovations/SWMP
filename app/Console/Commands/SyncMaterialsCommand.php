@@ -33,11 +33,12 @@ class SyncMaterialsCommand extends Command
     public function handle()
     {
         try {
-            $sapService = new SapService();
+            $sapService = new SapService;
             $materials = $sapService->getMaterials();
 
             if (empty($materials)) {
                 $this->warn('No materials found from SAP');
+
                 return Command::SUCCESS;
             }
 
@@ -66,7 +67,8 @@ class SyncMaterialsCommand extends Command
             return Command::SUCCESS;
         } catch (\Exception $e) {
             Log::error('Materials sync failed', ['error' => $e->getMessage()]);
-            $this->error('Materials sync failed: ' . $e->getMessage());
+            $this->error('Materials sync failed: '.$e->getMessage());
+
             return Command::FAILURE;
         }
     }
@@ -104,7 +106,9 @@ class SyncMaterialsCommand extends Command
                 'material_type_id' => $materialType->id,
                 'material_group_id' => $materialGroup->id,
                 'sync_at' => $syncTime,
-                'attp_required' => $materialData['attp_required']
+                'attp_required' => $materialData['attp_required'],
+                'default_unit' => $materialData['default_unit'],
+                'pal_to_default_unit' => $materialData['pal_to_default_unit'],
             ]
         );
 
@@ -139,7 +143,7 @@ class SyncMaterialsCommand extends Command
         }
 
         // Sync material areas (attach only the areas from this sync)
-        if (!empty($areaIds)) {
+        if (! empty($areaIds)) {
             $material->areas()->sync($areaIds);
         } else {
             // If no areas, detach all areas
