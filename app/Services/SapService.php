@@ -169,8 +169,9 @@ class SapService
                         'material_group_code' => $item['matgroup'],
                         'material_group_name' => $item['MATGROUPDES'],
                         'material_GTIN_code' => $item['mat_GTIN_code'],
+                        'default_unit' => $item['unit_of_measure'],
+                        'pal_to_default_unit' => $item['PAL_TO_EA_QUAN'],
                         'attp_required' => $item['ATTP_REQ'],
-
                         'plants' => collect($item['to_mplant']['results'] ?? [])->map(function ($plant) {
                             return [
                                 'plant_code' => $plant['PLANT'],
@@ -351,10 +352,14 @@ class SapService
                         'inbounds' => collect($request['to_Inbounds']['results'] ?? [])->map(function ($item) {
                             return [
                                 'inbound_id' => $item['SalesDocument'],
-                                'quantity' => $item['stock'],
-                                'measuring_unit' => $item['unit'],
+                                'quantity_in_EA' => $item['stock'],
+                                'quantity_in_PLA' => $item['stock_in_PAL'],
+                                'pallet_unit' => $item['PF'],
                                 'item_number' => $item['item_number'],
                                 'location' => $item['location'],
+                                'expiration_date' => $this->parseSapDate($item['expiration_date']),
+                                'manufacture_date' => $this->parseSapDate($item['manf_date']),
+                                'batch' => $item['batch'],
                             ];
                         }),
                     ];
@@ -668,7 +673,8 @@ class SapService
 
     public function cancelOutboundRequestBatch($outboundRequestCode)
     {
-        // $inboundRequest = $this->getInboundRequestDetails($inboundRequestCode);
+        $outboundRequest = $this->getOutboundRequestDetails($outboundRequestCode);
+
         // if ($inboundRequest) {
         //     $inboundDeliveryCode = $inboundRequest['inbound_delivery'];
         //     $inboundPo = $inboundRequest['po_number'];
@@ -885,6 +891,29 @@ class SapService
         }
     }
 
+    public function getOutboundRequestDetails($outboundRequestCode)
+    {
+        return $this->execute(function () use ($outboundRequestCode) {
+            $response = $this->getClient()
+                ->get($this->baseUrl . "/sap/opu/odata4/sap/api_warehouse_odo_2/srvd_a2x/sap/warehouseoutbdeliveryorder/0001/WhseOutboundDeliveryOrderHead('".$outboundRequestCode."')");
+dd($response->json());
+            if ($response->successful()) {
+                $data = $response->json();
+                dd($data);
+
+                $inboundRequests = collect($data['d']['results'])->map(function ($request) {
+                    return [
+                        'inbound_delivery' => $request['inbound_delivery'],
+                        'po_number' => $request['po_number'],
+                    ];
+                })->all();
+
+                return $inboundRequests[0];
+            }
+
+            return false;
+        });
+    }
     public function getInboundRequestDetails($inboundRequestCode)
     {
         return $this->execute(function () use ($inboundRequestCode) {
