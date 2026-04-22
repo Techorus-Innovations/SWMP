@@ -55,7 +55,7 @@ class MyStock extends Page implements HasTable
                     $stock['material_name_en'] = $material?->name_en;
                     $stock['material_name_ar'] = $material?->name_ar;
                     // $stock['material_name'] = ($locale === 'ar' ? $material?->name_ar : $material?->name_en);
-                    $stock['total_quantity'] = collect($stock['inbounds'] ?? [])->sum('quantity');
+                    $stock['total_quantity'] = collect($stock['inbounds'] ?? [])->sum('quantity_in_EA');
                     $stock['gtin'] = $material?->gtin_code ?? null;
 
                     return $stock;

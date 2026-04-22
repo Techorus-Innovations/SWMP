@@ -57,7 +57,7 @@ class StockDetails extends Page implements HasTable
 
         // Calculate total inbound quantity
         if ($this->response) {
-            $this->totalInboundQuantity = collect($this->response['inbounds'] ?? [])->sum('quantity');
+            $this->totalInboundQuantity = collect($this->response['inbounds'] ?? [])->sum('quantity_in_EA');
         }
     }
 
@@ -126,10 +126,16 @@ class StockDetails extends Page implements HasTable
                     ->url(fn ($record) => InboundDetails::getUrl([
                         'inboundRequestId' => $record['inbound_id'],
                     ])),
-                TextColumn::make('quantity')
-                    ->label(__('Quantity')),
-                TextColumn::make('measuring_unit')
-                    ->label(__('Unit')),
+                TextColumn::make('quantity_in_EA')
+                    ->label(__('Quantity in EA')),
+                TextColumn::make('quantity_in_PLA')
+                    ->label(__('Quantity in PLA')),
+                TextColumn::make('pallet_unit')
+                    ->label(__('Pallet Unit')),
+                TextColumn::make('expiration_date')
+                    ->label(__('Expiration Date')),
+                TextColumn::make('manufacture_date')
+                    ->label(__('Manufacture Date')),
             ])
             ->paginated([10, 25, 50])
             ->filters([])
