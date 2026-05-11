@@ -65,7 +65,7 @@ Route::get('/t', function () {
 
 Route::get('/test8', function () {
     $sapService = new SapService();
-    $RequestDetails = $sapService->cancelInboundRequestBatch(1010001044);
+    $RequestDetails = $sapService->getDetailedInboundRequest("3000002653","1010001064");
     return $RequestDetails;
 });
 
