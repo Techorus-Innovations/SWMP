@@ -2,8 +2,6 @@
 
 namespace App\Filament\Partner\Resources\Users\Schemas;
 
-use App\Enums\UserTypeEnum;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -19,6 +17,7 @@ class UserForm
                 TextInput::make('email')
                     ->label('Email address')
                     ->email()
+                    ->unique(ignoreRecord: true)
                     ->required(),
                 TextInput::make('password')
                     ->label(__('Password'))
@@ -31,7 +30,7 @@ class UserForm
                     ->relationship('partnerRoles', 'name')
                     ->multiple()
                     ->preload()
-                    ->searchable()
+                    ->searchable(),
             ]);
     }
 }
