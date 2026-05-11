@@ -259,10 +259,10 @@ class Registration extends Register
         return FileUpload::make('commercial_registration')
             ->label(__('Commercial Registration Document'))
             // ->required()
-            ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+            ->acceptedFileTypes(['application/pdf'])
             ->maxSize(5120)
             ->storeFiles(false)
-            ->helperText(__('PDF, JPEG, or PNG. Max 5MB.'));
+            ->helperText(__('PDF only. Max 5MB.'));
     }
 
     protected function getTaxCardFormComponent(): Component
