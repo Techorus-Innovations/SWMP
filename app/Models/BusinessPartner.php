@@ -80,7 +80,6 @@ class BusinessPartner extends Model
     {
         static::created(function (BusinessPartner $partner) {
             $partner->refresh();
-            dd($partner);
             $partner->submitToSap();
         });
     }
