@@ -30,9 +30,9 @@ class ListUsers extends ListRecords
             Tab::make(__('Customer'))
                 ->badge(fn ($count) => $count)
                 ->query(fn ($query) => $query->where('type', UserTypeEnum::Customer->value)),
-            // Tab::make(__('Supplier'))
-            //     ->badge(fn ($count) => $count)
-            //     ->query(fn ($query) => $query->where('type', UserTypeEnum::Supplier->value)),
+            Tab::make(__('Supplier'))
+                ->badge(fn ($count) => $count)
+                ->query(fn ($query) => $query->where('type', UserTypeEnum::Supplier->value)),
         ];
     }
 }

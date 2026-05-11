@@ -43,7 +43,7 @@ class UserForm
                     ->hidden(fn (Get $get) => $get('type') == null || $get('type') === UserTypeEnum::Admin->value)
                     ->required(fn (Get $get) => in_array($get('type'), [
                         UserTypeEnum::Customer->value,
-                        // UserTypeEnum::Supplier->value,
+                        UserTypeEnum::Supplier->value,
                     ])),
                 Select::make('partnerRoles')
                     ->label(__('Partner Roles'))
@@ -54,7 +54,7 @@ class UserForm
                     ->hidden(fn (Get $get) => $get('type') == null || $get('type') === UserTypeEnum::Admin->value)
                     ->required(fn (Get $get) => in_array($get('type'), [
                         UserTypeEnum::Customer->value,
-                        // UserTypeEnum::Supplier->value,
+                        UserTypeEnum::Supplier->value,
                     ])),
                 Select::make('role')
                     ->label(__('Admin Role'))

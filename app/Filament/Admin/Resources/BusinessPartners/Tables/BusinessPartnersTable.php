@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\BusinessPartners\Tables;
 
 use App\Enums\BusinessPartnerTypeEnum;
 use App\Enums\TaxCategoryEnum;
+use App\Filament\Admin\Resources\Users\UserResource;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -20,12 +21,9 @@ class BusinessPartnersTable
                     ->label(__('Request ID'))
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('user.name')
-                    ->label(__('User'))
-                    ->searchable(),
                 TextColumn::make('name1')
                     ->label(__('Business Partner Name'))
-                    ->getStateUsing(fn($record) => $record->name1 . ' ' . $record->name2)
+                    ->getStateUsing(fn ($record) => $record->name1.' '.$record->name2)
                     ->searchable(),
                 TextColumn::make('type')
                     ->label(__('Request Type'))
@@ -46,6 +44,10 @@ class BusinessPartnersTable
                 TextColumn::make('email')
                     ->label(__('Email'))
                     ->searchable(),
+                TextColumn::make('user.name')
+                    ->label(__('Super Admin User'))
+                    ->searchable()
+                    ->url(fn ($record) => UserResource::getUrl('edit', ['record' => $record->user])),
                 TextColumn::make('registration_number')
                     ->label(__('Registration Number'))
                     ->searchable()

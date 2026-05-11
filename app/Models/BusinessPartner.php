@@ -64,7 +64,7 @@ class BusinessPartner extends Model
             $region_code = $this->region->code,
             $tax_number = $this->tax_number,
             $commercial_registration_number = $this->registration_number,
-            $industry_code = $this->industry->code,
+            $industry_code = $this->industry?->code,
             $customer_type_code = $this->partnerType->customerType->code,
             $tax_category = $this->partnerType->tax_cat->value,
             $mobile = $this->mobile,
