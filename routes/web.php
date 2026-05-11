@@ -69,6 +69,11 @@ Route::get('/test8', function () {
     return $RequestDetails;
 });
 
+Route::get('/test80', function () {
+    $sapService = new SapService();
+    $RequestDetails = $sapService->getOutboundDeliverySlotsReservedCounts('2026-05-17');
+    return $RequestDetails;
+});
 use Illuminate\Support\Facades\Hash;
 Route::get('/test9', function () {
     dd(Hash::check('c3ebc5297439f464174670fb8becd220cc54e29233d7aa8de9cff84184b5db46', '$2y$12$XgyN06p91noLATgc//xUUu0hhJigLhUdH3iVTkVbVX48EEvmqJe56'));

@@ -143,6 +143,23 @@ class SapService
             }
         });
     }
+    public function getOutboundDeliverySlotsReservedCounts($date): ?array
+    {
+        return $this->execute(function () use ($date) {
+            $response = $this->getClient()
+                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_TIME_OUTBOUND_SRV/ZC_TIME_outbound(D_Date=datetime'" . $date . "T00:00:00')/Set");
+
+            if ($response->successful()) {
+                $data = $response->json('d.results');
+
+                $slots = collect($data)
+                    ->pluck('delivery_count', 'delivery_hour')
+                    ->toArray();
+
+                return $slots;
+            }
+        });
+    }
 
     public function getMaterials()
     {
