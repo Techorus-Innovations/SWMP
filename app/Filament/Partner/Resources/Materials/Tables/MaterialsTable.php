@@ -4,6 +4,7 @@ namespace App\Filament\Partner\Resources\Materials\Tables;
 
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class MaterialsTable
 {
@@ -13,6 +14,11 @@ class MaterialsTable
         $isEn = app()->getLocale() === 'en';
 
         return $table
+            ->modifyQueryUsing(function (Builder $query): Builder {
+                return $query->where('sync_at', function ($subQuery) {
+                    $subQuery->selectRaw('max(sync_at)')->from('materials');
+                });
+            })
             ->columns([
                 TextColumn::make('code')
                     ->label(__('Code'))
