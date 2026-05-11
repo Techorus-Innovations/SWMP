@@ -75,9 +75,18 @@ class BusinessPartner extends Model
         \App\Jobs\UploadPartnerFilesToSap::dispatch($this)->afterCommit();
     }
 
+
+    protected static function booted(): void
+    {
+        static::created(function (BusinessPartner $partner) {
+            $partner->refresh();
+            $partner->submitToSap();
+        });
+    }
+
     public function getname()
     {
-        return $this->name1.$this->name2;
+        return $this->name1 . $this->name2;
     }
 
     protected function casts(): array

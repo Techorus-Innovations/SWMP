@@ -363,7 +363,8 @@ class Registration extends Register
             $user->assignRole('partner');
             $user->partnerRoles()->attach(PartnerRole::pluck('id'));
 
-            $businessPartner->submitToSap();
+            // $businessPartner->refresh();
+            // $businessPartner->submitToSap();
 
             return $user;
         });
