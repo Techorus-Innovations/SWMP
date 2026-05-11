@@ -693,7 +693,9 @@ class SapService
                     if ($response->successful()) {
                         $data = $response->json();
 
-                        $inboundRequests = collect($data['d']['results'])->map(function ($request) {
+                        $inboundRequests = collect($data['d']['results'])->map(function ($request) use ($inboundDelivery) {
+                            $deliveryItems = collect($inboundDelivery['items'] ?? [])->keyBy('material');
+
                             return [
                                 'inbound_request_id' => $request['Inbound_request'],
                                 'created_date' => $this->parseSapDate($request['Created_on']),
@@ -701,22 +703,28 @@ class SapService
                                 'delivery_time' => $this->parseSapTime($request['delivery_time']),
                                 'delivery_date' => $this->parseSapDate($request['delivery_date']),
 
-                                'items' => collect($request['to_VBAP']['results'] ?? [])->map(function ($item) {
+                                'items' => collect($request['to_VBAP']['results'] ?? [])->map(function ($item) use ($deliveryItems) {
+                                    $materialCode = $item['Area_code'];
+                                    $deliveryInfo = $deliveryItems->get($materialCode);
                                     return [
                                         'quantity' => $item['QUNTITY'],
                                         'measuring_unit' => $item['MEINS'],
                                         'material_code' => $item['Area_code'],
                                         'material_description' => $item['Area_code_desc'],
-                                        'status' => $item['STATUS_DESC'],
+                                        // 'status' => $item['STATUS_DESC'],
+                                        'received_quantity' => $deliveryInfo['recieved_quantity'] ?? 0,
+                                        'received_unit' => $deliveryInfo['recieved_quantity_unit'] ?? $item['MEINS'],
+                                        'delivery_status_code' => $deliveryInfo['received_status'] ?? null,
                                     ];
                                 }),
                             ];
                         })->all();
 
-                        return [
-                            'inbound_request' => $inboundRequests[0],
-                            'inbound_delivery' => $inboundDelivery,
-                        ];
+                        // return [
+                        //     'inbound_request' => $inboundRequests[0],
+                        //     'inbound_delivery' => $inboundDelivery,
+                        // ];
+                        return $inboundRequests[0];
 
 
                     }
@@ -1061,7 +1069,7 @@ class SapService
 
                     'items' => collect($data['_WhseInbDeliveryItem'])->map(function ($request) {
                         return [
-                            'material' => (String)(Integer) $request['Product'],
+                            'material' => (String) (Integer) $request['Product'],
                             'recieved_quantity' => $request['ProductQuantity'],
                             'recieved_quantity_unit' => $request['QuantityUnit'],
                             'received_status' => $request['CompletionStatus'],
