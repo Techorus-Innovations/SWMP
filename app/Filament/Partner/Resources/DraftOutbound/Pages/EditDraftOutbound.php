@@ -39,9 +39,9 @@ class EditDraftOutbound extends EditRecord
             Action::make('submitOutbound')
                 ->label('Submit Outbound')
                 ->color('success')
-                ->hidden(fn($record): bool => count($record->materials) == 0 || $record->materials->sum('quantity') == 0)
-                ->disabled(fn($record): bool => $this->circuitBreaker->isOpen())
-                ->tooltip(fn() => $this->circuitBreaker->isOpen() ? 'External service is currently unavailable' : null)
+                ->hidden(fn ($record): bool => count($record->materials) == 0 || $record->materials->sum('quantity') == 0)
+                ->disabled(fn ($record): bool => $this->circuitBreaker->isOpen())
+                ->tooltip(fn () => $this->circuitBreaker->isOpen() ? 'External service is currently unavailable' : null)
                 ->schema([
                     DateRangePicker::make('date')
                         ->displayFormat('YYYY-MM-DD')
@@ -56,22 +56,22 @@ class EditDraftOutbound extends EditRecord
                         ->required(),
                     Select::make('time_slot')
                         ->label('Select Time Slot')
-                        ->disabled(fn(Get $get): bool => !filled($get(path: 'date')))
+                        ->disabled(fn (Get $get): bool => ! filled($get(path: 'date')))
                         ->options(
                             function (Get $get) {
-                                if (!$get('date')) {
+                                if (! $get('date')) {
                                     return [];
                                 }
 
                                 $date = $get('date');
                                 $sapService = new SapService;
-                                $usedSlots = $sapService->getDeliverySlotsReservedCounts($date);
+                                $usedSlots = $sapService->getOutboundDeliverySlotsReservedCounts($date);
 
                                 $day = strtolower(Carbon::parse($date)->format('D'));
 
                                 $workingHours = WorkingHours::where('day', $day)->get();
 
-                                if (!$workingHours) {
+                                if (! $workingHours) {
                                     return [];
                                 }
                                 $slots = [];
@@ -81,7 +81,7 @@ class EditDraftOutbound extends EditRecord
                                     while ($start < $end) {
                                         $hourKey = $start->format('H');
                                         $label = $start->format('h:i A');
-                                        if (!isset($usedSlots[$hourKey]) || $usedSlots[$hourKey] < $hours->quantity) {
+                                        if (! isset($usedSlots[$hourKey]) || $usedSlots[$hourKey] < $hours->quantity) {
                                             $slots[$hourKey] = $label;
                                         }
 

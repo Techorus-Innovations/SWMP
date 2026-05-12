@@ -134,7 +134,10 @@ class ViewDraftInbound extends ViewRecord
                                         } else {
 
                                             $sapService = new SapService;
-                                            $sapService->uploadAttpFile($filePath);
+                                            $status = $sapService->uploadAttpFile($filePath);
+                                            if (! $status) {
+                                                $fail('ATTP file failed to process');
+                                            }
                                         }
                                     },
                                 ])

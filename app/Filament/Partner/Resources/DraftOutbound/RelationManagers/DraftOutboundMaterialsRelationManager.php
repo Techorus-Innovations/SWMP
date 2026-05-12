@@ -89,6 +89,18 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
                 TextColumn::make('inbound_request_id')
                     ->label(__('Inbound Request ID'))
                     ->sortable(),
+
+                TextColumn::make('manufacture_date')
+                    ->label(__('Manufacture Date'))
+                    ->sortable(),
+
+                TextColumn::make('expiration_date')
+                    ->label(__('Expiration Date'))
+                    ->sortable(),
+
+                TextColumn::make('batch')
+                    ->label(__('Batch'))
+                    ->sortable(),
             ])
             ->filters([
                 // Tables\Filters\TrashedFilter::make(),
@@ -107,6 +119,9 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
                                 'quantity_unit' => $inbound['measuring_unit'],
                                 'inbound_request_item_code' => $inbound['item_number'],
                                 'location' => $inbound['location'],
+                                'manufacture_date' => $inbound['manufacture_date'],
+                                'expiration_date' => $inbound['expiration_date'],
+                                'batch' => $inbound['batch'],
                             ]);
                         }
 

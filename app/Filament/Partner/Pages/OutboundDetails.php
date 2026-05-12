@@ -54,6 +54,12 @@ class OutboundDetails extends Page implements HasTable
                         return true;
                     }
 
+                    if (isset($this->response['delivery_date'])) {
+                        if (\Carbon\Carbon::parse($this->response['delivery_date'])->startOfDay()->lessThan(today())) {
+                            return true;
+                        }
+                    }
+
                     return false;
                 })
                 ->action(function () {

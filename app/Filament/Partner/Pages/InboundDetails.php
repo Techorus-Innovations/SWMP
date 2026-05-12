@@ -41,7 +41,7 @@ class InboundDetails extends Page implements HasTable
     public function boot(): void
     {
         $this->sapService = new SapService;
-        $this->response = $this->sapService->getInboundRequestById(
+        $this->response = $this->sapService->getDetailedInboundRequest(
             filament()->auth()->user()->businessPartner->bp_code,
             $this->inboundRequestId
         );
@@ -67,9 +67,22 @@ class InboundDetails extends Page implements HasTable
                         return true;
                     }
 
-                    foreach ($this->response['items'] as $item) {
-                        if ($item['status'] == 'Completely processed' || $item['status'] == 'Partially processed') {
+                    if (isset($this->response['delivery_date'])) {
+                        if (\Carbon\Carbon::parse($this->response['delivery_date'])->startOfDay()->lessThan(today())) {
                             return true;
+                        }
+                    }
+
+                    if (isset($this->response['items'])) {
+                        foreach ($this->response['items'] as $item) {
+                            $received = (float) ($item['received_quantity'] ?? $item['recieved_quantity'] ?? 0);
+                            if ($received > 0) {
+                                return true;
+                            }
+
+                            if ($item['received_quantity'] == 0 && $item['delivery_status_code'] == '9') {
+                                return true;
+                            }
                         }
                     }
 
@@ -161,8 +174,28 @@ class InboundDetails extends Page implements HasTable
                     ->label('Quantity'),
                 TextColumn::make('measuring_unit')
                     ->label('Unit'),
-                TextColumn::make('status')
+                TextColumn::make('received_quantity')
+                    ->label('Received Quantity'),
+                TextColumn::make('received_unit')
+                    ->label('Received Unit'),
+                TextColumn::make('delivery_status_code')
                     ->label('Status')
+                    ->formatStateUsing(function ($state, $record) {
+                        $received = (float) ($record['received_quantity'] ?? 0);
+                        $quantity = (float) ($record['quantity'] ?? 0);
+
+                        if ($state == '9' && $received == 0) {
+                            return __('Cancelled');
+                        } elseif ($state == '9' && $received < $quantity) {
+                            return __('Partially received');
+                        } elseif ($state == '9' && $received == $quantity) {
+                            return __('Completely received');
+                        } elseif ($state == '1') {
+                            return __('Not yet received');
+                        }
+
+                        return $state;
+                    })
                     ->badge()
                     ->color('primary'),
             ])
