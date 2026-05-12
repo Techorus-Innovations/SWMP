@@ -760,43 +760,24 @@ class SapService
 
     public function cancelOutboundRequestBatch($outboundRequestCode)
     {
-        $outboundRequest = $this->getOutboundRequestDetails($outboundRequestCode);
+        $outboundRequestItems = $this->getOutboundRequestItems($outboundRequestCode);
 
-        // if ($inboundRequest) {
-        //     $inboundDeliveryCode = $inboundRequest['inbound_delivery'];
-        //     $inboundPo = $inboundRequest['po_number'];
+        if ($outboundRequestItems && $outboundRequestItems->isNotEmpty()) {
+            $OutboundDeliveryItemsCancelationStatus = $this->batchCancelOutboundItems($outboundRequestCode, $outboundRequestItems);
 
-        //     $deliveryItems = $this->getInboundDeliveryItems($inboundDeliveryCode);
+            if (!$OutboundDeliveryItemsCancelationStatus) {
+                return false;
+            }
 
-        //     if ($deliveryItems->isNotEmpty()) {
-        //         $InboundDeliveryItemsCancelationStatus = $this->batchCancelInboundDeliveryItems($inboundDeliveryCode, $deliveryItems);
 
-        //         if (!$InboundDeliveryItemsCancelationStatus) {
-        //             return false;
-        //         }
 
-        //     }
+        }
 
-        //     $PoCancelationStatus = $this->CancelPo($inboundPo);
-        //     if (!$PoCancelationStatus) {
-        //         return false;
-        //     }
 
-        //     $salesOrderItems = $this->getSalesOrderItems($inboundRequestCode);
-        //     // dd($salesOrderItems);
 
-        //     if ($salesOrderItems->isNotEmpty()) {
-        //         $InboundDeliveryItemsCancelationStatus = $this->batchCancelSalesOrderItems($inboundRequestCode, $salesOrderItems);
+        $OutboundCancelationStatus = $this->CancelOutboundFromErp($outboundRequestCode);
 
-        //         if (!$InboundDeliveryItemsCancelationStatus) {
-        //             return false;
-        //         }
-
-        //     }
-
-        return true;
-
-        // }
+        return $OutboundCancelationStatus;
     }
 
     public function cancelInboundRequestBatch($inboundRequestCode)
@@ -978,26 +959,92 @@ class SapService
         }
     }
 
-    public function getOutboundRequestDetails($outboundRequestCode)
+
+    public function batchCancelOutboundItems($outboundCode, $outboundItems)
+    {
+
+        $tokenResponse = $this->getCsrfToken();
+        $csrfToken = $tokenResponse['token'];
+        $cookies = $tokenResponse['headers']['set-cookie'];
+        $CRLF = "\r\n";
+
+        $batchData = '--batch_1' . $CRLF;
+        $batchData .= 'Content-Type: multipart/mixed; boundary=changeset_s1' . $CRLF . $CRLF;
+
+        $counter = 1;
+        foreach ($outboundItems as $item) {
+
+            $etag = '*'; // $item['etag'];
+            $itemCode = $item['item_code'];
+            $batchData .= '--changeset_s1' . $CRLF;
+            $batchData .= 'Content-Type: application/http' . $CRLF;
+            $batchData .= 'Content-Transfer-Encoding: binary' . $CRLF;
+            $batchData .= 'Content-ID: ' . $counter . $CRLF . $CRLF;
+            $batchData .= "POST WhseOutboundDeliveryOrderItem(EWMOutboundDeliveryOrder='" . $outboundCode . "',EWMOutboundDeliveryOrderItem='" . $itemCode . "')//SAP__self.AdjustDeliveryItemQuantity HTTP/1.1" . $CRLF;
+            $batchData .= 'Content-Type: application/json' . $CRLF;
+            $batchData .= 'If-Match: ' . $etag . $CRLF . $CRLF;
+            $batchData .= '{}' . $CRLF;
+            $counter++;
+        }
+
+        $batchData .= '--changeset_s1--' . $CRLF;
+        $batchData .= '--batch_1--';
+
+        // dd($batchData);
+
+        $response = $this->getClient()
+            ->withHeaders([
+                'x-csrf-token' => $csrfToken,
+                'Cookie' => $cookies,
+                'Content-Type' => 'multipart/mixed;boundary=batch_1',
+                'Accept' => 'multipart/mixed, application/json',
+            ])
+            ->withQueryParameters([
+                'sap-client' => $this->client,
+            ])
+            ->withBody($batchData, 'multipart/mixed;boundary=batch_1')
+            ->post($this->baseUrl . '/sap/opu/odata4/sap/api_warehouse_odo_2/srvd_a2x/sap/warehouseoutbdeliveryorder/0001/$batch');
+
+        return $response->status() == 200;
+    }
+
+
+    public function CancelOutboundFromErp($outboundRequestCode)
     {
         return $this->execute(function () use ($outboundRequestCode) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata4/sap/api_warehouse_odo_2/srvd_a2x/sap/warehouseoutbdeliveryorder/0001/WhseOutboundDeliveryOrderHead('" . $outboundRequestCode . "')");
-            dd($response->json());
+                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_OUTBOUND_CANCEL_SRV/outbound_deliverySet('" . $outboundRequestCode . "')");
+            // dd($response->json());
+            if ($response->successful()) {
+                return true;
+            }
+            return false;
+        });
+    }
+
+
+
+    public function getOutboundRequestItems($outboundRequestCode)
+    {
+        return $this->execute(function () use ($outboundRequestCode) {
+            $response = $this->getClient()
+                ->get($this->baseUrl . "/sap/opu/odata4/sap/api_warehouse_odo_2/srvd_a2x/sap/warehouseoutbdeliveryorder/0001/WhseOutboundDeliveryOrderHead('" . $outboundRequestCode . "')", [
+                    '$expand' => '_WhseOutbDeliveryOrderItem',
+                ]);
+
             if ($response->successful()) {
                 $data = $response->json();
-                dd($data);
+                // dd($data);
 
-                $inboundRequests = collect($data['d']['results'])->map(function ($request) {
+                $deliveryItems = collect($data['_WhseOutbDeliveryOrderItem'])->map(function ($request) {
                     return [
-                        'inbound_delivery' => $request['inbound_delivery'],
-                        'po_number' => $request['po_number'],
+                        'etag' => $request['@odata.etag'],
+                        'item_code' => $request['EWMOutboundDeliveryOrderItem'],
+                        'status' => $request['GoodsIssueStatus'],
                     ];
-                })->all();
-
-                return $inboundRequests[0];
+                });
+                return $deliveryItems->where('status', '1');
             }
-
             return false;
         });
     }
