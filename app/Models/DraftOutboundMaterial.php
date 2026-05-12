@@ -9,7 +9,7 @@ class DraftOutboundMaterial extends Model
 {
     protected $table = 'draft_outbound_material';
 
-    protected $fillable = ['draft_outbound_id', 'material_code', 'quantity', 'max_quantity', 'quantity_unit', 'location', 'inbound_request_item_code', 'inbound_request_id'];
+    protected $fillable = ['draft_outbound_id', 'material_code', 'quantity', 'max_quantity', 'quantity_unit', 'location', 'inbound_request_item_code', 'inbound_request_id', 'batch', 'expiration_date', 'manufacture_date'];
 
     public function draftOutbound(): BelongsTo
     {
