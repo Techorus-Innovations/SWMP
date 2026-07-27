@@ -150,11 +150,11 @@ class ViewDraftInbound extends ViewRecord
                     $time = $data['time_slot'];
                     $bpcode = filament()->auth()->user()->businessPartner->bp_code;
                     $contractId = $this->record->contract_id;
-                    $materialCodesWithQuantity = $this->record->getMaterialCodesWithQuantity();
+                    // $materialCodesWithQuantity = $this->record->getMaterialCodesWithQuantity();
 
                     // dd($materialCodesWithQuantity);
                     $sapService = new SapService;
-                    $response = $sapService->createInbound($bpcode, $contractId, $materialCodesWithQuantity, $date, $time);
+                    $response = $sapService->createInbound($bpcode, $contractId, $this->record, $date, $time);
                     preg_match('/Inbound Request(\d+)/', $response['d']['Message'], $matches);
                     $requestNumber = $matches[1] ?? null;
                     if ($requestNumber != null && isset($data['csv_file'])) {

@@ -110,14 +110,17 @@ class DraftInboundForm
                         ->suffix('EA'),
                     TextInput::make('batch')
                         ->label(__('Batch'))
+                        ->required()
                         ->string()
                         ->maxLength(10),
                     DatePicker::make('manufacture_date')
                         ->label(__('Manufacture Date'))
+                        ->required()
                         ->displayFormat('Y-m-d')
                         ->live(),
                     DatePicker::make('expiration_date')
                         ->label(__('Expiration Date'))
+                        ->required()
                         ->displayFormat('Y-m-d')
                         ->after('manufacture_date')
                         ->rules([
