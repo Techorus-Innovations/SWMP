@@ -29,7 +29,11 @@ class EditDraftInbound extends EditRecord
         $data['materials'] = $this->record->materials
             ->map(fn ($material) => [
                 'material_id' => $material->id,
+                'plant_area_id' => $material->pivot->plant_area_id,
                 'quantity' => $material->pivot->quantity,
+                'batch' => $material->pivot->batch,
+                'manufacture_date' => $material->pivot->manufacture_date,
+                'expiration_date' => $material->pivot->expiration_date,
             ])
             ->toArray();
 
@@ -38,17 +42,18 @@ class EditDraftInbound extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        $syncData = collect($data['materials'] ?? [])
-            ->pluck('quantity', 'material_id')
-            ->filter()
-            ->toArray();
         $this->materialsToSync = [];
-        foreach ($syncData as $materialId => $quantity) {
-            $this->materialsToSync[$materialId] = [
-                'quantity' => $quantity,
-            ];
+        foreach ($data['materials'] ?? [] as $item) {
+            if (! empty($item['material_id'])) {
+                $this->materialsToSync[$item['material_id']] = [
+                    'quantity' => $item['quantity'] ?? null,
+                    'plant_area_id' => $item['plant_area_id'] ?? null,
+                    'batch' => $item['batch'] ?? null,
+                    'manufacture_date' => $item['manufacture_date'] ?? null,
+                    'expiration_date' => $item['expiration_date'] ?? null,
+                ];
+            }
         }
-        // dd($this->materialsToSync);
 
         unset($data['materials']);
 

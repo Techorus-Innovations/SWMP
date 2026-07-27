@@ -15,13 +15,18 @@ class DraftInbound extends Model
 
     public function materials()
     {
-        return $this->belongsToMany(Material::class, 'draft_inbound_material')->withPivot('quantity');
+        return $this->belongsToMany(Material::class, 'draft_inbound_material')->withPivot('quantity', 'batch', 'manufacture_date', 'expiration_date', 'plant_area_id');
     }
 
-    public function getMaterialCodesWithQuantity() {
+    public function getMaterialsData() {
         return $this->materials->mapWithKeys(function ($material) {
-            return [(String) $material->code => $material->pivot->quantity];
+            return [(String) $material->code => [
+                'quantity' => $material->pivot->quantity,
+                'batch' => $material->pivot->batch,
+                'manufacture_date' => $material->pivot->manufacture_date,
+                'expiration_date' => $material->pivot->expiration_date,
+                'plant_area_id' => $material->pivot->plant_area_id,
+            ]];
         })->toArray();
-        
     }
 }
