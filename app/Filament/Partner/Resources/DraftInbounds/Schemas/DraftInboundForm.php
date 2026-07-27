@@ -88,7 +88,8 @@ class DraftInboundForm
                             function (Get $get) {
                                 return function (string $attribute, $value, \Closure $fail) use ($get) {
                                     $batch = $get('batch');
-                                    if (! $value || ! $batch) {
+                                    $plantAreaId = $get('plant_area_id');
+                                    if (! $value || ! $batch || ! $plantAreaId) {
                                         return;
                                     }
 
@@ -96,22 +97,23 @@ class DraftInboundForm
                                     $duplicates = 0;
                                     foreach ($allMaterials as $item) {
                                         if (
-                                            isset($item['material_id'], $item['batch']) &&
+                                            isset($item['material_id'], $item['batch'], $item['plant_area_id']) &&
                                             (string) $item['material_id'] === (string) $value &&
-                                            trim((string) $item['batch']) === trim((string) $batch)
+                                            trim((string) $item['batch']) === trim((string) $batch) &&
+                                            (string) $item['plant_area_id'] === (string) $plantAreaId
                                         ) {
                                             $duplicates++;
                                         }
                                     }
 
                                     if ($duplicates > 1) {
-                                        $fail(__('The combination of material and batch must be unique within the draft inbound.'));
+                                        $fail(__('The combination of material, batch, and storage location must be unique within the draft inbound.'));
                                     }
                                 };
                             },
                         ]),
                     Select::make('plant_area_id')
-                        ->label(__('Plant Area'))
+                        ->label(__('Storage Location'))
                         ->options(function (Get $get) use ($areas): array {
                             $materialId = $get('material_id');
                             if (! $materialId) {
@@ -129,7 +131,35 @@ class DraftInboundForm
                                 ->toArray();
                         })
                         ->searchable()
-                        ->required(),
+                        ->required()
+                        ->rules([
+                            function (Get $get) {
+                                return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                    $materialId = $get('material_id');
+                                    $batch = $get('batch');
+                                    if (! $materialId || ! $batch || ! $value) {
+                                        return;
+                                    }
+
+                                    $allMaterials = $get('../../materials') ?? [];
+                                    $duplicates = 0;
+                                    foreach ($allMaterials as $item) {
+                                        if (
+                                            isset($item['material_id'], $item['batch'], $item['plant_area_id']) &&
+                                            (string) $item['material_id'] === (string) $materialId &&
+                                            trim((string) $item['batch']) === trim((string) $batch) &&
+                                            (string) $item['plant_area_id'] === (string) $value
+                                        ) {
+                                            $duplicates++;
+                                        }
+                                    }
+
+                                    if ($duplicates > 1) {
+                                        $fail(__('The combination of material, batch, and storage location must be unique within the draft inbound.'));
+                                    }
+                                };
+                            },
+                        ]),
                     TextInput::make('quantity')
                         ->numeric()
                         ->required()
@@ -144,7 +174,8 @@ class DraftInboundForm
                             function (Get $get) {
                                 return function (string $attribute, $value, \Closure $fail) use ($get) {
                                     $materialId = $get('material_id');
-                                    if (! $materialId || ! $value) {
+                                    $plantAreaId = $get('plant_area_id');
+                                    if (! $materialId || ! $value || ! $plantAreaId) {
                                         return;
                                     }
 
@@ -152,16 +183,17 @@ class DraftInboundForm
                                     $duplicates = 0;
                                     foreach ($allMaterials as $item) {
                                         if (
-                                            isset($item['material_id'], $item['batch']) &&
+                                            isset($item['material_id'], $item['batch'], $item['plant_area_id']) &&
                                             (string) $item['material_id'] === (string) $materialId &&
-                                            trim((string) $item['batch']) === trim((string) $value)
+                                            trim((string) $item['batch']) === trim((string) $value) &&
+                                            (string) $item['plant_area_id'] === (string) $plantAreaId
                                         ) {
                                             $duplicates++;
                                         }
                                     }
 
                                     if ($duplicates > 1) {
-                                        $fail(__('The combination of material and batch must be unique within the draft inbound.'));
+                                        $fail(__('The combination of material, batch, and storage location must be unique within the draft inbound.'));
                                     }
                                 };
                             },
