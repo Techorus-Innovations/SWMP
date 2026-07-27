@@ -92,9 +92,8 @@ class MyContractDetails extends Page implements HasTable
                 TextColumn::make('area_description')
                     ->label(__('Area Description')),
                 TextColumn::make('quantity')
-                    ->label(__('Quantity')),
-                TextColumn::make('measuring_unit')
-                    ->label(__('Measuring Unit')),
+                    ->label(__('Quantity'))
+                    ->suffix(fn ($record) => ' ' . ($record['measuring_unit'] ?? '')),
             ])
             ->paginated([10, 25, 50])
             ->filters([])

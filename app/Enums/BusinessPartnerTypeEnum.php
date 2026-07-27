@@ -4,8 +4,8 @@ namespace App\Enums;
 
 enum BusinessPartnerTypeEnum: string
 {
-    case Supplier = 's';
-    case Customer = 'c';
+    case Supplier = 'S';
+    case Customer = 'C';
 
     public function label(): string
     {

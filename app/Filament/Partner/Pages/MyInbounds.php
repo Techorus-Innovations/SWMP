@@ -59,14 +59,23 @@ class MyInbounds extends Page implements HasTable
             ->columns([
                 TextColumn::make('inbound_request_id')
                     ->label(__('Inbound Request ID')),
+                TextColumn::make('contract')
+                    ->label(__('Contract Number')),
                 TextColumn::make('created_date')
                     ->label(__('Created Date')),
-                TextColumn::make('shipping_indicator')
-                    ->label(__('Shipping Indicator')),
+                // TextColumn::make('shipping_indicator')
+                //     ->label(__('Shipping Indicator')),
                 TextColumn::make('delivery_date')
                     ->label(__('Delivery Date')),
                 TextColumn::make('delivery_time')
                     ->label(__('Delivery Time')),
+                TextColumn::make('status')
+                    ->label(__('Status'))
+                    ->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'Active' => 'success',
+                        'Cancelled' => 'danger',
+                    }),
             ])
             ->paginated([10, 25, 50])
             ->filters([])

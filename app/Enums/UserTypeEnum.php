@@ -4,9 +4,9 @@ namespace App\Enums;
 
 enum UserTypeEnum: string
 {
-    case Admin = 'a';
-    case Customer = 'c';
-    case Supplier = 's';
+    case Admin = 'A';
+    case Customer = 'C';
+    case Supplier = 'S';
 
     public function label(): string
     {

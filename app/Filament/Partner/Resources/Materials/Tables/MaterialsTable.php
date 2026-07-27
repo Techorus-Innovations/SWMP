@@ -43,19 +43,19 @@ class MaterialsTable
                     ->label(__('Default Unit'))
                     ->searchable(),
 
-                TextColumn::make('pal_to_default_unit')
-                    ->label(__('PAL to Default Unit'))
-                    ->searchable(),
+                // TextColumn::make('pal_to_default_unit')
+                //     ->label(__('PAL to Default Unit'))
+                //     ->searchable(),
 
-                TextColumn::make('materialType.name_en')
-                    ->label(__('Material Type'))
-                    ->visible($isEn)
-                    ->searchable($isEn),
+                // TextColumn::make('materialType.name_en')
+                //     ->label(__('Material Type'))
+                //     ->visible($isEn)
+                //     ->searchable($isEn),
 
-                TextColumn::make('materialType.name_ar')
-                    ->label(__('Material Type'))
-                    ->visible($isAr)
-                    ->searchable($isAr),
+                // TextColumn::make('materialType.name_ar')
+                //     ->label(__('Material Type'))
+                //     ->visible($isAr)
+                //     ->searchable($isAr),
 
                 TextColumn::make('materialGroup.name_en')
                     ->label(__('Material Group'))

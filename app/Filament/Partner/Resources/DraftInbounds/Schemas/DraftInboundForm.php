@@ -49,8 +49,11 @@ class DraftInboundForm
                         ->label('Material')
                         ->options(
                             function () use ($areas): array {
-                                return Material::whereHas('areas', function ($query) use ($areas) {
-                                    $query->whereIn('code', $areas);
+                                $latest_sync_time = Material::max(('sync_at'));
+
+
+                                return Material::whereHas('areas', function ($query) use ($areas, $latest_sync_time) {
+                                    $query->whereIn('code', $areas)->where('sync_at', $latest_sync_time);
                                 })->get()
                                     ->mapWithKeys(fn ($m) => [
                                         $m->id => (app()->getLocale() === 'ar' ? $m->name_ar : $m->name_en),
@@ -63,7 +66,8 @@ class DraftInboundForm
                     TextInput::make('quantity')
                         ->numeric()
                         ->required()
-                        ->minValue(1),
+                        ->minValue(1)
+                        ->suffix('EA'),
                 ])
                 ->reorderable(false)
                 ->columns(2)

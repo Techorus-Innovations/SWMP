@@ -74,13 +74,14 @@ class InboundDetails extends Page implements HasTable
                     }
 
                     if (isset($this->response['items'])) {
+                        
                         foreach ($this->response['items'] as $item) {
-                            $received = (float) ($item['received_quantity'] ?? $item['recieved_quantity'] ?? 0);
-                            if ($received > 0) {
-                                return true;
-                            }
+                            // $received = (float) ($item['received_quantity'] ?? $item['recieved_quantity'] ?? 0);
+                            // // if ($received > 0) {
+                            // //     return true;
+                            // // }
 
-                            if ($item['received_quantity'] == 0 && $item['delivery_status_code'] == '9') {
+                            if ($item['status_code'] == "r" || $item['status_code'] == "c") {
                                 return true;
                             }
                         }
@@ -119,12 +120,26 @@ class InboundDetails extends Page implements HasTable
                     TextEntry::make('inbound_request_id')
                         ->label(__('Request ID'))
                         ->state($record['inbound_request_id'] ?? '—'),
+                    TextEntry::make('contract')
+                        ->label(__('Contract Number'))
+                        ->state($record['contract'] ?? '—'),
+                    TextEntry::make('status')
+                        ->label(__('Status'))
+                        ->state($record['status'] ?? '—')
+                        ->badge()
+                        ->color(function ($state) {
+                            if ($state == 'Cancelled') {
+                                return 'danger';
+                            } else {
+                                return 'success';
+                            }
+                        }),
                     TextEntry::make('created_date')
                         ->label(__('Created Date'))
                         ->state($record['created_date'] ?? '—'),
-                    TextEntry::make('shipping_indicator')
-                        ->label(__('Shipping Indicator'))
-                        ->state($record['shipping_indicator'] ?? '—'),
+                    // TextEntry::make('shipping_indicator')
+                    //     ->label(__('Shipping Indicator'))
+                    //     ->state($record['shipping_indicator'] ?? '—'),
                     TextEntry::make('delivery_date')
                         ->label(__('Delivery Date'))
                         ->state($record['delivery_date'] ?? '—'),
@@ -171,33 +186,48 @@ class InboundDetails extends Page implements HasTable
                 TextColumn::make('gtin')
                     ->label('GTIN Code'),
                 TextColumn::make('quantity')
-                    ->label('Quantity'),
-                TextColumn::make('measuring_unit')
-                    ->label('Unit'),
+                    ->label('Quantity')
+                    ->suffix(fn ($record) => ' ' . ($record['measuring_unit'] ?? '')),
+                // TextColumn::make('measuring_unit')
+                //     ->label('Unit'),
                 TextColumn::make('received_quantity')
-                    ->label('Received Quantity'),
-                TextColumn::make('received_unit')
-                    ->label('Received Unit'),
-                TextColumn::make('delivery_status_code')
+                    ->label('Received Quantity')
+                    ->suffix(fn ($record) => ' ' . ($record['quantity_unit'] ?? '')),
+                // TextColumn::make('quantity_unit')
+                //     ->label('Quantity Unit'),
+                TextColumn::make('status_code')
                     ->label('Status')
-                    ->formatStateUsing(function ($state, $record) {
-                        $received = (float) ($record['received_quantity'] ?? 0);
-                        $quantity = (float) ($record['quantity'] ?? 0);
+                    ->formatStateUsing(function ($state) {
 
-                        if ($state == '9' && $received == 0) {
+                        if ($state == 'c' ) {
                             return __('Cancelled');
-                        } elseif ($state == '9' && $received < $quantity) {
-                            return __('Partially received');
-                        } elseif ($state == '9' && $received == $quantity) {
-                            return __('Completely received');
-                        } elseif ($state == '1') {
+                        } elseif ($state == 'r' ) {
+                            return __('Received');
+                        } elseif ($state == 'n' ) {
                             return __('Not yet received');
                         }
 
                         return $state;
                     })
                     ->badge()
-                    ->color('primary'),
+                    ->color(function ($state) {
+                        if ($state == 'c') {
+                            return 'danger';
+                        } elseif ($state == 'r') {
+                            return 'success';
+                        } elseif ($state == 'n') {
+                            return 'warning';
+                        }
+                        else {
+                            return 'primary';
+                        }
+                    }),
+                TextColumn::make('batch')
+                    ->label('Batch'),
+                TextColumn::make('manufacturing_date')
+                    ->label('Manufacturing Date'),
+                TextColumn::make('expiration_date')
+                    ->label('Expiration Date'),
             ])
             ->paginated([10, 25, 50])
             ->filters([])
