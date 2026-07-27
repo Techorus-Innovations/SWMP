@@ -12,6 +12,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Carbon;
 
 class DraftInboundForm
 {
@@ -117,6 +118,16 @@ class DraftInboundForm
                         ->label(__('Manufacture Date'))
                         ->required()
                         ->displayFormat('Y-m-d')
+                        ->maxDate(Carbon::now()->addMonth())
+                        ->rules([
+                            function () {
+                                return function (string $attribute, $value, \Closure $fail) {
+                                    if ($value && Carbon::parse($value)->gt(Carbon::now()->addMonth())) {
+                                        $fail(__('Manufacture date cannot be more than 1 month in the future.'));
+                                    }
+                                };
+                            },
+                        ])
                         ->live(),
                     DatePicker::make('expiration_date')
                         ->label(__('Expiration Date'))

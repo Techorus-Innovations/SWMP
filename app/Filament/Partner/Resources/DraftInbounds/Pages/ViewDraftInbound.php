@@ -50,8 +50,46 @@ class ViewDraftInbound extends ViewRecord
                                 ->displayFormat('YYYY-MM-DD')
                                 ->disableRanges()
                                 // ->firstDayOfWeek(0)
-                                ->minDate(Carbon::now()->addDays(2))
-                                ->maxDate(Carbon::now()->addMonth())
+                                ->minDate(function () {
+                                    $minDate = Carbon::now()->addDays(2);
+                                    $maxMfgDate = Carbon::parse($this->record->materials
+                                        ->pluck('pivot.manufacture_date')
+                                        ->max())->addDay();
+                                    return max($minDate, $maxMfgDate);
+                                })
+                                ->maxDate(Carbon::now()->addMonth()->addDay())
+                                ->rules([
+                                    function () {
+                                        return function (string $attribute, $value, \Closure $fail) {
+                                            if (! $value) {
+                                                return;
+                                            }
+                                            $selectedDate = Carbon::parse($value);
+
+                                            $mfgDates = $this->record->materials
+                                                ->pluck('pivot.manufacture_date')
+                                                ->filter();
+                                            foreach ($mfgDates as $mfgDate) {
+                                                if ($selectedDate->lte(Carbon::parse($mfgDate))) {
+                                                    $fail(__('Delivery date must be after the manufacture date of all materials (:date).', ['date' => $mfgDate]));
+
+                                                    return;
+                                                }
+                                            }
+
+                                            $expDates = $this->record->materials
+                                                ->pluck('pivot.expiration_date')
+                                                ->filter();
+                                            foreach ($expDates as $expDate) {
+                                                if ($selectedDate->gte(Carbon::parse($expDate))) {
+                                                    $fail(__('Delivery date must be before the expiration date of all materials (:date).', ['date' => $expDate]));
+
+                                                    return;
+                                                }
+                                            }
+                                        };
+                                    },
+                                ])
                                 ->autoApply()
                                 ->alwaysShowCalendar()
                                 ->live()
