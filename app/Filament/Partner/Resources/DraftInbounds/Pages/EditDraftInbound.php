@@ -45,12 +45,15 @@ class EditDraftInbound extends EditRecord
         $this->materialsToSync = [];
         foreach ($data['materials'] ?? [] as $item) {
             if (! empty($item['material_id'])) {
-                $this->materialsToSync[$item['material_id']] = [
-                    'quantity' => $item['quantity'] ?? null,
-                    'plant_area_id' => $item['plant_area_id'] ?? null,
-                    'batch' => $item['batch'] ?? null,
-                    'manufacture_date' => $item['manufacture_date'] ?? null,
-                    'expiration_date' => $item['expiration_date'] ?? null,
+                $this->materialsToSync[] = [
+                    'material_id' => $item['material_id'],
+                    'pivot_data' => [
+                        'quantity' => $item['quantity'] ?? null,
+                        'plant_area_id' => $item['plant_area_id'] ?? null,
+                        'batch' => $item['batch'] ?? null,
+                        'manufacture_date' => $item['manufacture_date'] ?? null,
+                        'expiration_date' => $item['expiration_date'] ?? null,
+                    ],
                 ];
             }
         }
@@ -62,6 +65,9 @@ class EditDraftInbound extends EditRecord
 
     protected function afterSave(): void
     {
-        $this->record->materials()->sync($this->materialsToSync);
+        $this->record->materials()->detach();
+        foreach ($this->materialsToSync as $item) {
+            $this->record->materials()->attach($item['material_id'], $item['pivot_data']);
+        }
     }
 }

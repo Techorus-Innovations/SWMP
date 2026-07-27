@@ -83,7 +83,33 @@ class DraftInboundForm
                             $set('plant_area_id', $firstArea);
                         })
                         ->required()
-                        ->distinct(),
+                        // ->distinct()
+                        ->rules([
+                            function (Get $get) {
+                                return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                    $batch = $get('batch');
+                                    if (! $value || ! $batch) {
+                                        return;
+                                    }
+
+                                    $allMaterials = $get('../../materials') ?? [];
+                                    $duplicates = 0;
+                                    foreach ($allMaterials as $item) {
+                                        if (
+                                            isset($item['material_id'], $item['batch']) &&
+                                            (string) $item['material_id'] === (string) $value &&
+                                            trim((string) $item['batch']) === trim((string) $batch)
+                                        ) {
+                                            $duplicates++;
+                                        }
+                                    }
+
+                                    if ($duplicates > 1) {
+                                        $fail(__('The combination of material and batch must be unique within the draft inbound.'));
+                                    }
+                                };
+                            },
+                        ]),
                     Select::make('plant_area_id')
                         ->label(__('Plant Area'))
                         ->options(function (Get $get) use ($areas): array {
@@ -113,7 +139,33 @@ class DraftInboundForm
                         ->label(__('Batch'))
                         ->required()
                         ->string()
-                        ->maxLength(10),
+                        ->maxLength(10)
+                        ->rules([
+                            function (Get $get) {
+                                return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                    $materialId = $get('material_id');
+                                    if (! $materialId || ! $value) {
+                                        return;
+                                    }
+
+                                    $allMaterials = $get('../../materials') ?? [];
+                                    $duplicates = 0;
+                                    foreach ($allMaterials as $item) {
+                                        if (
+                                            isset($item['material_id'], $item['batch']) &&
+                                            (string) $item['material_id'] === (string) $materialId &&
+                                            trim((string) $item['batch']) === trim((string) $value)
+                                        ) {
+                                            $duplicates++;
+                                        }
+                                    }
+
+                                    if ($duplicates > 1) {
+                                        $fail(__('The combination of material and batch must be unique within the draft inbound.'));
+                                    }
+                                };
+                            },
+                        ]),
                     DatePicker::make('manufacture_date')
                         ->label(__('Manufacture Date'))
                         ->required()
