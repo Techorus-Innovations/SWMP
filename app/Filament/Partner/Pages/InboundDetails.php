@@ -91,7 +91,8 @@ class InboundDetails extends Page implements HasTable
                 })
                 ->action(function () {
                     $sapService = new SapService;
-                    $status = $sapService->cancelInboundRequestBatch($this->response['inbound_request_id']);
+
+                    $status = $sapService->cancelDelivery($this->response['delivery_code'],"INB");
                     if ($status == true) {
                         $this->boot();
                         Notification::make()
