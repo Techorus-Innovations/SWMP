@@ -25,6 +25,8 @@ class Material extends Model
 
     public function draftInbounds()
     {
-        return $this->belongsToMany(DraftInbound::class, 'draft_inbound_material');
+        return $this->belongsToMany(DraftInbound::class, 'draft_inbound_material')
+            ->using(DraftInboundMaterial::class)
+            ->withPivot('quantity', 'batch', 'manufacture_date', 'expiration_date', 'plant_area_id');
     }
 }

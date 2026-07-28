@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\PlantArea;
 use Illuminate\Database\Eloquent\Model;
 
 class DraftInbound extends Model
@@ -15,7 +16,9 @@ class DraftInbound extends Model
 
     public function materials()
     {
-        return $this->belongsToMany(Material::class, 'draft_inbound_material')->withPivot('quantity', 'batch', 'manufacture_date', 'expiration_date', 'plant_area_id');
+        return $this->belongsToMany(Material::class, 'draft_inbound_material')
+            ->using(DraftInboundMaterial::class)
+            ->withPivot('quantity', 'batch', 'manufacture_date', 'expiration_date', 'plant_area_id');
     }
 
     public function getMaterialsData() {
