@@ -35,7 +35,8 @@ class ViewDraftInbound extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
+            EditAction::make()
+                ->hidden(fn () => filled($this->record->attp_file)),
             Action::make('submitInbound')
                 ->label('Submit Inbound')
                 ->color('success')
@@ -139,7 +140,7 @@ class ViewDraftInbound extends ViewRecord
                     Step::make('Upload ATTP file')
                         ->description('Upload ATTP file')
                         ->hidden(function () {
-                            return ! $this->record->materials()
+                            return filled($this->record->attp_file) || ! $this->record->materials()
                                 ->where('attp_required', 'ZT')
                                 ->exists();
                         })
@@ -184,29 +185,49 @@ class ViewDraftInbound extends ViewRecord
                         ]),
                 ])
                 ->action(function (array $data) {
+                    $attpFile = $data['csv_file'] ?? $this->record->attp_file;
+
+                    if ($attpFile && ! filled($this->record->attp_file)) {
+                        $this->record->update([
+                            'attp_file' => $attpFile,
+                        ]);
+                    }
+
                     $date = $data['date'];
                     $time = $data['time_slot'];
                     $bpcode = filament()->auth()->user()->businessPartner->bp_code;
                     $contractId = $this->record->contract_id;
-                    // $materialCodesWithQuantity = $this->record->getMaterialCodesWithQuantity();
 
-                    // dd($materialCodesWithQuantity);
                     $sapService = new SapService;
                     $response = $sapService->createInbound($bpcode, $contractId, $this->record, $date, $time);
-                    preg_match('/Inbound Request(\d+)/', $response['d']['Message'], $matches);
+
+                    preg_match('/Inbound Request(\d+)/', $response['d']['Message'] ?? '', $matches);
                     $requestNumber = $matches[1] ?? null;
-                    if ($requestNumber != null && isset($data['csv_file'])) {
+
+                    if (! $requestNumber) {
+                        Notification::make()
+                            ->title('Error')
+                            ->body($response['d']['Message'] ?? $response['error']['message']['value'] ?? 'Failed to create inbound in SAP.')
+                            ->danger()
+                            ->send();
+
+                        return;
+                    }
+
+                    if ($attpFile) {
                         InboundAttp::create([
                             'inbound_number' => $requestNumber,
-                            'attp_file' => $data['csv_file'],
+                            'attp_file' => $attpFile,
                         ]);
                     }
+
                     DraftInbound::where('id', $this->record->id)->delete();
                     Notification::make()
                         ->title('Success')
                         ->body('Inbound created successfully with id: '.$requestNumber.'.')
                         ->success()
                         ->send();
+
                     redirect()->route('filament.partner.pages.my-inbounds');
                 }),
         ];

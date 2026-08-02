@@ -3,6 +3,7 @@
 namespace App\Filament\Partner\Resources\DraftInbounds\Tables;
 
 use App\Filament\Partner\Resources\DraftInbounds\Pages\EditDraftInbound;
+use App\Filament\Partner\Resources\DraftInbounds\Pages\ViewDraftInbound;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -41,17 +42,20 @@ class DraftInboundsTable
                     ->sortable(),
             ])
             ->recordUrl(
-                fn (Model $record): string => EditDraftInbound::getUrl([$record]),
+                fn (Model $record): string => filled($record->attp_file)
+                    ? ViewDraftInbound::getUrl([$record])
+                    : EditDraftInbound::getUrl([$record]),
             )
             ->actions([
-                    EditAction::make()
-                        ->disabled(fn () => $circuitBreaker->isOpen())
-                        ->tooltip(fn () => $circuitBreaker->isOpen() ? 'External service is currently unavailable' : null),
-                    ViewAction::make()
-                        ->disabled(fn () => $circuitBreaker->isOpen())
-                        ->tooltip(fn () => $circuitBreaker->isOpen() ? 'External service is currently unavailable' : null),
-                    DeleteAction::make()
-                ])
+                EditAction::make()
+                    ->hidden(fn (Model $record) => filled($record->attp_file))
+                    ->disabled(fn () => $circuitBreaker->isOpen())
+                    ->tooltip(fn () => $circuitBreaker->isOpen() ? 'External service is currently unavailable' : null),
+                ViewAction::make()
+                    ->disabled(fn () => $circuitBreaker->isOpen())
+                    ->tooltip(fn () => $circuitBreaker->isOpen() ? 'External service is currently unavailable' : null),
+                DeleteAction::make(),
+            ])
             ->defaultSort('created_at', 'desc');
     }
 }
