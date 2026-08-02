@@ -443,14 +443,16 @@ class SapService
         });
 
     }
+
+    
     public function getAllStock($businessPartnerCode)
     {
         return $this->execute(function () use ($businessPartnerCode) {
             $response = $this->getClient()
-                ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
-                    '$expand' => 'to_Inbounds',
-                    '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne ''",
-                    '$orderby' => 'Material asc',
+                ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_CUST_STTOCK_SRV/ZI_MATERIAL_QUANTITY', [
+                    '$expand' => 'to_batch/to_location',
+                    '$filter' => "C_KUNNR eq '$businessPartnerCode'",
+                    '$orderby' => 'matnr asc',
                 ]);
 
             if ($response->successful()) {
@@ -458,22 +460,27 @@ class SapService
                 $locale = app()->getLocale();
 
                 $stock = collect($data['d']['results'])->map(function ($request) use ($locale) {
-                    $material = Material::where('code', $request['Material'])->first();
+                    $material = Material::where('code', $request['matnr'])->first();
 
                     return [
                         'material_name' => ($locale === 'ar' ? $material?->name_ar : $material?->name_en),
-                        'material_code' => $request['Material'],
-                        'warehouse_code' => $request['Plant'],
-                        'inbounds' => collect($request['to_Inbounds']['results'] ?? [])->map(function ($item) {
+                        'material_code' => $request['matnr'],
+                        'material_quantity' => $request['TOTAL_QUANTITY'],
+                        'material_quantity_unit' => $request['BaseUnit'],
+                        'batches' => collect($request['to_batch']['results'] ?? [])->map(function ($item) {
                             return [
-                                'inbound_id' => $item['SalesDocument'],
-                                'quantity' => $item['stock'],
-                                'measuring_unit' => $item['unit'],
-                                'item_number' => $item['item_number'],
-                                'location' => $item['location'],
-                                'expiration_date' => $this->parseSapDate($item['expiration_date']),
-                                'manufacture_date' => $this->parseSapDate($item['manf_date']),
-                                'batch' => $item['batch'],
+                                'batch_code' => $item['BATCH'],
+                                'batch_quantity' => $item['TOTAL_QUANTITY'],
+                                'batch_quantity_unit' => $item['BaseUnit'],
+                                'expiration_date' => $this->parseSapDate($item['exp_date']),
+                                'manufacture_date' => $this->parseSapDate($item['mfc_date']),
+                                'locations' => collect($item['to_location']['results'] ?? [])->map(function ($item) {
+                                    return [
+                                        'location_code' => $item['location'],
+                                        'location_quantity' => $item['TOTAL_QUANTITY'],
+                                        'location_quantity_unit' => $item['BaseUnit'],
+                                    ];
+                                }),
                             ];
                         }),
                     ];
