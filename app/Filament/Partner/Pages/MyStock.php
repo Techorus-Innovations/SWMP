@@ -55,7 +55,8 @@ class MyStock extends Page implements HasTable
                     $stock['material_name_en'] = $material?->name_en;
                     $stock['material_name_ar'] = $material?->name_ar;
                     // $stock['material_name'] = ($locale === 'ar' ? $material?->name_ar : $material?->name_en);
-                    $stock['total_quantity'] = collect($stock['inbounds'] ?? [])->sum('quantity_in_EA');
+                    // $stock['total_quantity'] = collect($stock['inbounds'] ?? [])->sum('quantity_in_EA');
+                    // $stock['total_quantity'] = $stock['material_quantity'];
                     $stock['gtin'] = $material?->gtin_code ?? null;
 
                     return $stock;
@@ -77,9 +78,9 @@ class MyStock extends Page implements HasTable
                     ->label(__('Material Name (AR)')),
                 TextColumn::make('gtin')
                     ->label(__('GTIN Code')),
-                TextColumn::make('warehouse_code')
-                    ->label(__('Warehouse')),
-                TextColumn::make('total_quantity')
+                // TextColumn::make('warehouse_code')
+                //     ->label(__('Warehouse')),
+                TextColumn::make('material_quantity')
                     ->label(__('Total Quantity'))
                     ->badge(),
             ])
@@ -91,7 +92,7 @@ class MyStock extends Page implements HasTable
                     ->icon('heroicon-o-eye')
                     ->url(fn ($record) => StockDetails::getUrl([
                         'materialCode' => $record['material_code'],
-                        'warehouseCode' => $record['warehouse_code'],
+                        // 'warehouseCode' => $record['warehouse_code'],
                     ])),
             ])
             ->bulkActions([]);

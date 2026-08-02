@@ -14,7 +14,9 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Url;
-
+use Filament\Schemas\Components\Grid;
+use Filament\Infolists\Components\RepeatableEntry;
+use App\Models\PlantArea;
 class StockDetails extends Page implements HasTable
 {
     use InteractsWithTable;
@@ -27,17 +29,15 @@ class StockDetails extends Page implements HasTable
     #[Url]
     public string $materialCode = '';
 
-    /** Populated from URL query parameter */
-    #[Url]
-    public string $warehouseCode = '';
+    // /** Populated from URL query parameter */
+    // #[Url]
+    // public string $warehouseCode = '';
 
     protected $sapService;
 
     private ?array $response = null;
 
     private ?Material $material = null;
-
-    private ?int $totalInboundQuantity = null;
 
     public static function canAccess(): bool
     {
@@ -47,18 +47,41 @@ class StockDetails extends Page implements HasTable
     public function boot(): void
     {
         $this->sapService = new SapService;
-        $this->response = $this->sapService->getStockByMaterialCodeAndWarehouseCode(
+        $this->response = $this->sapService->getStockByMaterialCode(
             filament()->auth()->user()->businessPartner->bp_code,
-            $this->materialCode,
-            $this->warehouseCode
+            $this->materialCode
         );
         // Fetch material details from database
         $this->material = Material::where('code', $this->materialCode)->first();
 
-        // Calculate total inbound quantity
-        if ($this->response) {
-            $this->totalInboundQuantity = collect($this->response['inbounds'] ?? [])->sum('quantity_in_EA');
-        }
+
+        // Collect all location codes returned across all batches
+        $locationCodes = collect($this->response['batches'] ?? [])
+            ->flatMap(fn($batch) => collect($batch['locations'] ?? [])->pluck('location_code'))
+            ->unique()
+            ->values();
+
+        // Fetch matching PlantAreas once, keyed by code for O(1) lookup
+        $plantAreas = PlantArea::whereIn('code', $locationCodes)
+            ->get()
+            ->keyBy('code');
+        // Enrich each location with its name directly in the array
+        $this->response['batches'] = collect($this->response['batches'] ?? [])
+            ->map(function ($batch) use ($plantAreas) {
+                $batch['locations'] = collect($batch['locations'] ?? [])
+                    ->map(function ($location) use ($plantAreas) {
+                        $plantArea = $plantAreas->get($location['location_code'] ?? null);
+
+                        $location['location_name_en'] = $plantArea?->name_en ?? '—';
+                        $location['location_name_ar'] = $plantArea?->name_ar ?? '—';
+
+                        return $location;
+                    })
+                    ->all();
+
+                return $batch;
+            })
+            ->all();
     }
 
     public function getTitle(): string
@@ -66,14 +89,12 @@ class StockDetails extends Page implements HasTable
         $locale = app()->getLocale();
         $materialName = $locale === 'ar' ? $this->material?->name_ar : $this->material?->name_en;
 
-        return __('Stock Details').' - '.$materialName;
+        return __('Stock Details') . ' - ' . $materialName;
     }
 
     public function infolist(Schema $schema): Schema
     {
         $record = $this->response;
-        // $locale = app()->getLocale();
-        // $materialName = $locale === 'ar' ? $this->material?->name_ar : $this->material?->name_en;
 
         return $schema->components([
             Section::make(__('Stock Summary'))
@@ -82,64 +103,140 @@ class StockDetails extends Page implements HasTable
                     TextEntry::make('material_code')
                         ->label(__('Material Code'))
                         ->state($record['material_code'] ?? '—'),
-                    TextEntry::make('name_en')
-                        ->label(__('Material Name (EN)') ?? '-')
-                        ->state($this->material?->name_en),
-                    TextEntry::make('name_ar')
-                        ->label(__('Material Name (AR)') ?? '-')
-                        ->state($this->material?->name_ar),
-                    TextEntry::make('gtin')
-                        ->label(__('GTIN Code') ?? '-')
-                        ->state($this->material?->gtin_code),
-                    TextEntry::make('warehouse_code')
-                        ->label(__('Warehouse'))
-                        ->state($record['warehouse_code'] ?? '—'),
-                    TextEntry::make('total_inbound_quantity')
-                        ->label(__('Total Inbound Quantity'))
+                    TextEntry::make('material_quantity')
+                        ->label(__('Total Quantity'))
                         ->badge()
-                        ->state($this->totalInboundQuantity ?? '-'),
+                        ->state($record['material_quantity'] ?? '-')
+                        ->suffix(' ' . ($record['material_quantity_unit'] ?? '')),
+                    TextEntry::make('name_en')
+                        ->label(__('Material Name (EN)'))
+                        ->state($this->material?->name_en ?? '-'),
+                    TextEntry::make('name_ar')
+                        ->label(__('Material Name (AR)'))
+                        ->state($this->material?->name_ar ?? '-'),
+                    TextEntry::make('gtin')
+                        ->label(__('GTIN Code'))
+                        ->state($this->material?->gtin_code ?? '-'),
                 ]),
+
+            Section::make(__('Batches'))
+                ->schema([
+                    RepeatableEntry::make('batches')
+                        ->hiddenLabel()
+                        ->state($record['batches'] ?? [])
+                        ->schema([
+                            Grid::make(4)
+                                ->schema([
+                                    TextEntry::make('batch_code')
+                                        ->label(__('Batch Code'))
+                                        ->weight('bold'),
+                                    TextEntry::make('batch_quantity')
+                                        ->label(__('Batch Quantity'))
+                                        ->badge()
+                                        ->suffix(fn($record) => ' ' . ($record['batch_quantity_unit'] ?? '')),
+                                    TextEntry::make('expiration_date')
+                                        ->label(__('Expiration Date')),
+                                    TextEntry::make('manufacture_date')
+                                        ->label(__('Manufacture Date')),
+                                ]),
+
+                            Section::make(__('Locations'))
+                                ->collapsible()
+                                ->collapsed()
+                                ->compact()
+                                ->schema([
+                                    RepeatableEntry::make('locations')
+                                        ->hiddenLabel()
+                                        ->schema([
+                                            Grid::make(2)
+                                                ->schema([
+                                                    TextEntry::make('location_code')
+                                                        ->label(__('Location Code')),
+                                                    TextEntry::make('location_quantity')
+                                                        ->label(__('Location Quantity'))
+                                                        ->badge()
+                                                        ->color('gray')
+                                                        ->suffix(fn($record) => ' ' . ($record['location_quantity_unit'] ?? '')),
+                                                    TextEntry::make('location_name_en')
+                                                        ->label(__('Location Name (EN)')),
+                                                    TextEntry::make('location_name_ar')
+                                                        ->label(__('Location Name (AR)')),
+                                                ]),
+                                        ])
+                                        ->contained(false),
+                                ]),
+                        ])
+                        ->contained(true),
+                ]),
+
         ]);
     }
+    // public function infolist(Schema $schema): Schema
+    // {
+    //     $record = $this->response;
+    //     // $locale = app()->getLocale();
+    //     // $materialName = $locale === 'ar' ? $this->material?->name_ar : $this->material?->name_en;
 
-    public function table(Table $table): Table
-    {
-        return $table
-            ->records(function () {
-                $inbounds = collect($this->response['inbounds'] ?? [])->toArray();
-                $currentPage = $this->getTablePage();
-                $perPage = $this->getTableRecordsPerPage() ?? 10;
+    //     return $schema->components([
+    //         Section::make(__('Stock Summary'))
+    //             ->columns(2)
+    //             ->schema([
+    //                 TextEntry::make('material_code')
+    //                     ->label(__('Material Code'))
+    //                     ->state($record['material_code'] ?? '—'),
+    //                 TextEntry::make('material_quantity')
+    //                     ->label(__('Total Quantity'))
+    //                     ->badge()
+    //                     ->state($record['material_quantity'] ?? '-')
+    //                     ->suffix(' '.$record['material_quantity_unit']),
+    //                 TextEntry::make('name_en')
+    //                     ->label(__('Material Name (EN)') ?? '-')
+    //                     ->state($this->material?->name_en),
+    //                 TextEntry::make('name_ar')
+    //                     ->label(__('Material Name (AR)') ?? '-')
+    //                     ->state($this->material?->name_ar),
+    //                 TextEntry::make('gtin')
+    //                     ->label(__('GTIN Code') ?? '-')
+    //                     ->state($this->material?->gtin_code),
+    //                 // TextEntry::make('warehouse_code')
+    //                 //     ->label(__('Warehouse'))
+    //                 //     ->state($record['warehouse_code'] ?? '—'),
+    //             ]),
+    //     ]);
+    // }
 
-                $paginated = array_slice($inbounds, ($currentPage - 1) * $perPage, $perPage);
+    // public function table(Table $table): Table
+    // {
+    //     return $table
+    //         ->records(function () {
+    //             $batches = collect($this->response['batches'] ?? [])->toArray();
+    //             $currentPage = $this->getTablePage();
+    //             $perPage = $this->getTableRecordsPerPage() ?? 10;
 
-                return new LengthAwarePaginator(
-                    $paginated,
-                    count($inbounds),
-                    $perPage,
-                    $currentPage
-                );
-            })
-            ->columns([
-                TextColumn::make('inbound_id')
-                    ->label(__('Inbound ID'))
-                    ->icon('heroicon-o-eye')
-                    ->url(fn ($record) => InboundDetails::getUrl([
-                        'inboundRequestId' => $record['inbound_id'],
-                    ])),
-                TextColumn::make('quantity_in_EA')
-                    ->label(__('Quantity in EA')),
-                TextColumn::make('quantity_in_PLA')
-                    ->label(__('Quantity in PLA')),
-                TextColumn::make('pallet_unit')
-                    ->label(__('Pallet Unit')),
-                TextColumn::make('expiration_date')
-                    ->label(__('Expiration Date')),
-                TextColumn::make('manufacture_date')
-                    ->label(__('Manufacture Date')),
-            ])
-            ->paginated([10, 25, 50])
-            ->filters([])
-            ->actions([])
-            ->bulkActions([]);
-    }
+    //             $paginated = array_slice($batches, ($currentPage - 1) * $perPage, $perPage);
+
+    //             return new LengthAwarePaginator(
+    //                 $paginated,
+    //                 count($batches),
+    //                 $perPage,
+    //                 $currentPage
+    //             );
+    //         })
+    //         ->columns([
+
+    //             TextColumn::make('batch_code')
+    //                 ->label(__('Batch Code')) ,
+    //             TextColumn::make('batch_quantity')
+    //                 ->label(__('Batch Quantity'))
+    //                 ->suffix(fn ($record) => ' ' . ($record['batch_quantity_unit'] ?? '')),
+    //             TextColumn::make('expiration_date')
+    //                 ->label(__('Expiration Date')),
+    //             TextColumn::make('manufacture_date')
+    //                 ->label(__('Manufacture Date')),
+    //         ])
+    //         ->paginated([10, 25, 50])
+    //         ->filters([])
+    //         ->actions([])
+    //         ->bulkActions([]);
+    // }
 }

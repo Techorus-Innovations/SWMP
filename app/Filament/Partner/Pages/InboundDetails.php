@@ -66,13 +66,6 @@ class InboundDetails extends Page implements HasTable
                     if (! filament()->auth()->user()->canCancelInbounds()) {
                         return true;
                     }
-
-                    if (isset($this->response['delivery_date'])) {
-                        if (\Carbon\Carbon::parse($this->response['delivery_date'])->startOfDay()->lessThan(today())) {
-                            return true;
-                        }
-                    }
-
                     if (isset($this->response['items'])) {
                         
                         foreach ($this->response['items'] as $item) {
@@ -86,6 +79,13 @@ class InboundDetails extends Page implements HasTable
                             }
                         }
                     }
+
+                    if (isset($this->response['delivery_date'])) {
+                        if (\Carbon\Carbon::parse($this->response['delivery_date'])->startOfDay()->lessThan(today())) {
+                            return true;
+                        }
+                    }
+
 
                     return false;
                 })

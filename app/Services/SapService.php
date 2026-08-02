@@ -346,38 +346,89 @@ class SapService
 
     }
 
+    // public function getStock($businessPartnerCode, $pageSize, $pageNumber)
+    // {
+    //     return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
+    //         $response = $this->getClient()
+    //             ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
+    //                 '$expand' => 'to_Inbounds',
+    //                 '$inlinecount' => 'allpages',
+    //                 '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne ''",
+    //                 '$orderby' => 'Material asc',
+    //                 '$top' => $pageSize,
+    //                 '$skip' => ($pageNumber - 1) * $pageSize,
+    //             ]);
+
+    //         if ($response->successful()) {
+    //             $data = $response->json();
+
+    //             $stock = collect($data['d']['results'])->map(function ($request) {
+
+    //                 return [
+    //                     'material_code' => $request['Material'],
+    //                     'warehouse_code' => $request['Plant'],
+    //                     'inbounds' => collect($request['to_Inbounds']['results'] ?? [])->map(function ($item) {
+    //                         return [
+    //                             'inbound_id' => $item['SalesDocument'],
+    //                             'quantity_in_EA' => $item['stock'],
+    //                             'quantity_in_PLA' => $item['stock_in_PAL'],
+    //                             'pallet_unit' => $item['PalletUnit'],
+    //                             'item_number' => $item['item_number'],
+    //                             'location' => $item['location'],
+    //                             'expiration_date' => $this->parseSapDate($item['expiration_date']),
+    //                             'manufacture_date' => $this->parseSapDate($item['manf_date']),
+    //                             'batch' => $item['batch'],
+    //                         ];
+    //                     }),
+    //                 ];
+    //             })->all();
+
+    //             $stockData = ['totalCount' => $data['d']['__count'], 'paginatedStock' => $stock];
+
+    //             return $stockData;
+    //         }
+
+    //         return $response;
+    //     });
+
+    // }
+
     public function getStock($businessPartnerCode, $pageSize, $pageNumber)
     {
         return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
+
             $response = $this->getClient()
-                ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
-                    '$expand' => 'to_Inbounds',
+                ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_CUST_STTOCK_SRV/ZI_MATERIAL_QUANTITY', [
+                    '$expand' => 'to_batch/to_location',
                     '$inlinecount' => 'allpages',
-                    '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne ''",
-                    '$orderby' => 'Material asc',
+                    '$filter' => "CUSTOMER_CODE eq '$businessPartnerCode'",
+                    '$orderby' => 'matnr asc',
                     '$top' => $pageSize,
                     '$skip' => ($pageNumber - 1) * $pageSize,
                 ]);
-
             if ($response->successful()) {
                 $data = $response->json();
 
                 $stock = collect($data['d']['results'])->map(function ($request) {
 
                     return [
-                        'material_code' => $request['Material'],
-                        'warehouse_code' => $request['Plant'],
-                        'inbounds' => collect($request['to_Inbounds']['results'] ?? [])->map(function ($item) {
+                        'material_code' => $request['matnr'],
+                        'material_quantity' => $request['TOTAL_QUANTITY'],
+                        'material_quantity_unit' => $request['BaseUnit'],
+                        'batches' => collect($request['to_batch']['results'] ?? [])->map(function ($item) {
                             return [
-                                'inbound_id' => $item['SalesDocument'],
-                                'quantity_in_EA' => $item['stock'],
-                                'quantity_in_PLA' => $item['stock_in_PAL'],
-                                'pallet_unit' => $item['PalletUnit'],
-                                'item_number' => $item['item_number'],
-                                'location' => $item['location'],
-                                'expiration_date' => $this->parseSapDate($item['expiration_date']),
-                                'manufacture_date' => $this->parseSapDate($item['manf_date']),
-                                'batch' => $item['batch'],
+                                'batch_code' => $item['BATCH'],
+                                'batch_quantity' => $item['TOTAL_QUANTITY'],
+                                'batch_quantity_unit' => $item['BaseUnit'],
+                                'expiration_date' => $this->parseSapDate($item['exp_date']),
+                                'manufacture_date' => $this->parseSapDate($item['mfc_date']),
+                                'locations' => collect($request['to_location']['results'] ?? [])->map(function ($item) {
+                                    return [
+                                        'location_code' => $item['location'],
+                                        'location_quantity' => $item['TOTAL_QUANTITY'],
+                                        'location_quantity_unit' => $item['BaseUnit'],
+                                    ];
+                                }),
                             ];
                         }),
                     ];
@@ -392,7 +443,6 @@ class SapService
         });
 
     }
-
     public function getAllStock($businessPartnerCode)
     {
         return $this->execute(function () use ($businessPartnerCode) {
@@ -437,48 +487,94 @@ class SapService
 
     }
 
-    public function getStockByMaterialCodeAndWarehouseCode($businessPartnerCode, $materialCode, $warehouseCode)
+    
+    public function getStockByMaterialCode($businessPartnerCode, $materialCode)
     {
-        return $this->execute(function () use ($businessPartnerCode, $materialCode, $warehouseCode) {
-            $response = $this->getClient()
-                ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
-                    '$expand' => 'to_Inbounds',
-                    '$inlinecount' => 'allpages',
-                    '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne '' and Material eq '$materialCode' and Plant eq '$warehouseCode'",
-                ]);
+        return $this->execute(function () use ($businessPartnerCode, $materialCode) {
 
+            $response = $this->getClient()
+                ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_CUST_STTOCK_SRV/ZI_MATERIAL_QUANTITY', [
+                    '$expand' => 'to_batch/to_location',
+                    '$filter' => "CUSTOMER_CODE eq '$businessPartnerCode' and matnr eq '$materialCode'",
+                ]);
             if ($response->successful()) {
                 $data = $response->json();
 
                 $stock = collect($data['d']['results'])->map(function ($request) {
 
                     return [
-                        'material_code' => $request['Material'],
-                        'warehouse_code' => $request['Plant'],
-                        'inbounds' => collect($request['to_Inbounds']['results'] ?? [])->map(function ($item) {
+                        'material_code' => $request['matnr'],
+                        'material_quantity' => $request['TOTAL_QUANTITY'],
+                        'material_quantity_unit' => $request['BaseUnit'],
+                        'batches' => collect($request['to_batch']['results'] ?? [])->map(function ($item) {
                             return [
-                                'inbound_id' => $item['SalesDocument'],
-                                'quantity_in_EA' => $item['stock'],
-                                'quantity_in_PLA' => $item['stock_in_PAL'],
-                                'pallet_unit' => $item['PalletUnit'],
-                                'item_number' => $item['item_number'],
-                                'location' => $item['location'],
-                                'expiration_date' => $this->parseSapDate($item['expiration_date']),
-                                'manufacture_date' => $this->parseSapDate($item['manf_date']),
-                                'batch' => $item['batch'],
+                                'batch_code' => $item['BATCH'],
+                                'batch_quantity' => $item['TOTAL_QUANTITY'],
+                                'batch_quantity_unit' => $item['BaseUnit'],
+                                'expiration_date' => $this->parseSapDate($item['exp_date']),
+                                'manufacture_date' => $this->parseSapDate($item['mfc_date']),
+                                'locations' => collect($item['to_location']['results'] ?? [])->map(function ($item) {
+                                    return [
+                                        'location_code' => $item['location'],
+                                        'location_quantity' => $item['TOTAL_QUANTITY'],
+                                        'location_quantity_unit' => $item['BaseUnit'],
+                                    ];
+                                }),
                             ];
                         }),
                     ];
                 })->all();
 
                 return $stock[0];
-
             }
 
             return $response;
         });
 
     }
+
+    // public function getStockByMaterialCodeAndWarehouseCode($businessPartnerCode, $materialCode, $warehouseCode)
+    // {
+    //     return $this->execute(function () use ($businessPartnerCode, $materialCode, $warehouseCode) {
+    //         $response = $this->getClient()
+    //             ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_ODATA_CDS_STOCK_SRV/ZI_Mat_stock', [
+    //                 '$expand' => 'to_Inbounds',
+    //                 '$inlinecount' => 'allpages',
+    //                 '$filter' => "C_KUNNR eq '$businessPartnerCode' and Material ne '' and Material eq '$materialCode' and Plant eq '$warehouseCode'",
+    //             ]);
+
+    //         if ($response->successful()) {
+    //             $data = $response->json();
+
+    //             $stock = collect($data['d']['results'])->map(function ($request) {
+
+    //                 return [
+    //                     'material_code' => $request['Material'],
+    //                     'warehouse_code' => $request['Plant'],
+    //                     'inbounds' => collect($request['to_Inbounds']['results'] ?? [])->map(function ($item) {
+    //                         return [
+    //                             'inbound_id' => $item['SalesDocument'],
+    //                             'quantity_in_EA' => $item['stock'],
+    //                             'quantity_in_PLA' => $item['stock_in_PAL'],
+    //                             'pallet_unit' => $item['PalletUnit'],
+    //                             'item_number' => $item['item_number'],
+    //                             'location' => $item['location'],
+    //                             'expiration_date' => $this->parseSapDate($item['expiration_date']),
+    //                             'manufacture_date' => $this->parseSapDate($item['manf_date']),
+    //                             'batch' => $item['batch'],
+    //                         ];
+    //                     }),
+    //                 ];
+    //             })->all();
+
+    //             return $stock[0];
+
+    //         }
+
+    //         return $response;
+    //     });
+
+    // }
 
     public function getOutboundRequests($businessPartnerCode, $pageSize, $pageNumber)
     {
@@ -1505,37 +1601,48 @@ class SapService
 
     }
 
-    public function createInbound($businessPartnerCode, $contractCode, $items, $date, $hour)
+    public function createInbound($businessPartnerCode, $contractCode, $draftInbound, $date, $hour)
     {
+        // dd($draftInbound->materials[0]->code);
+        // dd("I".$draftInbound->id);
+        // dd($draftInbound->materials[0]->pivot->plantArea->plant->code);
         $counter = 10;
         $results = [];
-        foreach ($items as $material => $quantity) {
-            $formatted = sprintf('%06d', $counter);
+        foreach ($draftInbound->materials as $material) {
+            $formatted_counter = sprintf('%06d', $counter);
             array_push(
                 $results,
                 [
-                    'SoNumber' => $contractCode,
-                    'ITEM' => $formatted,
-                    'Materia' => (string) $material,
-                    'ReqQty' => (string) $quantity,
+
+                    "ITEM" => $formatted_counter,
+                    "Materia" => (string) $material->code,
+                    "ReqQty" => (string) $material->pivot->quantity,
+                    "UOM" => "EA",
+                    "Sloc" => $material->pivot->plantArea->code,
+                    "Plant" => $material->pivot->plantArea->plant->code,
+                    "BATCH" => $material->pivot->batch,
+                    "mfdate" => $this->formatSapDate($material->pivot->manufacture_date),
+                    "ExpDate" => $this->formatSapDate($material->pivot->expiration_date)
                 ]
             );
             $counter += 10;
         }
 
-        $timestampSeconds = strtotime($date);
+        // $timestampSeconds = strtotime($date);
 
-        $timestampMilliseconds = $timestampSeconds * 1000;
+        // $timestampMilliseconds = $timestampSeconds * 1000;
 
-        $sapDateFormat = '/Date(' . $timestampMilliseconds . ')/';
+        // $sapDateFormat = '/Date(' . $timestampMilliseconds . ')/';
+
 
         $data = [
             'd' => [
-
+                'REQ_ID' => "I" . $draftInbound->id,
+                'REQ_TYPE' => "INB",
                 'BpNum' => $businessPartnerCode,
-                'ReceivingDate' => $sapDateFormat, // '\/Date(1772150400000)\/',
+                'ReceivingDate' => $this->formatSapDate($date), // '\/Date(1772150400000)\/',
                 'ShipmentIndicator' => '0',
-                'SoNumber' => $contractCode,
+                'Contract' => $contractCode,
                 'deliverytime' => 'PT' . $hour . 'H00M00S',
                 'soitemsSet' => [
                     'results' => $results,
@@ -1796,6 +1903,19 @@ class SapService
         }
 
         return null;
+    }
+
+    private function formatSapDate($date)
+    {
+
+
+        $timestampSeconds = strtotime($date);
+
+        $timestampMilliseconds = $timestampSeconds * 1000;
+
+        $sapDateFormat = '/Date(' . $timestampMilliseconds . ')/';
+
+        return $sapDateFormat;
     }
     private function parseSapDateTimestamp($sapDateTimestamp)
     {
