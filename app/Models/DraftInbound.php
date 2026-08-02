@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DraftInbound extends Model
 {
-    protected $fillable = ['title', 'contract_id', 'user_id'];
+    protected $fillable = ['title', 'contract_id', 'user_id', 'attp_file'];
 
     public function user()
     {

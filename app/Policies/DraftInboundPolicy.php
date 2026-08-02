@@ -29,7 +29,7 @@ class DraftInboundPolicy
 
     public function update(AuthUser $authUser, DraftInbound $draftInbound): bool
     {
-        return $authUser->can('Update:DraftInbound');
+        return $authUser->can('Update:DraftInbound') && ! filled($draftInbound->attp_file);
     }
 
     public function delete(AuthUser $authUser, DraftInbound $draftInbound): bool
