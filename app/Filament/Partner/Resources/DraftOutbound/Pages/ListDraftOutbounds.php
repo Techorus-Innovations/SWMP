@@ -19,7 +19,8 @@ class ListDraftOutbounds extends ListRecords
         $actions = [];
 
         if (!$existingDraft) {
-            $actions[] = \Filament\Actions\CreateAction::make();
+            $actions[] = \Filament\Actions\CreateAction::make()
+                ->createAnother(false);
         }
 
         return $actions;
