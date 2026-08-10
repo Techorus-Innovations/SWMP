@@ -65,7 +65,7 @@ Route::get('/t', function () {
 
 Route::get('/test8', function () {
     $sapService = new SapService();
-    $RequestDetails = $sapService->getDetailedInboundRequest("3000002653","1010001064");
+    $RequestDetails = $sapService->getDetailedInboundRequest("3000002653", "1010001064");
     return $RequestDetails;
 });
 
@@ -73,6 +73,14 @@ Route::get('/test80', function () {
     $sapService = new SapService();
     $RequestDetails = $sapService->getOutboundDeliverySlotsReservedCounts('2026-05-17');
     return $RequestDetails;
+});
+
+
+Route::get('/test80', function () {
+    $sapService = new SapService();
+
+    $materials = $sapService->getMaterials();
+    return $materials;
 });
 use Illuminate\Support\Facades\Hash;
 Route::get('/test9', function () {

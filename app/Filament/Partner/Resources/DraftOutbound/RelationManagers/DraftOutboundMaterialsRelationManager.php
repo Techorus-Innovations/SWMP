@@ -3,6 +3,7 @@
 namespace App\Filament\Partner\Resources\DraftOutbound\RelationManagers;
 
 use App\Models\DraftOutboundMaterial;
+use App\Models\PlantArea;
 use App\Services\SapService;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -23,12 +24,25 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
 
     public $options = [];
 
+    public $plantAreas;
+
     public function mount(): void
     {
         $sapService = new SapService;
         $this->stock = $sapService->getAllStock(filament()->auth()->user()->businessPartner->bp_code);
-        // dd($this->stock);
+
         $this->options = collect($this->stock)->pluck('material_name', 'material_code');
+
+        // Preload all location names once to avoid N+1 lookups later
+        $locationCodes = collect($this->stock)
+            ->flatMap(fn ($material) => collect($material['batches'] ?? [])
+                ->flatMap(fn ($batch) => collect($batch['locations'] ?? [])->pluck('location_code')))
+            ->unique()
+            ->values();
+
+        
+
+        $this->plantAreas = PlantArea::whereIn('code', $locationCodes)->get()->keyBy('code');
     }
 
     public function form(Schema $schema): Schema
@@ -38,7 +52,9 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
                 Select::make('material_code')
                     ->label(__('Material'))
                     ->options(function () {
-                        $appliedCodes = $this->getRelationship()->pluck('material_code')
+                        $appliedCodes = $this->getRelationship()
+                            ->pluck('material_code')
+                            ->unique()
                             ->toArray();
 
                         return collect($this->options)
@@ -52,6 +68,8 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
+        $locale = app()->getLocale();
+
         return $table
             ->recordTitleAttribute('material_id')
             ->columns([
@@ -63,6 +81,23 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
                 TextColumn::make('material.code')
                     ->label(__('Material Code'))
                     ->searchable(),
+
+                TextColumn::make('batch_code')
+                    ->label(__('Batch'))
+                    ->sortable(),
+
+                TextColumn::make('location_code')
+                    ->label(__('Location'))
+                    ->formatStateUsing(function (string $state) use ($locale) {
+                        $plantArea = $this->plantAreas->get($state);
+
+                        if (! $plantArea) {
+                            return $state;
+                        }
+
+                        return $locale === 'ar' ? $plantArea->name_ar : $plantArea->name_en;
+                    })
+                    ->sortable(),
 
                 TextInputColumn::make('quantity')
                     ->rules(function (DraftOutboundMaterial $record): array {
@@ -77,17 +112,11 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
                     ->afterStateUpdated(function () {
                         $this->dispatch('materials-updated');
                     })
-                    ->suffix(function (DraftOutboundMaterial $record) {
-                        return $record->quantity_unit;
-                    })
+                    ->suffix(fn (DraftOutboundMaterial $record) => $record->quantity_unit)
                     ->sortable(),
 
                 TextColumn::make('max_quantity')
                     ->label(__('Max Quantity'))
-                    ->sortable(),
-
-                TextColumn::make('inbound_request_id')
-                    ->label(__('Inbound Request ID'))
                     ->sortable(),
 
                 TextColumn::make('manufacture_date')
@@ -97,47 +126,49 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
                 TextColumn::make('expiration_date')
                     ->label(__('Expiration Date'))
                     ->sortable(),
-
-                TextColumn::make('batch')
-                    ->label(__('Batch'))
-                    ->sortable(),
             ])
-            ->filters([
-                // Tables\Filters\TrashedFilter::make(),
-            ])
+            ->filters([])
             ->headerActions([
                 CreateAction::make()
                     ->label(__('Add Items'))
                     ->action(function (array $data): void {
                         $selectedStock = collect($this->stock)
                             ->firstWhere('material_code', $data['material_code']);
-                        foreach ($selectedStock['inbounds'] as $inbound) {
-                            $this->getRelationship()->create([
-                                'material_code' => $selectedStock['material_code'],
-                                'max_quantity' => $inbound['quantity'],
-                                'inbound_request_id' => $inbound['inbound_id'],
-                                'quantity_unit' => $inbound['measuring_unit'],
-                                'inbound_request_item_code' => $inbound['item_number'],
-                                'location' => $inbound['location'],
-                                'manufacture_date' => $inbound['manufacture_date'],
-                                'expiration_date' => $inbound['expiration_date'],
-                                'batch' => $inbound['batch'],
-                            ]);
+
+                        foreach ($selectedStock['batches'] ?? [] as $batch) {
+
+                            $locations = $batch['locations'] ?? [];
+
+                            if (empty($locations)) {
+                                continue;
+                            }
+
+                            foreach ($locations as $location) {
+                                $this->getRelationship()->create([
+                                    'material_code' => $selectedStock['material_code'],
+                                    'batch_code' => $batch['batch_code'],
+                                    'location_code' => $location['location_code'],
+                                    'max_quantity' => $location['location_quantity'],
+                                    'quantity' => 0,
+                                    'quantity_unit' => $location['location_quantity_unit']
+                                        ?? $batch['batch_quantity_unit'],
+                                    'manufacture_date' => $batch['manufacture_date'],
+                                    'expiration_date' => $batch['expiration_date'],
+                                ]);
+                            }
                         }
 
                         $this->dispatch('materials-updated');
                     }),
             ])
             ->actions([
-
                 Action::make('deleteGroup')
                     ->label(__('Delete Material Group'))
-                    ->label('Delete Material Group')
                     ->icon('heroicon-o-trash')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->modalHeading('Delete all batches?')
-                    ->modalDescription('This will remove all inbound records for this specific material.')
+                    ->modalHeading(__('Delete all batches?'))
+                    ->modalDescription(__('This will remove all outbound line items for this specific material.'))
                     ->action(function (DraftOutboundMaterial $record): void {
                         $this->getRelationship()
                             ->where('material_code', $record->material_code)
@@ -150,3 +181,153 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
             ->defaultGroup('material.code');
     }
 }
+// namespace App\Filament\Partner\Resources\DraftOutbound\RelationManagers;
+
+// use App\Models\DraftOutboundMaterial;
+// use App\Services\SapService;
+// use Filament\Actions\Action;
+// use Filament\Actions\CreateAction;
+// use Filament\Forms\Components\Select;
+// use Filament\Resources\RelationManagers\RelationManager;
+// use Filament\Schemas\Schema;
+// use Filament\Tables\Columns\TextColumn;
+// use Filament\Tables\Columns\TextInputColumn;
+// use Filament\Tables\Table;
+
+// class DraftOutboundMaterialsRelationManager extends RelationManager
+// {
+//     protected static string $relationship = 'materials';
+
+//     protected static ?string $title = 'Materials';
+
+//     public $stock = [];
+
+//     public $options = [];
+
+//     public function mount(): void
+//     {
+//         $sapService = new SapService;
+//         $this->stock = $sapService->getAllStock(filament()->auth()->user()->businessPartner->bp_code);
+//         // dd($this->stock);
+//         $this->options = collect($this->stock)->pluck('material_name', 'material_code');
+//     }
+
+//     public function form(Schema $schema): Schema
+//     {
+//         return $schema
+//             ->components([
+//                 Select::make('material_code')
+//                     ->label(__('Material'))
+//                     ->options(function () {
+//                         $appliedCodes = $this->getRelationship()->pluck('material_code')
+//                             ->toArray();
+
+//                         return collect($this->options)
+//                             ->forget($appliedCodes)
+//                             ->toArray();
+//                     })
+//                     ->required()
+//                     ->searchable(),
+//             ]);
+//     }
+
+//     public function table(Table $table): Table
+//     {
+//         return $table
+//             ->recordTitleAttribute('material_id')
+//             ->columns([
+//                 TextColumn::make('material.name_en')
+//                     ->label(__('Material Name (EN)'))
+//                     ->searchable()
+//                     ->sortable(),
+
+//                 TextColumn::make('material.code')
+//                     ->label(__('Material Code'))
+//                     ->searchable(),
+
+//                 TextInputColumn::make('quantity')
+//                     ->rules(function (DraftOutboundMaterial $record): array {
+//                         return [
+//                             'required',
+//                             'numeric',
+//                             'min:0',
+//                             "max:{$record->max_quantity}",
+//                         ];
+//                     })
+//                     ->label(__('Quantity'))
+//                     ->afterStateUpdated(function () {
+//                         $this->dispatch('materials-updated');
+//                     })
+//                     ->suffix(function (DraftOutboundMaterial $record) {
+//                         return $record->quantity_unit;
+//                     })
+//                     ->sortable(),
+
+//                 TextColumn::make('max_quantity')
+//                     ->label(__('Max Quantity'))
+//                     ->sortable(),
+
+//                 TextColumn::make('inbound_request_id')
+//                     ->label(__('Inbound Request ID'))
+//                     ->sortable(),
+
+//                 TextColumn::make('manufacture_date')
+//                     ->label(__('Manufacture Date'))
+//                     ->sortable(),
+
+//                 TextColumn::make('expiration_date')
+//                     ->label(__('Expiration Date'))
+//                     ->sortable(),
+
+//                 TextColumn::make('batch')
+//                     ->label(__('Batch'))
+//                     ->sortable(),
+//             ])
+//             ->filters([
+//                 // Tables\Filters\TrashedFilter::make(),
+//             ])
+//             ->headerActions([
+//                 CreateAction::make()
+//                     ->label(__('Add Items'))
+//                     ->action(function (array $data): void {
+//                         $selectedStock = collect($this->stock)
+//                             ->firstWhere('material_code', $data['material_code']);
+//                         foreach ($selectedStock['inbounds'] as $inbound) {
+//                             $this->getRelationship()->create([
+//                                 'material_code' => $selectedStock['material_code'],
+//                                 'max_quantity' => $inbound['quantity'],
+//                                 'inbound_request_id' => $inbound['inbound_id'],
+//                                 'quantity_unit' => $inbound['measuring_unit'],
+//                                 'inbound_request_item_code' => $inbound['item_number'],
+//                                 'location' => $inbound['location'],
+//                                 'manufacture_date' => $inbound['manufacture_date'],
+//                                 'expiration_date' => $inbound['expiration_date'],
+//                                 'batch' => $inbound['batch'],
+//                             ]);
+//                         }
+
+//                         $this->dispatch('materials-updated');
+//                     }),
+//             ])
+//             ->actions([
+
+//                 Action::make('deleteGroup')
+//                     ->label(__('Delete Material Group'))
+//                     ->label('Delete Material Group')
+//                     ->icon('heroicon-o-trash')
+//                     ->color('danger')
+//                     ->requiresConfirmation()
+//                     ->modalHeading('Delete all batches?')
+//                     ->modalDescription('This will remove all inbound records for this specific material.')
+//                     ->action(function (DraftOutboundMaterial $record): void {
+//                         $this->getRelationship()
+//                             ->where('material_code', $record->material_code)
+//                             ->delete();
+
+//                         $this->dispatch('materials-updated');
+//                     }),
+//             ])
+//             ->bulkActions([])
+//             ->defaultGroup('material.code');
+//     }
+// }
