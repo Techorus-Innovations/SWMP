@@ -29,4 +29,13 @@ class Material extends Model
             ->using(DraftInboundMaterial::class)
             ->withPivot('quantity', 'batch', 'manufacture_date', 'expiration_date', 'plant_area_id');
     }
+
+    public function draftOutbounds()
+    {
+        return $this->belongsToMany(DraftOutbound::class, 'draft_outbound_material', 'material_code', 'draft_outbound_id', 'code', 'id')
+            ->using(DraftOutboundMaterial::class)
+            ->withPivot('quantity', 'max_quantity', 'quantity_unit', 'location_code', 'batch_code', 'expiration_date', 'manufacture_date');
+    }
 }
+
+

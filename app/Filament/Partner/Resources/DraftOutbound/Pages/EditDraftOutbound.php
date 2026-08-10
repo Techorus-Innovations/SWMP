@@ -39,7 +39,7 @@ class EditDraftOutbound extends EditRecord
             Action::make('submitOutbound')
                 ->label('Submit Outbound')
                 ->color('success')
-                ->hidden(fn ($record): bool => count($record->materials) == 0 || $record->materials->sum('quantity') == 0)
+                ->hidden(fn ($record): bool => count($record->materials) == 0 || $record->materials->sum(fn ($m) => $m->pivot->quantity ?? $m->quantity) == 0)
                 ->disabled(fn ($record): bool => $this->circuitBreaker->isOpen())
                 ->tooltip(fn () => $this->circuitBreaker->isOpen() ? 'External service is currently unavailable' : null)
                 ->schema([

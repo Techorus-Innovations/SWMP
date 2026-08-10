@@ -16,7 +16,7 @@ use Filament\Tables\Table;
 
 class DraftOutboundMaterialsRelationManager extends RelationManager
 {
-    protected static string $relationship = 'materials';
+    protected static string $relationship = 'outboundMaterials';
 
     protected static ?string $title = 'Materials';
 
