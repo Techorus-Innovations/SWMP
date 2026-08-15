@@ -55,17 +55,15 @@ class StockDetails extends Page implements HasTable
         $this->material = Material::where('code', $this->materialCode)->first();
 
 
-        // Collect all location codes returned across all batches
         $locationCodes = collect($this->response['batches'] ?? [])
             ->flatMap(fn($batch) => collect($batch['locations'] ?? [])->pluck('location_code'))
             ->unique()
             ->values();
 
-        // Fetch matching PlantAreas once, keyed by code for O(1) lookup
         $plantAreas = PlantArea::whereIn('code', $locationCodes)
             ->get()
             ->keyBy('code');
-        // Enrich each location with its name directly in the array
+
         $this->response['batches'] = collect($this->response['batches'] ?? [])
             ->map(function ($batch) use ($plantAreas) {
                 $batch['locations'] = collect($batch['locations'] ?? [])

@@ -17,7 +17,7 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Url;
-
+use App\Models\PlantArea;
 class OutboundDetails extends Page implements HasTable
 {
     use InteractsWithTable;
@@ -50,7 +50,7 @@ class OutboundDetails extends Page implements HasTable
                 ->modalHeading(__('Cancel Outbound Request'))
                 ->modalDescription(__('Are you sure you want to cancel this outbound request? This action cannot be undone.'))
                 ->hidden(function () {
-                    if (! filament()->auth()->user()->canCancelOutbounds()) {
+                    if (!filament()->auth()->user()->canCancelOutbounds()) {
                         return true;
                     }
 
@@ -64,7 +64,7 @@ class OutboundDetails extends Page implements HasTable
                 })
                 ->action(function () {
                     $sapService = new SapService;
-                    $status = $sapService->cancelOutboundRequestBatch($this->response['outbound_request_id']);
+                    $status = $sapService->cancelDelivery($this->response['outbound_request_id'],"OUD");
                     if ($status == true) {
                         $this->boot();
                         Notification::make()
@@ -89,11 +89,28 @@ class OutboundDetails extends Page implements HasTable
             filament()->auth()->user()->businessPartner->bp_code,
             $this->outboundRequestId
         );
+
+
+        $locationCodes = $this->response['items']->pluck('location_code')->unique()->values()->toArray();
+
+        $plantAreas = PlantArea::whereIn('code', $locationCodes)
+            ->get()
+            ->keyBy('code');
+
+        $this->response['items'] = $this->response['items']->map(function ($item) use ($plantAreas) {
+            $plantArea = $plantAreas->get($item['location_code'] ?? null);
+            $item['location_name_en'] = $plantArea?->name_en ?? '—';
+            $item['location_name_ar'] = $plantArea?->name_ar ?? '—';
+
+            return $item;
+        });
+
+
     }
 
     public function getTitle(): string
     {
-        return __('Outbound Request').' #'.$this->outboundRequestId;
+        return __('Outbound Request') . ' #' . $this->outboundRequestId;
     }
 
     public function infolist(Schema $schema): Schema
@@ -161,17 +178,24 @@ class OutboundDetails extends Page implements HasTable
                 TextColumn::make('gtin')
                     ->label(__('GTIN Code')),
                 TextColumn::make('quantity')
-                    ->label(__('Quantity')),
-                TextColumn::make('measuring_unit')
-                    ->label(__('Unit')),
+                    ->label(__('Quantity'))
+                    ->suffix(fn($record) => ' ' . ($record['measuring_unit'] ?? '')),
+                TextColumn::make('location_code')
+                    ->label(__('Location Code')),
+                TextColumn::make('location_name_en')
+                    ->label(__('Location Name (EN)')),
+                TextColumn::make('location_name_ar')
+                    ->label(__('Location Name (AR)')),
+                // TextColumn::make('measuring_unit')
+                //     ->label(__('Unit')),
                 // TextColumn::make('area_code')
                 //     ->label(__('Area Code')),
-                TextColumn::make('inbound_request_reference')
-                    ->label(__('Inbound Request Reference'))
-                    ->icon('heroicon-o-eye')
-                    ->url(fn ($record) => InboundDetails::getUrl([
-                        'inboundRequestId' => $record['inbound_request_reference'],
-                    ])),
+                // TextColumn::make('inbound_request_reference')
+                //     ->label(__('Inbound Request Reference'))
+                //     ->icon('heroicon-o-eye')
+                //     ->url(fn ($record) => InboundDetails::getUrl([
+                //         'inboundRequestId' => $record['inbound_request_reference'],
+                //     ])),
             ])
             ->paginated([10, 25, 50])
             ->filters([])
