@@ -131,6 +131,7 @@ class DraftOutboundMaterialsRelationManager extends RelationManager
             ->headerActions([
                 CreateAction::make()
                     ->label(__('Add Items'))
+                    ->createAnother(false)
                     ->action(function (array $data): void {
                         $selectedStock = collect($this->stock)
                             ->firstWhere('material_code', $data['material_code']);
