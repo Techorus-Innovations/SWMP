@@ -15,6 +15,8 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
+use App\Filament\Partner\Resources\DraftInbounds\RelationManagers\MaterialsRelationManager;
+
 class DraftInboundResource extends Resource
 {
     protected static ?string $model = DraftInbound::class;
@@ -47,7 +49,9 @@ class DraftInboundResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            MaterialsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

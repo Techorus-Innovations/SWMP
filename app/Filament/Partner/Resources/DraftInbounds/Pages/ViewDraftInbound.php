@@ -232,20 +232,5 @@ class ViewDraftInbound extends ViewRecord
                 }),
         ];
     }
-
-    protected function mutateFormDataBeforeFill(array $data): array
-    {
-        $data['materials'] = $this->record->materials
-            ->map(fn ($material) => [
-                'material_id' => $material->id,
-                'plant_area_id' => $material->pivot->plant_area_id,
-                'quantity' => $material->pivot->quantity,
-                'batch' => $material->pivot->batch,
-                'manufacture_date' => $material->pivot->manufacture_date,
-                'expiration_date' => $material->pivot->expiration_date,
-            ])
-            ->toArray();
-
-        return $data;
-    }
 }
+
