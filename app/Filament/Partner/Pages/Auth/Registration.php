@@ -202,7 +202,7 @@ class Registration extends Register
     protected function getIndustryTypeFormComponent(): Component
     {
         return Select::make('industry_id')
-            ->label(__('Industry Type'))
+            ->label(__('Sector'))
             ->options(Industry::pluck('name_en', 'id'))
             ->searchable()
             ->visible(

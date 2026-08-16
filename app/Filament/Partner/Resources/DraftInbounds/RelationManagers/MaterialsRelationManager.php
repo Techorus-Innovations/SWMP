@@ -51,14 +51,14 @@ class MaterialsRelationManager extends RelationManager
     protected function loadContractAreas(): void
     {
         $owner = $this->getOwnerRecord();
-        if (! $owner || ! $owner->contract_id) {
+        if (!$owner || !$owner->contract_id) {
             $this->contractAreas = [];
 
             return;
         }
 
         $bpCode = filament()->auth()->user()?->businessPartner?->bp_code;
-        if (! $bpCode) {
+        if (!$bpCode) {
             $this->contractAreas = [];
 
             return;
@@ -83,14 +83,14 @@ class MaterialsRelationManager extends RelationManager
                         return Material::whereHas('areas', function ($query) use ($areas, $latest_sync_time) {
                             $query->whereIn('code', $areas)->where('sync_at', $latest_sync_time);
                         })->get()
-                            ->mapWithKeys(fn ($m) => [
-                                $m->id => (app()->getLocale() === 'ar' ? $m->name_ar : $m->name_en),
+                            ->mapWithKeys(fn($m) => [
+                                $m->id => (app()->getLocale() === 'ar' ? $m->name_ar : $m->name_en) . " " . $m->gtin_code,
                             ])->toArray();
                     })
                     ->searchable()
                     ->live()
                     ->afterStateUpdated(function (Set $set, $state) {
-                        if (! $state) {
+                        if (!$state) {
                             $set('plant_area_id', null);
 
                             return;
@@ -110,12 +110,12 @@ class MaterialsRelationManager extends RelationManager
                             return function (string $attribute, $value, \Closure $fail) use ($get, $record) {
                                 $batch = $get('batch');
                                 $plantAreaId = $get('plant_area_id');
-                                if (! $value || ! $batch || ! $plantAreaId) {
+                                if (!$value || !$batch || !$plantAreaId) {
                                     return;
                                 }
 
                                 $ownerRecord = $this->getOwnerRecord();
-                                if (! $ownerRecord) {
+                                if (!$ownerRecord) {
                                     return;
                                 }
 
@@ -139,7 +139,7 @@ class MaterialsRelationManager extends RelationManager
                     ->label(__('Storage Location'))
                     ->options(function (Get $get): array {
                         $materialId = $get('material_id');
-                        if (! $materialId) {
+                        if (!$materialId) {
                             return [];
                         }
                         $areas = $this->getContractAreas();
@@ -149,7 +149,7 @@ class MaterialsRelationManager extends RelationManager
                                 $query->where('materials.id', $materialId);
                             })
                             ->get()
-                            ->mapWithKeys(fn ($pa) => [
+                            ->mapWithKeys(fn($pa) => [
                                 $pa->id => (app()->getLocale() === 'ar' ? $pa->name_ar : $pa->name_en),
                             ])
                             ->toArray();
@@ -161,12 +161,12 @@ class MaterialsRelationManager extends RelationManager
                             return function (string $attribute, $value, \Closure $fail) use ($get, $record) {
                                 $materialId = $get('material_id');
                                 $batch = $get('batch');
-                                if (! $materialId || ! $batch || ! $value) {
+                                if (!$materialId || !$batch || !$value) {
                                     return;
                                 }
 
                                 $ownerRecord = $this->getOwnerRecord();
-                                if (! $ownerRecord) {
+                                if (!$ownerRecord) {
                                     return;
                                 }
 
@@ -203,12 +203,12 @@ class MaterialsRelationManager extends RelationManager
                             return function (string $attribute, $value, \Closure $fail) use ($get, $record) {
                                 $materialId = $get('material_id');
                                 $plantAreaId = $get('plant_area_id');
-                                if (! $materialId || ! $value || ! $plantAreaId) {
+                                if (!$materialId || !$value || !$plantAreaId) {
                                     return;
                                 }
 
                                 $ownerRecord = $this->getOwnerRecord();
-                                if (! $ownerRecord) {
+                                if (!$ownerRecord) {
                                     return;
                                 }
 
@@ -250,7 +250,7 @@ class MaterialsRelationManager extends RelationManager
                     ->displayFormat('d/m/Y')
                     ->after('manufacture_date')
                     ->rules([
-                        fn (Get $get): \Closure => function (string $attribute, $value, \Closure $fail) use ($get) {
+                        fn(Get $get): \Closure => function (string $attribute, $value, \Closure $fail) use ($get) {
                             $mfgDate = $get('manufacture_date');
                             if ($mfgDate && $value && strtotime($value) <= strtotime($mfgDate)) {
                                 $fail(__('Expiration date must be after manufacture date.'));
@@ -274,7 +274,7 @@ class MaterialsRelationManager extends RelationManager
 
                 TextColumn::make('material_name')
                     ->label(__('Material'))
-                    ->state(fn (DraftInboundMaterial $record) => $locale === 'ar' ? $record->material?->name_ar : $record->material?->name_en)
+                    ->state(fn(DraftInboundMaterial $record) => $locale === 'ar' ? $record->material?->name_ar : $record->material?->name_en)
                     ->searchable(query: function ($query, string $search) use ($locale) {
                         $query->whereHas('material', function ($q) use ($search, $locale) {
                             $column = $locale === 'ar' ? 'name_ar' : 'name_en';
@@ -285,7 +285,7 @@ class MaterialsRelationManager extends RelationManager
 
                 TextColumn::make('plantArea')
                     ->label(__('Storage Location'))
-                    ->state(fn (DraftInboundMaterial $record) => $locale === 'ar' ? $record->plantArea?->name_ar : $record->plantArea?->name_en)
+                    ->state(fn(DraftInboundMaterial $record) => $locale === 'ar' ? $record->plantArea?->name_ar : $record->plantArea?->name_en)
                     ->sortable(),
 
                 TextColumn::make('quantity')
@@ -312,7 +312,7 @@ class MaterialsRelationManager extends RelationManager
                 CreateAction::make()
                     ->label(__('Add Material'))
                     ->modalHeading(__('Add Material'))
-                    ->hidden(fn () => filled($this->getOwnerRecord()?->attp_file))
+                    ->hidden(fn() => filled($this->getOwnerRecord()?->attp_file))
                     ->after(function () {
                         $this->dispatch('materials-updated');
                     }),
@@ -323,7 +323,7 @@ class MaterialsRelationManager extends RelationManager
                     ->color('primary')
                     ->modalHeading(__('Bulk Import Materials'))
                     ->modalDescription(__('Upload a CSV or Excel file with columns: gtin_code, batch, manufacture_date, expiration_date, quantity.'))
-                    ->hidden(fn () => filled($this->getOwnerRecord()?->attp_file))
+                    ->hidden(fn() => filled($this->getOwnerRecord()?->attp_file))
                     ->schema([
                         FileUpload::make('file')
                             ->label(__('Spreadsheet File'))
@@ -408,12 +408,12 @@ class MaterialsRelationManager extends RelationManager
             ->actions([
                 EditAction::make()
                     ->modalHeading(__('Edit Material'))
-                    ->hidden(fn () => filled($this->getOwnerRecord()?->attp_file))
+                    ->hidden(fn() => filled($this->getOwnerRecord()?->attp_file))
                     ->after(function () {
                         $this->dispatch('materials-updated');
                     }),
                 DeleteAction::make()
-                    ->hidden(fn () => filled($this->getOwnerRecord()?->attp_file))
+                    ->hidden(fn() => filled($this->getOwnerRecord()?->attp_file))
                     ->after(function () {
                         $this->dispatch('materials-updated');
                     }),

@@ -620,7 +620,7 @@ class SapService
     //                             'material_code' => $item['Material_code'],
     //                             'material_description' => $item['Material_code_desc'],
     //                             'status_desciprion' => $item['STATUS_DESC'],
-                                
+
     //                             // 'location_code' => $item['storage_location'],
     //                             // // 'inbound_request_reference' => $item['Refernce'],
     //                         ];
@@ -1692,8 +1692,18 @@ class SapService
             ],
         ];
         // dd($data);
+
+
+        $tokenResponse = $this->getCsrfToken();
+        $csrfToken = $tokenResponse['token'];
+        $cookies = $tokenResponse['headers']['set-cookie'];
+
         $response = $this->getClient()
-            ->withHeaders(['X-Requested-With' => 'X'])
+            ->withHeaders([
+                'x-csrf-token' => $csrfToken,
+                'Accept' => 'application/json',
+                'Cookie' => $cookies,
+            ])
             ->post($this->baseUrl . '/sap/opu/odata/SAP/ZINT_PORTAL_SRV/PARTNER', $data);
 
         // dd($response->json());
