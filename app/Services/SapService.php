@@ -586,19 +586,114 @@ class SapService
 
     // }
 
-    //     public function getOutboundRequests($businessPartnerCode, $pageSize, $pageNumber)
+    public function getOutboundRequests($businessPartnerCode, $pageSize, $pageNumber)
+    {
+        return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
+            $response = $this->getClient()
+                ->get($this->baseUrl . "/sap/opu/odata/sap/ZUI_VIEW_OUTBOUND/ZC_VIEW_OUTBOUND_RAP?", [
+                    '$expand' => 'to_VBAP',
+                    '$inlinecount' => 'allpages',
+                    '$orderby' => 'delivery_date desc',
+                    '$top' => $pageSize,
+                    '$skip' => ($pageNumber - 1) * $pageSize,
+                    '$filter' => "BP_NUMBER eq '$businessPartnerCode'",
+                ]);
+
+            if ($response->successful()) {
+                $this->breaker->recordSuccess();
+                $data = $response->json();
+
+                // dd($data);
+                $outboundRequests = collect($data['d']['results'])->map(function ($request) {
+
+                    return [
+                        'outbound_request_id' => $request['outbound_request'],
+                        // 'delivery_date' => $this->parseSapDate($request['Delivery_date']),
+                        'status' => $request['status'],
+                        'delivery_time' => $this->parseSapTime($request['delivery_time']),
+                        'delivery_date' => $this->parseSapDate($request['delivery_date']),
+                        'ship_to_party' => $request['ship_toParty'],
+                        'items' => collect($request['to_VBAP']['results'] ?? [])->map(function ($item) {
+                            return [
+                                'quantity' => $item['QUNTITY'],
+                                'measuring_unit' => $item['MEINS'],
+                                'material_code' => $item['Material_code'],
+                                'material_description' => $item['Material_code_desc'],
+                                // 'status_desciprion' => $item['STATUS_DESC'],
+
+                                // 'location_code' => $item['storage_location'],
+                                // // 'inbound_request_reference' => $item['Refernce'],
+                            ];
+                        }),
+                    ];
+                })->all();
+
+                $outboundRequestsData = ['totalCount' => $data['d']['__count'], 'paginatedOutbounds' => $outboundRequests];
+
+                return $outboundRequestsData;
+            }
+
+            return $response;
+        });
+    }
+
+    public function getOutboundRequestById($businessPartnerCode, $outboundRequestCode)
+    {
+        return $this->execute(function () use ($businessPartnerCode, $outboundRequestCode) {
+            $response = $this->getClient()
+                ->get($this->baseUrl . "/sap/opu/odata/sap/ZUI_VIEW_OUTBOUND/ZC_VIEW_OUTBOUND_RAP?", [
+                    '$expand' => 'to_VBAP',
+                    '$filter' => "outbound_request eq '{$outboundRequestCode}' and BP_NUMBER eq '$businessPartnerCode'",
+
+                ]);
+
+            if ($response->successful()) {
+                $this->breaker->recordSuccess();
+                $data = $response->json();
+
+                $outboundRequests = collect($data['d']['results'])->map(function ($request) {
+
+                    return [
+                        'outbound_request_id' => $request['outbound_request'],
+                        // 'delivery_date' => $this->parseSapDate($request['Delivery_date']),
+                        'status' => $request['status'],
+                        'delivery_time' => $this->parseSapTime($request['delivery_time']),
+                        'delivery_date' => $this->parseSapDate($request['delivery_date']),
+                        'ship_to_party' => $request['ship_toParty'],
+                        'items' => collect($request['to_VBAP']['results'] ?? [])->map(function ($item) {
+                            return [
+                                'item_code' => $item['item'],
+                                'quantity' => $item['QUNTITY'],
+                                'measuring_unit' => $item['MEINS'],
+                                'material_code' => $item['Material_code'],
+                                'material_description' => $item['Material_code_desc'],
+                                // 'location_code' => $item['storage_location'],
+                                // 'inbound_request_reference' => $item['Refernce'],
+                            ];
+                        }),
+                    ];
+                })->all();
+                
+                return $outboundRequests[0];
+            }
+
+
+            return $response;
+        });
+    }
+
+
+    // public function getOutboundRequests($businessPartnerCode, $pageSize, $pageNumber)
     // {
     //     return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
     //         $response = $this->getClient()
-    //             ->get($this->baseUrl . "/sap/opu/odata/sap/ZUI_VIEW_OUTBOUND/ZC_VIEW_OUTBOUND_RAP?", [
-    //                 '$expand' => 'to_VBAP',
+    //             ->get($this->baseUrl . "/sap/opu/odata/sap/ZPRJ_ODATA_VIEW_OUTBOUND_SRV/ZC_OUTVOUND_VIEW(C_KUNNR='$businessPartnerCode')/Set", [
+    //                 '$expand' => 'to_LIP',
     //                 '$inlinecount' => 'allpages',
-    //                 '$orderby' => 'delivery_date desc',
+    //                 '$orderby' => 'Delivery_date desc',
     //                 '$top' => $pageSize,
     //                 '$skip' => ($pageNumber - 1) * $pageSize,
-    //                 '$filter' => "BP_NUMBER eq '$businessPartnerCode'",
     //             ]);
-
     //         if ($response->successful()) {
     //             $this->breaker->recordSuccess();
     //             $data = $response->json();
@@ -607,22 +702,20 @@ class SapService
     //             $outboundRequests = collect($data['d']['results'])->map(function ($request) {
 
     //                 return [
-    //                     'outbound_request_id' => $request['outbound_request'],
+    //                     'outbound_request_id' => $request['Outbound_delivery'],
     //                     // 'delivery_date' => $this->parseSapDate($request['Delivery_date']),
     //                     'status' => $request['status'],
     //                     'delivery_time' => $this->parseSapTime($request['delivery_time']),
-    //                     'delivery_date' => $this->parseSapDate($request['delivery_date']),
-    //                     // 'ship_to_party' => $request['ship_to_party'],
-    //                     'items' => collect($request['to_VBAP']['results'] ?? [])->map(function ($item) {
+    //                     'delivery_date' => $this->parseSapDate($request['Delivery_date']),
+    //                     'ship_to_party' => $request['ship_to_party'],
+    //                     'items' => collect($request['to_LIP']['results'] ?? [])->map(function ($item) {
     //                         return [
-    //                             'quantity' => $item['QUNTITY'],
-    //                             'measuring_unit' => $item['MEINS'],
-    //                             'material_code' => $item['Material_code'],
-    //                             'material_description' => $item['Material_code_desc'],
-    //                             'status_desciprion' => $item['STATUS_DESC'],
-
-    //                             // 'location_code' => $item['storage_location'],
-    //                             // // 'inbound_request_reference' => $item['Refernce'],
+    //                             'quantity' => $item['Delivery_quantity'],
+    //                             'measuring_unit' => $item['Qunt'],
+    //                             'material_code' => $item['material'],
+    //                             'material_description' => $item['Description'],
+    //                             'location_code' => $item['storage_location'],
+    //                             // 'inbound_request_reference' => $item['Refernce'],
     //                         ];
     //                     }),
     //                 ];
@@ -679,97 +772,6 @@ class SapService
     //         return $response;
     //     });
     // }
-
-
-    public function getOutboundRequests($businessPartnerCode, $pageSize, $pageNumber)
-    {
-        return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
-            $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/sap/ZPRJ_ODATA_VIEW_OUTBOUND_SRV/ZC_OUTVOUND_VIEW(C_KUNNR='$businessPartnerCode')/Set", [
-                    '$expand' => 'to_LIP',
-                    '$inlinecount' => 'allpages',
-                    '$orderby' => 'Delivery_date desc',
-                    '$top' => $pageSize,
-                    '$skip' => ($pageNumber - 1) * $pageSize,
-                ]);
-            if ($response->successful()) {
-                $this->breaker->recordSuccess();
-                $data = $response->json();
-
-                // dd($data);
-                $outboundRequests = collect($data['d']['results'])->map(function ($request) {
-
-                    return [
-                        'outbound_request_id' => $request['Outbound_delivery'],
-                        // 'delivery_date' => $this->parseSapDate($request['Delivery_date']),
-                        'status' => $request['status'],
-                        'delivery_time' => $this->parseSapTime($request['delivery_time']),
-                        'delivery_date' => $this->parseSapDate($request['Delivery_date']),
-                        'ship_to_party' => $request['ship_to_party'],
-                        'items' => collect($request['to_LIP']['results'] ?? [])->map(function ($item) {
-                            return [
-                                'quantity' => $item['Delivery_quantity'],
-                                'measuring_unit' => $item['Qunt'],
-                                'material_code' => $item['material'],
-                                'material_description' => $item['Description'],
-                                'location_code' => $item['storage_location'],
-                                // 'inbound_request_reference' => $item['Refernce'],
-                            ];
-                        }),
-                    ];
-                })->all();
-
-                $outboundRequestsData = ['totalCount' => $data['d']['__count'], 'paginatedOutbounds' => $outboundRequests];
-
-                return $outboundRequestsData;
-            }
-
-            return $response;
-        });
-    }
-
-    public function getOutboundRequestById($businessPartnerCode, $outboundRequestCode)
-    {
-        return $this->execute(function () use ($businessPartnerCode, $outboundRequestCode) {
-            $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/sap/ZPRJ_ODATA_VIEW_OUTBOUND_SRV/ZC_OUTVOUND_VIEW(C_KUNNR='$businessPartnerCode')/Set", [
-                    '$expand' => 'to_LIP',
-                    '$filter' => "Outbound_delivery eq '{$outboundRequestCode}'",
-
-                ]);
-            if ($response->successful()) {
-                $this->breaker->recordSuccess();
-                $data = $response->json();
-
-                $outboundRequests = collect($data['d']['results'])->map(function ($request) {
-
-                    return [
-                        'outbound_request_id' => $request['Outbound_delivery'],
-                        // 'delivery_date' => $this->parseSapDate($request['Delivery_date']),
-                        'status' => $request['status'],
-                        'delivery_time' => $this->parseSapTime($request['delivery_time']),
-                        'delivery_date' => $this->parseSapDate($request['Delivery_date']),
-                        'ship_to_party' => $request['ship_to_party'],
-                        'items' => collect($request['to_LIP']['results'] ?? [])->map(function ($item) {
-                            return [
-                                'item_code' => $item['outbound_item'],
-                                'quantity' => $item['Delivery_quantity'],
-                                'measuring_unit' => $item['Qunt'],
-                                'material_code' => $item['material'],
-                                'material_description' => $item['Description'],
-                                'location_code' => $item['storage_location'],
-                                // 'inbound_request_reference' => $item['Refernce'],
-                            ];
-                        }),
-                    ];
-                })->all();
-
-                return $outboundRequests[0];
-            }
-
-            return $response;
-        });
-    }
 
     // public function getInboundRequestById($businessPartnerCode, $inboundRequestCode)
     // {
