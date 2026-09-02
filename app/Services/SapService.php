@@ -659,6 +659,7 @@ class SapService
                         'status' => $request['status'],
                         'delivery_time' => $this->parseSapTime($request['delivery_time']),
                         'delivery_date' => $this->parseSapDate($request['delivery_date']),
+                        'delivery_number' => $request['Delivery'],
                         'ship_to_party' => $request['ship_toParty'],
                         'items' => collect($request['to_VBAP']['results'] ?? [])->map(function ($item) {
                             return [
