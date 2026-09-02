@@ -64,7 +64,7 @@ class OutboundDetails extends Page implements HasTable
                 })
                 ->action(function () {
                     $sapService = new SapService;
-                    $status = $sapService->cancelDelivery($this->response['outbound_request_id'],"OUD");
+                    $status = $sapService->cancelDelivery($this->response['delivery_number'], 'OUD');
                     if ($status == true) {
                         $this->boot();
                         Notification::make()
