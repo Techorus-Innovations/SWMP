@@ -77,7 +77,7 @@ class SapService
             ->withOptions(['verify' => $this->verify])
             ->acceptJson()
             ->withQueryParameters(['sap-client' => $this->client])
-            ->timeout(120);
+            ->timeout(500);
     }
 
     private function getAttpClient()
@@ -93,7 +93,7 @@ class SapService
         return $this->execute(function () {
             $response = $this->getClient()
                 ->withHeaders(['x-csrf-token' => 'fetch'])
-                ->get($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_ODATA_MATERIAL_SRV/ZC_MATERIAL');
+                ->get($this->baseUrl.'/sap/opu/odata/SAP/ZPRJ_ODATA_MATERIAL_SRV/ZC_MATERIAL');
 
             if ($response->successful()) {
                 $token = $response->headers()['x-csrf-token'][0];
@@ -111,7 +111,7 @@ class SapService
         return $this->execute(function () {
             $response = $this->getAttpClient()
                 ->withHeaders(['x-csrf-token' => 'fetch'])
-                ->get($this->attpUrl . '/sap/opu/odata/sap/ZAATP_FILE_SRV');
+                ->get($this->attpUrl.'/sap/opu/odata/sap/ZAATP_FILE_SRV');
 
             if ($response->successful()) {
                 $token = $response->headers()['x-csrf-token'][0];
@@ -129,7 +129,7 @@ class SapService
     {
         return $this->execute(function () use ($date) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_TIME_SRV/ZC_TIME(D_Date=datetime'" . $date . "T00:00:00')/Set");
+                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_TIME_SRV/ZC_TIME(D_Date=datetime'".$date."T00:00:00')/Set");
 
             if ($response->successful()) {
                 $data = $response->json('d.results');
@@ -147,7 +147,7 @@ class SapService
     {
         return $this->execute(function () use ($date) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_TIME_OUTBOUND_SRV/ZC_TIME_outbound(D_Date=datetime'" . $date . "T00:00:00')/Set");
+                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_TIME_OUTBOUND_SRV/ZC_TIME_outbound(D_Date=datetime'".$date."T00:00:00')/Set");
 
             if ($response->successful()) {
                 $data = $response->json('d.results');
@@ -165,7 +165,7 @@ class SapService
     {
         return $this->execute(function () {
             $response = $this->getClient()
-                ->get($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_ODATA_MATERIAL_SRV/ZC_MATERIAL', [
+                ->get($this->baseUrl.'/sap/opu/odata/SAP/ZPRJ_ODATA_MATERIAL_SRV/ZC_MATERIAL', [
                     '$expand' => 'to_mplant/to_mlocation',
 
                 ]);
@@ -268,7 +268,7 @@ class SapService
             $filter = $state == 'active' ? 'ge' : 'le';
             $now = Carbon::now()->format('Y-m-d\TH:i:s');
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set", [
+                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set", [
                     '$expand' => 'to_VP',
                     '$inlinecount' => 'allpages',
                     '$orderby' => 'CONTRACT_END asc',
@@ -312,7 +312,7 @@ class SapService
     {
         return $this->execute(function () use ($businessPartnerCode, $contractId) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set", [
+                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set", [
                     '$expand' => 'to_VP',
                     '$filter' => "Contract eq '$contractId'",
                 ]);
@@ -399,7 +399,7 @@ class SapService
         return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
 
             $response = $this->getClient()
-                ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_CUST_STTOCK_SRV/ZI_MATERIAL_QUANTITY', [
+                ->get($this->baseUrl.'/sap/opu/odata/sap/ZPRJ_CUST_STTOCK_SRV/ZI_MATERIAL_QUANTITY', [
                     '$expand' => 'to_batch/to_location',
                     '$inlinecount' => 'allpages',
                     '$filter' => "CUSTOMER_CODE eq '$businessPartnerCode'",
@@ -445,12 +445,11 @@ class SapService
 
     }
 
-
     public function getAllStock($businessPartnerCode)
     {
         return $this->execute(function () use ($businessPartnerCode) {
             $response = $this->getClient()
-                ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_CUST_STTOCK_SRV/ZI_MATERIAL_QUANTITY', [
+                ->get($this->baseUrl.'/sap/opu/odata/sap/ZPRJ_CUST_STTOCK_SRV/ZI_MATERIAL_QUANTITY', [
                     '$expand' => 'to_batch/to_location',
                     '$filter' => "CUSTOMER_CODE eq '$businessPartnerCode'",
                     '$orderby' => 'matnr asc',
@@ -497,13 +496,12 @@ class SapService
 
     }
 
-
     public function getStockByMaterialCode($businessPartnerCode, $materialCode)
     {
         return $this->execute(function () use ($businessPartnerCode, $materialCode) {
 
             $response = $this->getClient()
-                ->get($this->baseUrl . '/sap/opu/odata/sap/ZPRJ_CUST_STTOCK_SRV/ZI_MATERIAL_QUANTITY', [
+                ->get($this->baseUrl.'/sap/opu/odata/sap/ZPRJ_CUST_STTOCK_SRV/ZI_MATERIAL_QUANTITY', [
                     '$expand' => 'to_batch/to_location',
                     '$filter' => "CUSTOMER_CODE eq '$businessPartnerCode' and matnr eq '$materialCode'",
                 ]);
@@ -590,7 +588,7 @@ class SapService
     {
         return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/sap/ZUI_VIEW_OUTBOUND/ZC_VIEW_OUTBOUND_RAP?", [
+                ->get($this->baseUrl.'/sap/opu/odata/sap/ZUI_VIEW_OUTBOUND/ZC_VIEW_OUTBOUND_RAP?', [
                     '$expand' => 'to_VBAP',
                     '$inlinecount' => 'allpages',
                     '$orderby' => 'delivery_date desc',
@@ -639,9 +637,11 @@ class SapService
 
     public function getOutboundRequestById($businessPartnerCode, $outboundRequestCode)
     {
+        // dd($outboundRequestCode, $businessPartnerCode);
+
         return $this->execute(function () use ($businessPartnerCode, $outboundRequestCode) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/sap/ZUI_VIEW_OUTBOUND/ZC_VIEW_OUTBOUND_RAP?", [
+                ->get($this->baseUrl.'/sap/opu/odata/sap/ZUI_VIEW_OUTBOUND/ZC_VIEW_OUTBOUND_RAP?', [
                     '$expand' => 'to_VBAP',
                     '$filter' => "outbound_request eq '{$outboundRequestCode}' and BP_NUMBER eq '$businessPartnerCode'",
 
@@ -674,15 +674,13 @@ class SapService
                         }),
                     ];
                 })->all();
-                
+
                 return $outboundRequests[0];
             }
-
 
             return $response;
         });
     }
-
 
     // public function getOutboundRequests($businessPartnerCode, $pageSize, $pageNumber)
     // {
@@ -817,7 +815,7 @@ class SapService
         // dd($businessPartnerCode, $pageSize, $pageNumber);
         return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set", [
+                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set", [
                     '$expand' => 'to_VBAP',
                     '$inlinecount' => 'allpages',
                     '$orderby' => 'Created_on desc',
@@ -830,14 +828,13 @@ class SapService
                 $this->breaker->recordSuccess();
                 $data = $response->json();
 
-
                 $inboundRequests = collect($data['d']['results'])->map(function ($request) {
-                    if ($request['Delivery'] == "") {
-                        $status = "Cancelled";
-                        $delivery_date = "";
-                        $delivery_time = "";
+                    if ($request['Delivery'] == '') {
+                        $status = 'Cancelled';
+                        $delivery_date = '';
+                        $delivery_time = '';
                     } else {
-                        $status = "Active";
+                        $status = 'Active';
                         $delivery_date = $this->parseSapDate($request['delivery_date']);
                         $delivery_time = $this->parseSapTime($request['delivery_time']);
 
@@ -880,7 +877,7 @@ class SapService
     {
         return $this->execute(function () use ($businessPartnerCode, $inboundRequestCode) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set", [
+                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set", [
                     '$expand' => 'to_VBAP',
                     '$filter' => "Inbound_request eq '{$inboundRequestCode}'",
                 ]);
@@ -916,26 +913,25 @@ class SapService
 
     }
 
-
     public function getDetailedInboundRequest($businessPartnerCode, $inboundRequestCode)
     {
         $response = $this->getClient()
-            ->get($this->baseUrl . "/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set", [
+            ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_VIEW_INB_REQ_SRV/ZC_VIEW_INBOUND(C_KUNNR='$businessPartnerCode')/Set", [
                 '$expand' => 'to_VBAP',
                 '$filter' => "Inbound_request eq '{$inboundRequestCode}'",
             ]);
         if ($response->successful()) {
-            $inboundRequest = $response->json()["d"]["results"][0];
+            $inboundRequest = $response->json()['d']['results'][0];
             $inboundDeliveryCode = $inboundRequest['Delivery'];
             // dd($inboundRequest);
-            if ($inboundDeliveryCode == "") {
+            if ($inboundDeliveryCode == '') {
                 return [
                     'inbound_request_id' => $inboundRequestCode,
                     'contract' => $inboundRequest['Contract_number'],
                     'created_date' => $this->parseSapDate($inboundRequest['Created_on']),
-                    'status' => "Cancelled",
-                    'delivery_time' => "",
-                    'delivery_date' => "",
+                    'status' => 'Cancelled',
+                    'delivery_time' => '',
+                    'delivery_date' => '',
 
                     'items' => collect($inboundRequest['to_VBAP']['results'] ?? [])->map(function ($item) {
 
@@ -949,7 +945,7 @@ class SapService
                             'expiration_date' => $this->parseSapDate($item['Expiration_date']),
                             'received_quantity' => 0,
                             'quantity_unit' => $item['MEINS'],
-                            'status_code' => "c",
+                            'status_code' => 'c',
                         ];
                     }),
                 ];
@@ -963,7 +959,7 @@ class SapService
                         'inbound_request_id' => $inboundRequestCode,
                         'contract' => $inboundRequest['Contract_number'],
                         'created_date' => $this->parseSapDate($inboundRequest['Created_on']),
-                        'status' => "Active",
+                        'status' => 'Active',
                         'delivery_code' => $inboundRequest['Delivery'],
                         'delivery_time' => $this->parseSapTime($inboundRequest['delivery_time']),
                         'delivery_date' => $this->parseSapDate($inboundRequest['delivery_date']),
@@ -972,11 +968,11 @@ class SapService
                             $materialCode = $item['Area_code'];
                             $deliveryInfo = $deliveryItems->get($materialCode);
                             if ($deliveryInfo['planned_quantity'] == 0) {
-                                $status_code = "c";
-                            } else if ($deliveryInfo['recieved_quantity'] > 0) {
-                                $status_code = "r";
+                                $status_code = 'c';
+                            } elseif ($deliveryInfo['recieved_quantity'] > 0) {
+                                $status_code = 'r';
                             } else {
-                                $status_code = "n";
+                                $status_code = 'n';
                             }
 
                             return [
@@ -987,7 +983,7 @@ class SapService
                                 'batch' => $item['batch'],
                                 'manufacturing_date' => $this->parseSapDate($item['Manufacturing_date']),
                                 'expiration_date' => $this->parseSapDate($item['Expiration_date']),
-                                'received_quantity' => (integer) $deliveryInfo['recieved_quantity'] ?? 0,
+                                'received_quantity' => (int) $deliveryInfo['recieved_quantity'] ?? 0,
                                 'quantity_unit' => $deliveryInfo['quantity_unit'] ?? $item['MEINS'],
                                 'status_code' => $status_code ?? null,
                             ];
@@ -999,7 +995,6 @@ class SapService
 
         return false;
     }
-
 
     // public function getDetailedInboundRequest($businessPartnerCode, $inboundRequestCode)
     // {
@@ -1023,9 +1018,6 @@ class SapService
 
     //                     $inboundRequests = collect($data['d']['results'][0])->map(function ($request) use ($inboundDelivery) {
     //                         $deliveryItems = collect($inboundDelivery['items'] ?? [])->keyBy('material');
-
-
-
 
     //                         return [
     //                             'inbound_request_id' => $request['Inbound_request'],
@@ -1089,18 +1081,12 @@ class SapService
     //             return false;
     //         }
 
-
-
     //     }
-
-
 
     //     $OutboundCancelationStatus = $this->CancelOutboundFromErp($outboundRequestCode);
 
     //     return $OutboundCancelationStatus;
     // }
-
-
 
     // public function cancelInboundRequestBatch($inboundRequestCode)
     // {
@@ -1281,7 +1267,6 @@ class SapService
     //     }
     // }
 
-
     // public function batchCancelOutboundItems($outboundCode, $outboundItems)
     // {
 
@@ -1330,7 +1315,6 @@ class SapService
     //     return $response->status() == 200;
     // }
 
-
     // public function CancelOutboundFromErp($outboundRequestCode)
     // {
     //     return $this->execute(function () use ($outboundRequestCode) {
@@ -1343,8 +1327,6 @@ class SapService
     //         return false;
     //     });
     // }
-
-
 
     // public function getOutboundRequestItems($outboundRequestCode)
     // {
@@ -1466,17 +1448,14 @@ class SapService
     //     });
     // }
 
-
     public function getInboundDeliveryWithItems($inboundDeliveryCode)
     {
 
         return $this->execute(function () use ($inboundDeliveryCode) {
             $response = $this->getClient()
-                ->get($this->baseUrl . "/sap/opu/odata/sap/ZI_EWM_DELIVERY_CDS/ZI_EWM_DELIVERY(p_inbound='$inboundDeliveryCode')/Set", [
+                ->get($this->baseUrl."/sap/opu/odata/sap/ZI_EWM_DELIVERY_CDS/ZI_EWM_DELIVERY(p_inbound='$inboundDeliveryCode')/Set", [
                     '$expand' => 'to_GR',
                 ]);
-
-
 
             if ($response->successful()) {
                 $inboundDelivery = $response->json()['d']['results'][0];
@@ -1499,13 +1478,13 @@ class SapService
                         ];
                     }),
                 ];
+
                 return $inboundDeliveryData;
             }
 
             return false;
         });
     }
-
 
     // public function getSalesOrderItems($inboundRequestCode)
     // {
@@ -1627,8 +1606,6 @@ class SapService
 
     // }
 
-
-
     public function cancelDelivery($deliveryCode, $deliveryType)
     {
 
@@ -1652,7 +1629,7 @@ class SapService
             ->withQueryParameters([
                 'sap-client' => $this->client,
             ])
-            ->post($this->baseUrl . '/sap/opu/odata/sap/ZCANCEL_DELIVERY_SRV/DeliverySet', $data);
+            ->post($this->baseUrl.'/sap/opu/odata/sap/ZCANCEL_DELIVERY_SRV/DeliverySet', $data);
 
         return $response->successful();
     }
@@ -1694,8 +1671,7 @@ class SapService
                 ],
             ],
         ];
-        // dd($data);
-
+        // dd(json_encode($data));
 
         $tokenResponse = $this->getCsrfToken();
         $csrfToken = $tokenResponse['token'];
@@ -1707,7 +1683,7 @@ class SapService
                 'Accept' => 'application/json',
                 'Cookie' => $cookies,
             ])
-            ->post($this->baseUrl . '/sap/opu/odata/SAP/ZINT_PORTAL_SRV/PARTNER', $data);
+            ->post($this->baseUrl.'/sap/opu/odata/SAP/ZINT_PORTAL_SRV/PARTNER', $data);
 
         // dd($response->json());
         return $response->json();
@@ -1732,15 +1708,15 @@ class SapService
                 $results,
                 [
 
-                    "ITEM" => $formatted_counter,
-                    "Materia" => (string) $material->code,
-                    "ReqQty" => (string) $material->pivot->quantity,
-                    "UOM" => "EA",
-                    "Sloc" => $material->pivot->plantArea->code,
-                    "Plant" => $material->pivot->plantArea->plant->code,
-                    "BATCH" => $material->pivot->batch,
-                    "mfdate" => $this->formatSapDate($material->pivot->manufacture_date),
-                    "ExpDate" => $this->formatSapDate($material->pivot->expiration_date)
+                    'ITEM' => $formatted_counter,
+                    'Materia' => (string) $material->code,
+                    'ReqQty' => (string) $material->pivot->quantity,
+                    'UOM' => 'EA',
+                    'Sloc' => $material->pivot->plantArea->code,
+                    'Plant' => $material->pivot->plantArea->plant->code,
+                    'BATCH' => $material->pivot->batch,
+                    'mfdate' => $this->formatSapDate($material->pivot->manufacture_date),
+                    'ExpDate' => $this->formatSapDate($material->pivot->expiration_date),
                 ]
             );
             $counter += 10;
@@ -1752,16 +1728,15 @@ class SapService
 
         // $sapDateFormat = '/Date(' . $timestampMilliseconds . ')/';
 
-
         $data = [
             'd' => [
-                'REQ_ID' => "I" . $draftInbound->id,
-                'REQ_TYPE' => "INB",
+                'REQ_ID' => 'I'.$draftInbound->id,
+                'REQ_TYPE' => 'INB',
                 'BpNum' => $businessPartnerCode,
                 'ReceivingDate' => $this->formatSapDate($date), // '\/Date(1772150400000)\/',
                 'ShipmentIndicator' => '0',
                 'Contract' => $contractCode,
-                'deliverytime' => 'PT' . $hour . 'H00M00S',
+                'deliverytime' => 'PT'.$hour.'H00M00S',
                 'soitemsSet' => [
                     'results' => $results,
                 ],
@@ -1784,7 +1759,7 @@ class SapService
             ->withQueryParameters([
                 'sap-client' => $this->client,
             ])
-            ->post($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_INB_REQQ_SRV/soheaderSet', $data);
+            ->post($this->baseUrl.'/sap/opu/odata/SAP/ZPRJ_INB_REQQ_SRV/soheaderSet', $data);
 
         return $response->json();
 
@@ -1813,38 +1788,34 @@ class SapService
                 $results,
                 [
 
-                    "ITEM" => $formatted_counter,
-                    "Materia" => (string) $outboundedMaterial->material_code,
-                    "ReqQty" => (string) $outboundedMaterial->quantity,
-                    "UOM" => "EA",
-                    "Sloc" => $outboundedMaterial->location_code,
-                    "Plant" => $outboundedMaterial->plantArea->plant->code,
-                    "BATCH" => $outboundedMaterial->batch_code,
-                    "mfdate" => $this->formatSapDate($outboundedMaterial->manufacture_date),
-                    "ExpDate" => $this->formatSapDate($outboundedMaterial->expiration_date)
+                    'ITEM' => $formatted_counter,
+                    'Materia' => (string) $outboundedMaterial->material_code,
+                    'ReqQty' => (string) $outboundedMaterial->quantity,
+                    'UOM' => 'EA',
+                    'Sloc' => $outboundedMaterial->location_code,
+                    'Plant' => $outboundedMaterial->plantArea->plant->code,
+                    'BATCH' => $outboundedMaterial->batch_code,
+                    'mfdate' => $this->formatSapDate($outboundedMaterial->manufacture_date),
+                    'ExpDate' => $this->formatSapDate($outboundedMaterial->expiration_date),
                 ]
             );
             $counter += 10;
         }
 
-
-
         $data = [
             'd' => [
-                'REQ_ID' => "O" . $outboundId,
-                'REQ_TYPE' => "OUD",
+                'REQ_ID' => 'O'.$outboundId,
+                'REQ_TYPE' => 'OUD',
                 'BpNum' => $businessPartnerCode,
                 'BPLOC' => $shiptoPartyCode,
                 'ReceivingDate' => $this->formatSapDate($date), // '\/Date(1772150400000)\/',
                 'ShipmentIndicator' => '0',
-                'deliverytime' => 'PT' . $hour . 'H00M00S',
+                'deliverytime' => 'PT'.$hour.'H00M00S',
                 'soitemsSet' => [
                     'results' => $results,
                 ],
             ],
         ];
-
-
         $tokenResponse = $this->getCsrfToken();
         $csrfToken = $tokenResponse['token'];
         $cookies = $tokenResponse['headers']['set-cookie'];
@@ -1859,14 +1830,11 @@ class SapService
             ->withQueryParameters([
                 'sap-client' => $this->client,
             ])
-            ->post($this->baseUrl . '/sap/opu/odata/SAP/ZPRJ_INB_REQQ_SRV/soheaderSet', $data);
+            ->post($this->baseUrl.'/sap/opu/odata/SAP/ZPRJ_INB_REQQ_SRV/soheaderSet', $data);
 
         return $response->json();
 
-
     }
-
-
 
     // public function createOutbound($businessPartnerCode, $shiptoPartyCode, $outboundId, $date, $hour)
     // {
@@ -2081,7 +2049,7 @@ class SapService
 
     private function parseSapDate($sapDate)
     {
-        if (!$sapDate) {
+        if (! $sapDate) {
             return null;
         }
 
@@ -2099,18 +2067,18 @@ class SapService
     private function formatSapDate($date)
     {
 
-
         $timestampSeconds = strtotime($date);
 
         $timestampMilliseconds = $timestampSeconds * 1000;
 
-        $sapDateFormat = '/Date(' . $timestampMilliseconds . ')/';
+        $sapDateFormat = '/Date('.$timestampMilliseconds.')/';
 
         return $sapDateFormat;
     }
+
     private function parseSapDateTimestamp($sapDateTimestamp)
     {
-        if (!$sapDateTimestamp) {
+        if (! $sapDateTimestamp) {
             return null;
         }
 
@@ -2124,6 +2092,7 @@ class SapService
 
         return null;
     }
+
     private function parseSapTime($sapDuration)
     {
         return Carbon::createFromFormat('H', substr($sapDuration, 2, 2))->format('h A');
@@ -2131,7 +2100,7 @@ class SapService
 
     private function parseSapDateTime($sapDateTime)
     {
-        if (!$sapDateTime) {
+        if (! $sapDateTime) {
             return null;
         }
 
@@ -2141,7 +2110,7 @@ class SapService
     public function uploadFile($slug, $filePath)
     {
         $fileContent = \Illuminate\Support\Facades\Storage::disk('private')->get($filePath);
-        if (!$fileContent) {
+        if (! $fileContent) {
             return null;
         }
 
@@ -2162,7 +2131,7 @@ class SapService
             ])
             ->withQueryParameters(['sap-client' => $this->client])
             ->withBody($fileContent, 'application/octet-stream')
-            ->post($this->baseUrl . '/sap/opu/odata/SAP/ZTEST_SEND_FILES_SRV/FileSet');
+            ->post($this->baseUrl.'/sap/opu/odata/SAP/ZTEST_SEND_FILES_SRV/FileSet');
 
         return $response->json();
     }
@@ -2170,7 +2139,7 @@ class SapService
     public function uploadAttpFile($filePath)
     {
         $fileContent = File::get($filePath);
-        if (!$fileContent) {
+        if (! $fileContent) {
             return null;
         }
 
@@ -2192,7 +2161,7 @@ class SapService
             ])
             ->withQueryParameters(['sap-client' => $this->client])
             ->withBody($fileContent, 'application/octet-stream')
-            ->post($this->attpUrl . '/sap/opu/odata/sap/ZAATP_FILE_SRV/FileSet');
+            ->post($this->attpUrl.'/sap/opu/odata/sap/ZAATP_FILE_SRV/FileSet');
         // dd($response->json());
 
         return $response->successful();

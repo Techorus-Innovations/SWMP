@@ -13,6 +13,8 @@ class DraftOutboundMaterial extends Pivot
 
     public $incrementing = true;
 
+    public $timestamps = false;
+
     protected function casts(): array
     {
         return [

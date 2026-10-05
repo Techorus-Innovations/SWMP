@@ -3,6 +3,7 @@
 namespace App\Filament\Partner\Pages;
 
 use App\Models\Material;
+use App\Models\PlantArea;
 use App\Services\SapService;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\IconEntry;
@@ -17,7 +18,7 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Url;
-use App\Models\PlantArea;
+
 class OutboundDetails extends Page implements HasTable
 {
     use InteractsWithTable;
@@ -50,7 +51,7 @@ class OutboundDetails extends Page implements HasTable
                 ->modalHeading(__('Cancel Outbound Request'))
                 ->modalDescription(__('Are you sure you want to cancel this outbound request? This action cannot be undone.'))
                 ->hidden(function () {
-                    if (!filament()->auth()->user()->canCancelOutbounds()) {
+                    if (! filament()->auth()->user()->canCancelOutbounds()) {
                         return true;
                     }
 
@@ -90,7 +91,6 @@ class OutboundDetails extends Page implements HasTable
             $this->outboundRequestId
         );
 
-
         $locationCodes = $this->response['items']->pluck('location_code')->unique()->values()->toArray();
 
         $plantAreas = PlantArea::whereIn('code', $locationCodes)
@@ -105,12 +105,11 @@ class OutboundDetails extends Page implements HasTable
             return $item;
         });
 
-
     }
 
     public function getTitle(): string
     {
-        return __('Outbound Request') . ' #' . $this->outboundRequestId;
+        return __('Outbound Request').' #'.$this->outboundRequestId;
     }
 
     public function infolist(Schema $schema): Schema
@@ -179,13 +178,13 @@ class OutboundDetails extends Page implements HasTable
                     ->label(__('GTIN Code')),
                 TextColumn::make('quantity')
                     ->label(__('Quantity'))
-                    ->suffix(fn($record) => ' ' . ($record['measuring_unit'] ?? '')),
+                    ->suffix(fn ($record) => ' '.($record['measuring_unit'] ?? '')),
                 TextColumn::make('location_code')
                     ->label(__('Location Code')),
-                TextColumn::make('location_name_en')
-                    ->label(__('Location Name (EN)')),
-                TextColumn::make('location_name_ar')
-                    ->label(__('Location Name (AR)')),
+                // TextColumn::make('location_name_en')
+                //     ->label(__('Location Name (EN)')),
+                // TextColumn::make('location_name_ar')
+                //     ->label(__('Location Name (AR)')),
                 // TextColumn::make('measuring_unit')
                 //     ->label(__('Unit')),
                 // TextColumn::make('area_code')
