@@ -347,6 +347,50 @@ class SapService
 
     }
 
+    /**
+     * Find a single contract for a partner.
+     * Returns null ONLY when SAP confirms the contract does not exist.
+     * Throws (ServiceUnavailableHttpException) when SAP is unreachable or returns an error.
+     */
+    public function findContractById($businessPartnerCode, $contractId): ?array
+    {
+        // Escape single quotes for OData string literals (partner-supplied input)
+        $safeContractId = str_replace("'", "''", (string) $contractId);
+
+        return $this->execute(function () use ($businessPartnerCode, $safeContractId) {
+            $response = $this->getClient()
+                ->get($this->baseUrl."/sap/opu/odata/SAP/ZPRJ_ODATA_CONTRACT1_SRV/ZC_CONTRAC(c_kunnr='$businessPartnerCode')/Set", [
+                    '$expand' => 'to_VP',
+                    '$filter' => "Contract eq '$safeContractId'",
+                ]);
+
+            if (! $response->successful()) {
+                throw new \RuntimeException('SAP contract lookup failed with HTTP '.$response->status());
+            }
+
+            $results = $response->json('d.results') ?? [];
+            if (empty($results)) {
+                return null;
+            }
+
+            $item = $results[0];
+
+            return [
+                'contract_code' => $item['Contract'],
+                'contract_start' => $this->parseSapDate($item['CONTRACT_START']),
+                'contract_end' => $this->parseSapDate($item['CONTRACT_END']),
+                'areas' => collect($item['to_VP']['results'] ?? [])->map(function ($area) {
+                    return [
+                        'area_code' => $area['Area_code_new'],
+                        'area_description' => $area['Area_code_new_desc'],
+                        'quantity' => $area['QUNTITY'],
+                        'measuring_unit' => $area['MEINS'],
+                    ];
+                })->all(),
+            ];
+        });
+    }
+
     // public function getStock($businessPartnerCode, $pageSize, $pageNumber)
     // {
     //     return $this->execute(function () use ($businessPartnerCode, $pageSize, $pageNumber) {
@@ -423,7 +467,7 @@ class SapService
                                 'batch_quantity_unit' => $item['BaseUnit'],
                                 'expiration_date' => $this->parseSapDate($item['exp_date']),
                                 'manufacture_date' => $this->parseSapDate($item['mfc_date']),
-                                'locations' => collect($request['to_location']['results'] ?? [])->map(function ($item) {
+                                'locations' => collect($item['to_location']['results'] ?? [])->map(function ($item) {
                                     return [
                                         'location_code' => $item['location'],
                                         'location_quantity' => $item['TOTAL_QUANTITY'],
@@ -1770,7 +1814,7 @@ class SapService
 
     }
 
-    public function createOutbound($businessPartnerCode, $shiptoPartyCode, $outboundId, $date, $hour)
+    public function createOutbound($businessPartnerCode, $shiptoPartyCode, $outboundId, $date, $hour, bool $deliveryService = false)
     {
 
         // $sapDateFormat = $date . 'T00:00:00';
@@ -1809,7 +1853,7 @@ class SapService
                 'BpNum' => $businessPartnerCode,
                 'BPLOC' => $shiptoPartyCode,
                 'ReceivingDate' => $this->formatSapDate($date), // '\/Date(1772150400000)\/',
-                'ShipmentIndicator' => '0',
+                'ShipmentIndicator' => $deliveryService ? '1' : '0',
                 'deliverytime' => 'PT'.$hour.'H00M00S',
                 'soitemsSet' => [
                     'results' => $results,

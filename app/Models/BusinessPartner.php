@@ -131,4 +131,9 @@ class BusinessPartner extends Model
     {
         return $this->belongsTo(PartnerType::class, 'partner_type_id');
     }
+
+    public function client(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Client::class, 'business_partner_id');
+    }
 }
