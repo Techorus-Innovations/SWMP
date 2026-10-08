@@ -45,92 +45,63 @@ class ApiCredentials extends Page
 
     public function getClientProperty(): ?Client
     {
-        return filament()->auth()->user()?->businessPartner?->client;
+        return filament()->auth()->user()?->businessPartner?->client()->first();
     }
 
     public function infolist(Schema $schema): Schema
     {
-        $client = $this->client;
-        $components = [];
-
-        // Reveal banner when a new secret is generated or regenerated
-        if ($this->plainSecret) {
-            $components[] = Section::make('Your New Client Secret')
+        return $schema->components([
+            // Reveal banner when a new secret is generated or regenerated
+            Section::make('Your New Client Secret')
                 ->description('Copy this secret now. For security reasons, it will not be displayed again.')
+                ->visible(fn (): bool => filled($this->plainSecret))
                 ->schema([
                     TextEntry::make('new_client_secret')
                         ->label('Client Secret')
-                        ->state($this->plainSecret)
+                        ->state(fn () => $this->plainSecret)
                         ->copyable()
                         ->copyMessage('Client Secret copied to clipboard')
                         ->weight('bold')
                         ->color('success'),
-                ]);
-        }
+                ]),
 
-        // Active Credentials Details
-        if ($client) {
-            $components[] = Section::make('API Client Credentials')
+            // Active Credentials Details
+            Section::make('API Client Credentials')
                 ->description('Use these credentials to authenticate your external system or ERP.')
+                ->visible(fn (): bool => (bool) $this->client)
                 ->columns(2)
                 ->schema([
                     TextEntry::make('client_id')
                         ->label('Client ID')
-                        ->state($client->client_id)
+                        ->state(fn () => $this->client?->client_id)
                         ->copyable()
                         ->copyMessage('Client ID copied to clipboard'),
 
                     TextEntry::make('status')
                         ->label('Status')
                         ->badge()
-                        ->state($client->is_active ? 'Active' : 'Deactivated')
-                        ->color($client->is_active ? 'success' : 'danger'),
+                        ->state(fn () => $this->client?->is_active ? 'Active' : 'Deactivated')
+                        ->color(fn () => $this->client?->is_active ? 'success' : 'danger'),
 
                     TextEntry::make('created_at')
                         ->label('Created')
-                        ->state($client->created_at?->format('Y-m-d H:i') ?? 'N/A'),
+                        ->state(fn () => $this->client?->created_at?->format('Y-m-d H:i') ?? 'N/A'),
 
                     TextEntry::make('last_used_at')
                         ->label('Last Used')
-                        ->state($client->last_used_at?->diffForHumans() ?? 'Never'),
-                ]);
+                        ->state(fn () => $this->client?->last_used_at?->diffForHumans() ?? 'Never'),
+                ]),
 
-            // $components[] = Section::make('Authentication Details')
-                // ->description('How to exchange your credentials for an API Bearer token.')
-                // ->columns(2)
-                // ->schema([
-                //     TextEntry::make('token_endpoint')
-                //         ->label('Token Endpoint')
-                //         ->state(url('/api/v1/auth/token'))
-                //         ->copyable()
-                //         ->copyMessage('Token endpoint copied to clipboard'),
-
-                //     TextEntry::make('token_lifetime')
-                //         ->label('Token Lifetime')
-                //         ->state('24 Hours (86,400 seconds)'),
-
-                //     TextEntry::make('method')
-                //         ->label('HTTP Method')
-                //         ->badge()
-                //         ->state('POST')
-                //         ->color('info'),
-
-                //     TextEntry::make('documentation')
-                //         ->label('OpenAPI Documentation')
-                //         ->state('public/docs/openapi.yaml'),
-                // ]);
-        } else {
             // Empty state when no credentials exist yet
-            $components[] = Section::make('No API Credentials Found')
+            Section::make('No API Credentials Found')
                 ->description('Generate an API client credential to allow external software, ERPs, or webhooks to integrate with your SWMP account.')
+                ->visible(fn (): bool => ! $this->client)
                 ->schema([
                     TextEntry::make('status_info')
                         ->hiddenLabel()
                         ->state('Click the "Generate API Credentials" button above to create your Client ID and Client Secret.'),
-                ]);
-        }
-
-        return $schema->components($components);
+                ]),
+        ]);
     }
 
     public function generateCredentials(): void
@@ -141,7 +112,7 @@ class ApiCredentials extends Page
             return;
         }
 
-        if ($partner->client) {
+        if ($partner->client()->exists()) {
             Notification::make()
                 ->title('Credentials already exist')
                 ->warning()
@@ -160,6 +131,9 @@ class ApiCredentials extends Page
             'is_active' => true,
         ]);
 
+        unset($this->client);
+        $partner->unsetRelation('client');
+
         $this->plainSecret = $clientSecret;
 
         Notification::make()
@@ -172,7 +146,8 @@ class ApiCredentials extends Page
 
     public function regenerateSecret(): void
     {
-        $client = $this->client;
+        $partner = filament()->auth()->user()?->businessPartner;
+        $client = $partner?->client()->first();
 
         if (! $client) {
             return;
@@ -187,6 +162,9 @@ class ApiCredentials extends Page
         // Revoke all previously active Sanctum tokens
         $client->tokens()->delete();
 
+        unset($this->client);
+        $partner?->unsetRelation('client');
+
         $this->plainSecret = $clientSecret;
 
         Notification::make()
@@ -197,62 +175,106 @@ class ApiCredentials extends Page
             ->send();
     }
 
-    public function toggleActive(): void
+    public function activateAccess(): void
     {
-        $client = $this->client;
+        $partner = filament()->auth()->user()?->businessPartner;
+        $client = $partner?->client()->first();
 
         if (! $client) {
             return;
         }
 
-        $newStatus = ! $client->is_active;
-
         $client->update([
-            'is_active' => $newStatus,
+            'is_active' => true,
         ]);
 
-        if (! $newStatus) {
-            $client->tokens()->delete();
-        }
+        unset($this->client);
+        $partner?->unsetRelation('client');
 
         Notification::make()
-            ->title($newStatus ? 'API Access Activated' : 'API Access Deactivated')
-            ->body($newStatus ? 'API credentials are now active.' : 'API access is revoked and active tokens have been cleared.')
-            ->status($newStatus ? 'success' : 'danger')
+            ->title('API Access Activated')
+            ->body('API credentials are now active.')
+            ->success()
             ->send();
+    }
+
+    public function deactivateAccess(): void
+    {
+        $partner = filament()->auth()->user()?->businessPartner;
+        $client = $partner?->client()->first();
+
+        if (! $client) {
+            return;
+        }
+
+        $client->update([
+            'is_active' => false,
+        ]);
+
+        // Revoke all active tokens
+        $client->tokens()->delete();
+
+        unset($this->client);
+        $partner?->unsetRelation('client');
+
+        Notification::make()
+            ->title('API Access Deactivated')
+            ->body('API access is revoked and active tokens have been cleared.')
+            ->danger()
+            ->send();
+    }
+
+    public function toggleActive(): void
+    {
+        if ($this->client?->is_active) {
+            $this->deactivateAccess();
+        } else {
+            $this->activateAccess();
+        }
     }
 
     protected function getHeaderActions(): array
     {
-        $client = $this->client;
-
-        if (! $client) {
-            return [
-                Action::make('generate')
-                    ->label('Generate API Credentials')
-                    ->icon('heroicon-o-plus')
-                    ->color('primary')
-                    ->action('generateCredentials'),
-            ];
-        }
-
         return [
+            Action::make('generate')
+                ->label('Generate API Credentials')
+                ->icon('heroicon-o-plus')
+                ->color('primary')
+                ->visible(fn (): bool => ! $this->client)
+                ->action('generateCredentials'),
+
             Action::make('regenerate')
                 ->label('Regenerate Secret')
                 ->icon('heroicon-o-arrow-path')
                 ->color('warning')
+                ->visible(fn (): bool => (bool) $this->client)
                 ->requiresConfirmation()
                 ->modalHeading('Regenerate Client Secret?')
                 ->modalDescription('Regenerating your secret will immediately invalidate and revoke all active access tokens. Any automated systems using the previous secret will need to be updated.')
                 ->modalSubmitActionLabel('Yes, regenerate')
                 ->action('regenerateSecret'),
 
-            Action::make('toggle')
-                ->label($client->is_active ? 'Deactivate Access' : 'Activate Access')
-                ->icon($client->is_active ? 'heroicon-o-no-symbol' : 'heroicon-o-check-circle')
-                ->color($client->is_active ? 'danger' : 'success')
+            Action::make('activate')
+                ->label('Activate Access')
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->visible(fn (): bool => (bool) ($this->client && ! $this->client->is_active))
                 ->requiresConfirmation()
-                ->action('toggleActive'),
+                ->modalHeading('Activate API Access?')
+                ->modalDescription('This will allow your client credentials to request API access tokens again.')
+                ->modalSubmitActionLabel('Yes, activate')
+                ->action('activateAccess'),
+
+            Action::make('deactivate')
+                ->label('Deactivate Access')
+                ->icon('heroicon-o-no-symbol')
+                ->color('danger')
+                ->visible(fn (): bool => (bool) ($this->client && $this->client->is_active))
+                ->requiresConfirmation()
+                ->modalHeading('Deactivate API Access?')
+                ->modalDescription('This will immediately revoke all active access tokens and reject future API calls.')
+                ->modalSubmitActionLabel('Yes, deactivate')
+                ->action('deactivateAccess'),
         ];
     }
 }
