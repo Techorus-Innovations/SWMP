@@ -50,16 +50,10 @@ class ContractApiController extends Controller
             ];
         })->values()->all();
 
-        if ($isPaginated) {
-            return response()->json([
-                'contracts' => [
-                    'total_count' => (int) ($contractsData['totalCount'] ?? count($mappedContracts)),
-                    'contracts' => $mappedContracts,
-                ],
-            ], 200);
-        }
+        $totalCount = (int) ($contractsData['totalCount'] ?? count($mappedContracts));
 
         return response()->json([
+            'total_count' => $totalCount,
             'contracts' => $mappedContracts,
         ], 200);
     }

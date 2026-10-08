@@ -1,0 +1,623 @@
+{
+  "info": {
+    "_postman_id": "a9b8c7d6-e5f4-4321-8765-abcdef123456",
+    "name": "SWMP External Partner Integration APIs",
+    "description": "Postman Collection for SWMP External Partner Integration APIs (v1).\n\nAuthenticate via client credentials to obtain a 24-hour Bearer token, query contracts, check available delivery slots, inspect stock inventory, and create inbound or outbound requests synchronized directly with SAP.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearer_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Ensure sample_delivery_date is always dynamically valid (5 days from now)",
+          "if (!pm.collectionVariables.get('sample_delivery_date')) {",
+          "    const targetDate = new Date();",
+          "    targetDate.setDate(targetDate.getDate() + 5);",
+          "    const yyyy = targetDate.getFullYear();",
+          "    const mm = String(targetDate.getMonth() + 1).padStart(2, '0');",
+          "    const dd = String(targetDate.getDate()).padStart(2, '0');",
+          "    pm.collectionVariables.set('sample_delivery_date', `${yyyy}-${mm}-${dd}`);",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "client_id",
+      "value": "cl_live_9f83a1b2c3d4e5f67890",
+      "type": "string"
+    },
+    {
+      "key": "client_secret",
+      "value": "sec_live_abcdef1234567890",
+      "type": "string"
+    },
+    {
+      "key": "bearer_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sample_contract_code",
+      "value": "40000123",
+      "type": "string"
+    },
+    {
+      "key": "sample_gtin",
+      "value": "06285000000000",
+      "type": "string"
+    },
+    {
+      "key": "sample_gln",
+      "value": "6281000000000",
+      "type": "string"
+    },
+    {
+      "key": "sample_delivery_date",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "description": "Endpoints for client credentials exchange and Bearer token management.",
+      "item": [
+        {
+          "name": "Exchange Client Credentials for Bearer Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Token received and saved to collection variables\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('access_token');",
+                  "    pm.collectionVariables.set('bearer_token', jsonData.access_token);",
+                  "    console.log('Bearer token saved successfully!');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_id\": \"{{client_id}}\",\n  \"client_secret\": \"{{client_secret}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "token"
+              ]
+            },
+            "description": "Exchanges Client ID and Client Secret generated in the SWMP Partner Portal for a 24-hour Bearer token. The test script automatically saves the returned token into `{{bearer_token}}` for all protected collection calls."
+          },
+          "response": [
+            {
+              "name": "200 Token Issued",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"client_id\": \"cl_live_9f83a1b2c3d4e5f67890\",\n  \"client_secret\": \"sec_live_abcdef1234567890\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/token",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "token"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"access_token\": \"1|abcdef1234567890...\",\n  \"token_type\": \"Bearer\",\n  \"expires_in\": 86400,\n  \"business_partner\": {\n    \"bp_code\": \"BP100234\",\n    \"name\": \"Acme Pharmaceuticals LLC\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Contracts",
+      "description": "Retrieve active and expired SAP contracts for the authenticated partner.",
+      "item": [
+        {
+          "name": "Get Partner Contracts (All)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/contracts?status=active",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "contracts"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "active",
+                  "description": "Filter contracts by status: 'active' or 'expired'"
+                }
+              ]
+            },
+            "description": "Fetches the complete active contract list from SAP for the authenticated Business Partner without pagination."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Partner Contracts (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/contracts?page_size=10&page_number=1&status=active",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "contracts"
+              ],
+              "query": [
+                {
+                  "key": "page_size",
+                  "value": "10",
+                  "description": "Number of contracts per page"
+                },
+                {
+                  "key": "page_number",
+                  "value": "1",
+                  "description": "Page number (1-indexed)"
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "description": "Filter contracts by status: 'active' or 'expired'"
+                }
+              ]
+            },
+            "description": "Fetches paginated contracts with `total_count` and `contracts` list."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Partner Contracts (Expired)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/contracts?status=expired",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "contracts"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "expired",
+                  "description": "Filter contracts by status: 'active' or 'expired'"
+                }
+              ]
+            },
+            "description": "Fetches expired contracts for the authenticated partner."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Delivery Slots",
+      "description": "Query available warehouse delivery slot capacities for inbound and outbound operations.",
+      "item": [
+        {
+          "name": "Get Inbound Delivery Slots",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const target = new Date();",
+                  "target.setDate(target.getDate() + 5);",
+                  "const yyyy = target.getFullYear();",
+                  "const mm = String(target.getMonth() + 1).padStart(2, '0');",
+                  "const dd = String(target.getDate()).padStart(2, '0');",
+                  "pm.collectionVariables.set('sample_delivery_date', `${yyyy}-${mm}-${dd}`);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/inbound-slots?date={{sample_delivery_date}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inbound-slots"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{sample_delivery_date}}",
+                  "description": "Delivery date (YYYY-MM-DD), must be between tomorrow and +30 days"
+                }
+              ]
+            },
+            "description": "Returns available inbound time slots (`HH:00`) for the specified date."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Outbound Delivery Slots",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const target = new Date();",
+                  "target.setDate(target.getDate() + 5);",
+                  "const yyyy = target.getFullYear();",
+                  "const mm = String(target.getMonth() + 1).padStart(2, '0');",
+                  "const dd = String(target.getDate()).padStart(2, '0');",
+                  "pm.collectionVariables.set('sample_delivery_date', `${yyyy}-${mm}-${dd}`);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/outbound-slots?date={{sample_delivery_date}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "outbound-slots"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{sample_delivery_date}}",
+                  "description": "Dispatch date (YYYY-MM-DD), must be between tomorrow and +30 days"
+                }
+              ]
+            },
+            "description": "Returns available outbound time slots (`HH:00`) for the specified date."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Inventory & Stock",
+      "description": "Retrieve current warehouse stock inventory, batches, and storage locations.",
+      "item": [
+        {
+          "name": "Get Partner Stock (Complete)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/stock",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "stock"
+              ]
+            },
+            "description": "Retrieves the complete stock inventory dataset from SAP for the authenticated partner."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Partner Stock (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/stock?page_size=20&page_number=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "stock"
+              ],
+              "query": [
+                {
+                  "key": "page_size",
+                  "value": "20",
+                  "description": "Number of stock records per page"
+                },
+                {
+                  "key": "page_number",
+                  "value": "1",
+                  "description": "Page number (1-indexed)"
+                }
+              ]
+            },
+            "description": "Retrieves paginated stock records."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Partner Stock (Filter by GTIN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/stock?product_gtin={{sample_gtin}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "stock"
+              ],
+              "query": [
+                {
+                  "key": "product_gtin",
+                  "value": "{{sample_gtin}}",
+                  "description": "Filter by product GTIN barcode"
+                }
+              ]
+            },
+            "description": "Retrieves warehouse inventory filtered for a specific product GTIN. If not found, returns 422 with `PRODUCT_GTIN_NOT_FOUND`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Inbound Requests",
+      "description": "Create inbound delivery requests synchronized directly with SAP.",
+      "item": [
+        {
+          "name": "Create Inbound Delivery Request",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = new Date();",
+                  "d.setDate(d.getDate() + 5);",
+                  "const yyyy = d.getFullYear();",
+                  "const mm = String(d.getMonth() + 1).padStart(2, '0');",
+                  "const dd = String(d.getDate()).padStart(2, '0');",
+                  "pm.collectionVariables.set('sample_delivery_date', `${yyyy}-${mm}-${dd}`);",
+                  "",
+                  "// Manufacture date: 30 days before delivery date",
+                  "const mfg = new Date(d);",
+                  "mfg.setDate(mfg.getDate() - 30);",
+                  "const mfgStr = `${mfg.getFullYear()}-${String(mfg.getMonth() + 1).padStart(2, '0')}-${String(mfg.getDate()).padStart(2, '0')}`;",
+                  "pm.variables.set('mfg_date', mfgStr);",
+                  "",
+                  "// Expiration date: 2 years after delivery date",
+                  "const exp = new Date(d);",
+                  "exp.setFullYear(exp.getFullYear() + 2);",
+                  "const expStr = `${exp.getFullYear()}-${String(exp.getMonth() + 1).padStart(2, '0')}-${String(exp.getDate()).padStart(2, '0')}`;",
+                  "pm.variables.set('exp_date', expStr);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contract_code\": \"{{sample_contract_code}}\",\n  \"delivery_date\": \"{{sample_delivery_date}}\",\n  \"delivery_time\": \"09\",\n  \"products\": [\n    {\n      \"gtin\": \"{{sample_gtin}}\",\n      \"quantity\": 100,\n      \"batch\": \"BATCH-01\",\n      \"manufacture_date\": \"{{mfg_date}}\",\n      \"expiration_date\": \"{{exp_date}}\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/inbound-requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inbound-requests"
+              ]
+            },
+            "description": "Validates material GTIN codes, auto-resolves storage location from the material's first permitted area, verifies contract eligibility and slot capacity, then pushes the request to SAP."
+          },
+          "response": [
+            {
+              "name": "201 Inbound Request Created",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"inbound_id\": \"10009210\",\n  \"message\": \"Inbound request created successfully in SAP.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Outbound Requests",
+      "description": "Create outbound delivery requests synchronized directly with SAP.",
+      "item": [
+        {
+          "name": "Create Outbound Delivery Request",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = new Date();",
+                  "d.setDate(d.getDate() + 5);",
+                  "const yyyy = d.getFullYear();",
+                  "const mm = String(d.getMonth() + 1).padStart(2, '0');",
+                  "const dd = String(d.getDate()).padStart(2, '0');",
+                  "pm.collectionVariables.set('sample_delivery_date', `${yyyy}-${mm}-${dd}`);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delivery_service\": true,\n  \"ship_to_party_gln\": \"{{sample_gln}}\",\n  \"delivery_date\": \"{{sample_delivery_date}}\",\n  \"delivery_time_slot\": \"11\",\n  \"products\": [\n    {\n      \"product_gtin\": \"{{sample_gtin}}\",\n      \"batch_code\": \"BATCH-01\",\n      \"quantity\": 25\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/outbound-requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "outbound-requests"
+              ]
+            },
+            "description": "Validates outbound delivery against stock inventory, verifies slot capacity, auto-allocates stock batch locations, and submits the request to SAP."
+          },
+          "response": [
+            {
+              "name": "201 Outbound Request Created",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"outbound_id\": \"O800123\",\n  \"message\": \"Outbound request created successfully in SAP.\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

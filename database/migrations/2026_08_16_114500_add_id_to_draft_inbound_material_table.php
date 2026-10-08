@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('draft_inbound_material', function (Blueprint $table) {
-            $table->id()->first();
-        });
+        if (! Schema::hasColumn('draft_inbound_material', 'id')) {
+            Schema::table('draft_inbound_material', function (Blueprint $table) {
+                $table->id()->first();
+            });
+        }
     }
 
     /**
@@ -21,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('draft_inbound_material', function (Blueprint $table) {
-            $table->dropColumn('id');
-        });
+        if (Schema::hasColumn('draft_inbound_material', 'id')) {
+            Schema::table('draft_inbound_material', function (Blueprint $table) {
+                $table->dropColumn('id');
+            });
+        }
     }
 };

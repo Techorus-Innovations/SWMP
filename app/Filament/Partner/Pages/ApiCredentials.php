@@ -4,8 +4,11 @@ namespace App\Filament\Partner\Pages;
 
 use App\Models\Client;
 use Filament\Actions\Action;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -43,6 +46,91 @@ class ApiCredentials extends Page
     public function getClientProperty(): ?Client
     {
         return filament()->auth()->user()?->businessPartner?->client;
+    }
+
+    public function infolist(Schema $schema): Schema
+    {
+        $client = $this->client;
+        $components = [];
+
+        // Reveal banner when a new secret is generated or regenerated
+        if ($this->plainSecret) {
+            $components[] = Section::make('Your New Client Secret')
+                ->description('Copy this secret now. For security reasons, it will not be displayed again.')
+                ->schema([
+                    TextEntry::make('new_client_secret')
+                        ->label('Client Secret')
+                        ->state($this->plainSecret)
+                        ->copyable()
+                        ->copyMessage('Client Secret copied to clipboard')
+                        ->weight('bold')
+                        ->color('success'),
+                ]);
+        }
+
+        // Active Credentials Details
+        if ($client) {
+            $components[] = Section::make('API Client Credentials')
+                ->description('Use these credentials to authenticate your external system or ERP.')
+                ->columns(2)
+                ->schema([
+                    TextEntry::make('client_id')
+                        ->label('Client ID')
+                        ->state($client->client_id)
+                        ->copyable()
+                        ->copyMessage('Client ID copied to clipboard'),
+
+                    TextEntry::make('status')
+                        ->label('Status')
+                        ->badge()
+                        ->state($client->is_active ? 'Active' : 'Deactivated')
+                        ->color($client->is_active ? 'success' : 'danger'),
+
+                    TextEntry::make('created_at')
+                        ->label('Created')
+                        ->state($client->created_at?->format('Y-m-d H:i') ?? 'N/A'),
+
+                    TextEntry::make('last_used_at')
+                        ->label('Last Used')
+                        ->state($client->last_used_at?->diffForHumans() ?? 'Never'),
+                ]);
+
+            // $components[] = Section::make('Authentication Details')
+                // ->description('How to exchange your credentials for an API Bearer token.')
+                // ->columns(2)
+                // ->schema([
+                //     TextEntry::make('token_endpoint')
+                //         ->label('Token Endpoint')
+                //         ->state(url('/api/v1/auth/token'))
+                //         ->copyable()
+                //         ->copyMessage('Token endpoint copied to clipboard'),
+
+                //     TextEntry::make('token_lifetime')
+                //         ->label('Token Lifetime')
+                //         ->state('24 Hours (86,400 seconds)'),
+
+                //     TextEntry::make('method')
+                //         ->label('HTTP Method')
+                //         ->badge()
+                //         ->state('POST')
+                //         ->color('info'),
+
+                //     TextEntry::make('documentation')
+                //         ->label('OpenAPI Documentation')
+                //         ->state('public/docs/openapi.yaml'),
+                // ]);
+        } else {
+            // Empty state when no credentials exist yet
+            $components[] = Section::make('No API Credentials Found')
+                ->description('Generate an API client credential to allow external software, ERPs, or webhooks to integrate with your SWMP account.')
+                ->schema([
+                    TextEntry::make('status_info')
+                        ->hiddenLabel()
+                        ->state('Click the "Generate API Credentials" button above to create your Client ID and Client Secret.'),
+                ]);
+        }
+
+        return $schema->components($components);
     }
 
     public function generateCredentials(): void

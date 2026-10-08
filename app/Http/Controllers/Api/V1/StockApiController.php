@@ -116,7 +116,10 @@ class StockApiController extends Controller
                 ];
             })->values()->all();
 
+            $totalCount = isset($stockData['totalCount']) ? (int) $stockData['totalCount'] : count($mappedProducts);
+
             return response()->json([
+                'total_count' => $totalCount,
                 'products' => $mappedProducts,
             ], 200);
         } catch (\Throwable $e) {
