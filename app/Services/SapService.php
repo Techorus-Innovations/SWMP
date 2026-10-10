@@ -1814,7 +1814,7 @@ class SapService
 
     }
 
-    public function createOutbound($businessPartnerCode, $shiptoPartyCode, $outboundId, $date, $hour, bool $deliveryService = false)
+    public function createOutbound($businessPartnerCode, $shiptoPartyCode, $outboundId, $date, $hour)
     {
 
         // $sapDateFormat = $date . 'T00:00:00';
@@ -1853,7 +1853,7 @@ class SapService
                 'BpNum' => $businessPartnerCode,
                 'BPLOC' => $shiptoPartyCode,
                 'ReceivingDate' => $this->formatSapDate($date), // '\/Date(1772150400000)\/',
-                'ShipmentIndicator' => $deliveryService ? '1' : '0',
+                'ShipmentIndicator' => '0',
                 'deliverytime' => 'PT'.$hour.'H00M00S',
                 'soitemsSet' => [
                     'results' => $results,

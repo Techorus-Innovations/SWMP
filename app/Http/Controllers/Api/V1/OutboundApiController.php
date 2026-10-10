@@ -19,7 +19,6 @@ class OutboundApiController extends Controller
         $partner = $request->attributes->get('authenticated_partner');
         $bpCode = $partner->bp_code;
         $shipToPartyGln = $request->input('ship_to_party_gln', $request->input('ship_to_party'));
-        $deliveryService = (bool) $request->input('delivery_service', false);
         $date = $request->input('delivery_date');
         $hour = $request->input('delivery_time_slot');
         $products = $request->input('products', []);
@@ -94,7 +93,7 @@ class OutboundApiController extends Controller
             // Load outbound materials relations needed for SAP payload
             $outbound->load(['outboundMaterials.plantArea.plant']);
 
-            $response = $sapService->createOutbound($bpCode, $shipToPartyGln, $outbound->id, $date, $hour, $deliveryService);
+            $response = $sapService->createOutbound($bpCode, $shipToPartyGln, $outbound->id, $date, $hour);
 
             // Clean up staging record
             $outbound->delete();
