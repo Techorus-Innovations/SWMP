@@ -1,0 +1,882 @@
+openapi: 3.0.3
+info:
+  title: SWMP External Partner Integration APIs
+  version: 1.0.0
+  description: >
+    RESTful APIs for external partner systems, ERPs, and automated webhooks.
+    Authenticate via client credentials to obtain a 24-hour Bearer token, then query
+    contracts, check delivery slot capacities, retrieve inventory stock, and submit Inbound
+    or Outbound requests synchronized directly with SAP.
+servers:
+  - url: /api/v1
+    description: Current Environment (v1)
+
+paths:
+  /auth/token:
+    post:
+      tags:
+        - Authentication
+      summary: Exchange Client Credentials for Bearer Token
+      description: >
+        Public endpoint to authenticate your Client ID and Client Secret generated in the
+        SWMP Partner Portal. Returns a 24-hour Bearer token for accessing all partner endpoints.
+      operationId: issueToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+      responses:
+        '200':
+          description: Token issued successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid client_id or client_secret.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "Invalid client_id or client_secret."
+        '403':
+          description: Business partner is deactivated or not approved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "Forbidden: Associated Business Partner account is pending or rejected"
+
+  /contracts:
+    get:
+      tags:
+        - Contracts
+      summary: Get Partner Contracts
+      description: >
+        Fetches contracts from SAP for the authenticated Business Partner.
+        Pagination is optional: omit `page_size` and `page_number` to retrieve the complete contracts list.
+      operationId: getContracts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page_size
+          in: query
+          required: false
+          description: Number of contracts per page. If omitted, returns all contracts.
+          schema:
+            type: integer
+            example: 10
+        - name: page_number
+          in: query
+          required: false
+          description: Page number for pagination.
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: status
+          in: query
+          required: false
+          description: Filter contracts by status.
+          schema:
+            type: string
+            enum: [active, expired]
+            default: active
+      responses:
+        '200':
+          description: Contracts successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+
+  /inbound-slots:
+    get:
+      tags:
+        - Delivery Slots
+      summary: Get Inbound Delivery Slots
+      description: Returns available and booked inbound time slots and capacities for a specific date.
+      operationId: getInboundSlots
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          required: true
+          description: Scheduled delivery date (YYYY-MM-DD). Must be between tomorrow and +30 days (e.g. 2026-10-07 to 2026-11-05).
+          schema:
+            type: string
+            format: date
+            example: "2026-10-20"
+      responses:
+        '200':
+          description: Delivery slots retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboundSlotsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: Validation failed (invalid date format or out of allowable range).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+              examples:
+                invalid_date_format:
+                  summary: Invalid Date Format
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_DATE_FORMAT"
+                        field: "date"
+                        message: "The date field must match the format Y-m-d."
+                date_out_of_range:
+                  summary: Date Out of Range
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_DATE_RANGE"
+                        field: "date"
+                        message: "The date must be between 2026-10-07 and 2026-11-05."
+        '502':
+          $ref: '#/components/responses/BadGateway'
+
+  /stock:
+    get:
+      tags:
+        - Inventory
+      summary: Get Partner Stock Inventory
+      description: >
+        Retrieves warehouse inventory, batches, and locations from SAP for the authenticated partner.
+        Pagination is optional: omit `page_size` to retrieve the complete inventory dataset.
+      operationId: getStock
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page_size
+          in: query
+          required: false
+          description: Number of records per page. If omitted, returns complete inventory.
+          schema:
+            type: integer
+            example: 20
+        - name: page_number
+          in: query
+          required: false
+          description: Page number.
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: product_gtin
+          in: query
+          required: false
+          description: Optional filter by specific product_gtin code.
+          schema:
+            type: string
+            example: "06285000000000"
+      responses:
+        '200':
+          description: Stock retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: Validation failed (Product GTIN not found in stock).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+              examples:
+                product_gtin_not_found:
+                  summary: Product GTIN Not Found
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "PRODUCT_GTIN_NOT_FOUND"
+                        field: "product_gtin"
+                        message: "Product GTIN not found: Material with GTIN '06285000099999' does not exist or has no available stock."
+        '502':
+          $ref: '#/components/responses/BadGateway'
+
+  /outbound-slots:
+    get:
+      tags:
+        - Delivery Slots
+      summary: Get Outbound Delivery Slots
+      description: Returns outbound delivery slot reservations and remaining capacity for a given date.
+      operationId: getOutboundSlots
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          required: true
+          description: Scheduled dispatch date (YYYY-MM-DD). Must be between tomorrow and +30 days (e.g. 2026-10-07 to 2026-11-05).
+          schema:
+            type: string
+            format: date
+            example: "2026-10-22"
+      responses:
+        '200':
+          description: Outbound delivery slots retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboundSlotsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: Validation failed (invalid date format or out of allowable range).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+              examples:
+                invalid_date_format:
+                  summary: Invalid Date Format
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_DATE_FORMAT"
+                        field: "date"
+                        message: "The date field must match the format Y-m-d."
+                date_out_of_range:
+                  summary: Date Out of Range
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_DATE_RANGE"
+                        field: "date"
+                        message: "The date must be between 2026-10-07 and 2026-11-05."
+        '502':
+          $ref: '#/components/responses/BadGateway'
+
+  /inbound-requests:
+    post:
+      tags:
+        - Inbound Requests
+      summary: Create Inbound Delivery Request
+      description: >
+        Validates material GTIN codes, auto-resolves storage location from the material's first area,
+        verifies contract eligibility and slot capacity, then pushes the request to SAP.
+      operationId: createInboundRequest
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InboundRequestInput'
+      responses:
+        '201':
+          description: Inbound request created successfully in SAP.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboundRequestCreatedResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: Validation or domain error (with machine-readable codes).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+              examples:
+                invalid_delivery_date:
+                  summary: Invalid Delivery Date Format
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_DATE_FORMAT"
+                        field: "delivery_date"
+                        message: "The delivery_date field must match the format Y-m-d."
+                invalid_delivery_time:
+                  summary: Invalid Delivery Time Format
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_TIME_FORMAT"
+                        field: "delivery_time"
+                        message: "The delivery_time field must be a two-digit hour (e.g. '09')."
+                invalid_manufacture_date_format:
+                  summary: Invalid Manufacture Date Format
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_DATE_FORMAT"
+                        field: "products.0.manufacture_date"
+                        message: "The manufacture_date field must match the format Y-m-d."
+                invalid_expiration_date_format:
+                  summary: Invalid Expiration Date Format
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_DATE_FORMAT"
+                        field: "products.0.expiration_date"
+                        message: "The expiration_date field must match the format Y-m-d."
+                contract_not_found:
+                  summary: Contract Not Found
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "CONTRACT_NOT_FOUND"
+                        field: "contract_code"
+                        message: "Contract not found: Contract '40000999' does not exist for this business partner."
+                delivery_date_out_of_range:
+                  summary: Delivery Date Out of Range
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_DELIVERY_DATE_RANGE"
+                        field: "delivery_date"
+                        message: "The delivery_date must be between 2026-10-07 and 2026-11-05."
+                unavailable_timeslot:
+                  summary: Time Slot Not Available
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "UNAVAILABLE_TIMESLOT"
+                        field: "delivery_time"
+                        message: "Time slot not available: Time slot '09' is fully booked or outside operating hours."
+                quantity_greater_than_zero:
+                  summary: Quantity Must Be Greater Than 0
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_QUANTITY"
+                        field: "products.0.quantity"
+                        message: "The quantity must be greater than 0."
+                gtin_not_found:
+                  summary: Material GTIN Does Not Exist
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_GTIN"
+                        field: "products.0.gtin"
+                        message: "Material with GTIN '06285000099999' does not exist."
+                manufacture_date_before_delivery:
+                  summary: Manufacture Date Must Be Before Delivery Date
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_MANUFACTURE_DATE"
+                        field: "products.0.manufacture_date"
+                        message: "The manufacture_date must be before delivery_date."
+                expiration_date_after_delivery:
+                  summary: Expiration Date Must Be After Delivery Date
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_EXPIRATION_DATE"
+                        field: "products.0.expiration_date"
+                        message: "The expiration_date must be after delivery_date."
+                unsupported_gtin:
+                  summary: Unsupported GTIN (Storage Location Not Permitted)
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "UNSUPPORTED_GTIN"
+                        field: "products.0.gtin"
+                        message: "Unsupported GTIN (Material storage location not available for your contract): Material '06285000000000' storage location 'LOC-01' is not permitted for contract '40000123'."
+                missing_attribute:
+                  summary: Missing Attribute
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "MISSING_ATTRIBUTE"
+                        field: "delivery_date"
+                        message: "Missing attribute: The delivery_date field is required."
+        '502':
+          $ref: '#/components/responses/BadGateway'
+
+  /outbound-requests:
+    post:
+      tags:
+        - Outbound Requests
+      summary: Create Outbound Delivery Request
+      description: >
+        Validates outbound delivery against stock inventory, verifies slot capacity,
+        and submits the request to SAP.
+      operationId: createOutboundRequest
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OutboundRequestInput'
+      responses:
+        '201':
+          description: Outbound request created successfully in SAP.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboundRequestCreatedResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: Validation or domain error (with machine-readable codes).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+              examples:
+                invalid_delivery_date:
+                  summary: Invalid Delivery Date Format
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_DATE_FORMAT"
+                        field: "delivery_date"
+                        message: "The delivery_date field must match the format Y-m-d."
+                invalid_delivery_time_slot:
+                  summary: Invalid Delivery Time Slot Format
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_TIME_FORMAT"
+                        field: "delivery_time_slot"
+                        message: "The delivery_time_slot field must be a two-digit hour (e.g. '09')."
+                delivery_date_out_of_range:
+                  summary: Delivery Date Out of Range
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_DELIVERY_DATE_RANGE"
+                        field: "delivery_date"
+                        message: "The delivery_date must be between 2026-10-07 and 2026-11-05."
+                unavailable_timeslot:
+                  summary: Time Slot Not Available
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "UNAVAILABLE_TIMESLOT"
+                        field: "delivery_time_slot"
+                        message: "Time slot not available: Time slot '11' is fully booked or outside operating hours."
+                invalid_gln:
+                  summary: Invalid GLN
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_GLN"
+                        field: "ship_to_party_gln"
+                        message: "Invalid GLN: The destination GLN / Ship-to Party 'INVALID_PARTY' is invalid."
+                gtin_not_in_stock:
+                  summary: Product GTIN Not Available in Stock
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "PRODUCT_GTIN_NOT_IN_STOCK"
+                        field: "products.0.product_gtin"
+                        message: "Product GTIN not available in stock: Material 'MAT-999' has no stock in warehouse."
+                batch_not_available:
+                  summary: Batch Not Available
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "BATCH_NOT_AVAILABLE"
+                        field: "products.0.batch_code"
+                        message: "Batch not available: Batch 'BATCH-99' does not exist for this product."
+                quantity_not_available:
+                  summary: Quantity Not Available
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "QUANTITY_NOT_AVAILABLE"
+                        field: "products.0.quantity"
+                        message: "Quantity not available: Requested quantity (50) exceeds available stock (20) for batch 'BATCH-01'."
+                quantity_greater_than_zero:
+                  summary: Quantity Must Be Greater Than 0
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "INVALID_QUANTITY"
+                        field: "products.0.quantity"
+                        message: "The quantity must be greater than 0."
+                missing_attribute:
+                  summary: Missing Attribute
+                  value:
+                    message: "Validation failed."
+                    errors:
+                      - code: "MISSING_ATTRIBUTE"
+                        field: "ship_to_party_gln"
+                        message: "Missing attribute: The ship_to_party_gln field is required."
+        '502':
+          $ref: '#/components/responses/BadGateway'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum
+      description: "24-hour Bearer token issued by POST /api/v1/auth/token"
+
+  responses:
+    Unauthorized:
+      description: Missing, invalid, or expired Bearer token.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: "Unauthorized: Invalid or missing token."
+    ValidationError:
+      description: Request failed attribute validation or domain business rules.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
+    BadGateway:
+      description: Upstream SAP service error or network failure.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: "Service not available."
+
+  schemas:
+    TokenRequest:
+      type: object
+      required:
+        - client_id
+        - client_secret
+      properties:
+        client_id:
+          type: string
+          example: "cl_live_9f83a1b2c3d4e5f67890"
+        client_secret:
+          type: string
+          example: "sec_live_abcdef1234567890"
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "1|abcdef1234567890..."
+        token_type:
+          type: string
+          example: "Bearer"
+        expires_in:
+          type: integer
+          description: Lifetime in seconds (86400 = 24 hours).
+          example: 86400
+        business_partner:
+          type: object
+          properties:
+            bp_code:
+              type: string
+              example: "BP100234"
+            name:
+              type: string
+              example: "Acme Pharmaceuticals LLC"
+
+    ContractsResponse:
+      type: object
+      properties:
+        contracts:
+          description: Full list of contracts or paginated object with total_count.
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/Contract'
+            - type: object
+              properties:
+                total_count:
+                  type: integer
+                  example: 2
+                contracts:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Contract'
+
+    Contract:
+      type: object
+      properties:
+        contract_code:
+          type: string
+          example: "40000123"
+        contract_start:
+          type: string
+          format: date
+          example: "2026-01-01"
+        contract_end:
+          type: string
+          format: date
+          example: "2026-12-31"
+        storage_locations:
+          type: array
+          items:
+            type: object
+            properties:
+              storage_location_code:
+                type: string
+                example: "1001"
+              storage_location_name:
+                type: string
+                example: "Cold"
+              contracted_storage_capacity:
+                type: integer
+                example: 100
+              contracted_storage_capacity_unit:
+                type: string
+                example: "PAL"
+
+    InboundSlotsResponse:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2026-10-20"
+        slots:
+          type: array
+          example: ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00']
+          items:
+            type: string
+
+    OutboundSlotsResponse:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2026-10-22"
+        slots:
+          type: array
+          example: ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00']
+          items:
+            type: string
+
+    StockResponse:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockItem'
+
+    StockItem:
+      type: object
+      properties:
+        product_gtin:
+          type: string
+          example: "06285000000000"
+        total_quantity:
+          type: number
+          example: 500
+        total_quantity_unit:
+          type: string
+          example: "EA"
+        batches:
+          type: array
+          items:
+            type: object
+            properties:
+              batch_code:
+                type: string
+                example: "B202601"
+              batch_quantity:
+                type: number
+                example: 250
+              expiration_date:
+                type: string
+                format: date
+                example: "2028-06-30"
+              manufacture_date:
+                type: string
+                format: date
+                example: "2026-01-15"
+              storage_locations:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    storage_location_name:
+                      type: string
+                      example: "LOC-01"
+                    quantity_in_location:
+                      type: number
+                      example: 250
+
+    InboundRequestInput:
+      type: object
+      required:
+        - contract_code
+        - delivery_date
+        - delivery_time
+        - products
+      properties:
+        contract_code:
+          type: string
+          description: SAP Contract ID.
+          example: "40000123"
+        delivery_date:
+          type: string
+          format: date
+          description: Scheduled delivery date (YYYY-MM-DD). Must be between tomorrow and +30 days (e.g. 2026-10-07 to 2026-11-05).
+          example: "2026-10-20"
+        delivery_time:
+          type: string
+          pattern: "^(0[0-9]|1[0-9]|2[0-3])$"
+          description: Two-digit 24h delivery slot hour (e.g. '08', '09', '14').
+          example: "09"
+        products:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/InboundMaterialItem'
+
+    InboundMaterialItem:
+      type: object
+      required:
+        - gtin
+        - quantity
+        - batch
+        - manufacture_date
+        - expiration_date
+      properties:
+        gtin:
+          type: string
+          description: Global Trade Item Number registered in SWMP.
+          example: "06285000000000"
+        quantity:
+          type: integer
+          minimum: 1
+          description: Units to receive (must be greater than 0).
+          example: 100
+        batch:
+          type: string
+          maxLength: 10
+          description: Batch or lot number.
+          example: "BATCH-01"
+        manufacture_date:
+          type: string
+          format: date
+          description: Date of manufacture (YYYY-MM-DD). Must be before delivery_date.
+          example: "2026-09-01"
+        expiration_date:
+          type: string
+          format: date
+          description: Expiration date (YYYY-MM-DD). Must be after delivery_date.
+          example: "2028-09-01"
+
+    InboundRequestCreatedResponse:
+      type: object
+      properties:
+        inbound_id:
+          type: string
+          example: "10009210"
+        message:
+          type: string
+          example: "Inbound request created successfully in SAP."
+
+    OutboundRequestInput:
+      type: object
+      required:
+        - delivery_service
+        - ship_to_party_gln
+        - delivery_date
+        - delivery_time_slot
+        - products
+      properties:
+        delivery_service:
+          type: boolean
+          description: Flag indicating whether transportation delivery service is requested (true or false).
+          example: true
+        ship_to_party_gln:
+          type: string
+          description: Destination partner / GLN / Customer code.
+          example: "6281000000000"
+        delivery_date:
+          type: string
+          format: date
+          description: Date of dispatch (YYYY-MM-DD). Must be between tomorrow and +30 days (e.g. 2026-10-07 to 2026-11-05).
+          example: "2026-10-22"
+        delivery_time_slot:
+          type: string
+          pattern: "^(0[0-9]|1[0-9]|2[0-3])$"
+          description: Two-digit 24h delivery slot hour (e.g. '09', '11').
+          example: "11"
+        products:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OutboundMaterialItem'
+
+    OutboundMaterialItem:
+      type: object
+      required:
+        - product_gtin
+        - batch_code
+        - quantity
+      properties:
+        product_gtin:
+          type: string
+          example: "06285000000000"
+        batch_code:
+          type: string
+          example: "BATCH-01"
+        quantity:
+          type: integer
+          minimum: 1
+          description: Units to dispatch (must be greater than 0).
+          example: 25
+
+    OutboundRequestCreatedResponse:
+      type: object
+      properties:
+        outbound_id:
+          type: string
+          example: "O800123"
+        message:
+          type: string
+          example: "Outbound request created successfully in SAP."
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Error description"
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Validation failed."
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "INVALID_GTIN"
+              field:
+                type: string
+                example: "products.0.gtin"
+              message:
+                type: string
+                example: "Material with GTIN '06285000099999' does not exist."

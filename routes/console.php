@@ -18,3 +18,5 @@ Schedule::command('materials:sync')
         \Illuminate\Support\Facades\Log::error('Materials sync failed');
     });
 
+Schedule::command('sanctum:prune-expired --hours=24')->daily();
+

@@ -13,6 +13,11 @@ class CreateDraftOutbound extends CreateRecord
 
     protected static bool $canCreateAnother = false;
 
+    public function canCreateAnother(): bool
+    {
+        return false;
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['business_partner_id'] = filament()->auth()->user()->business_partner_id;
